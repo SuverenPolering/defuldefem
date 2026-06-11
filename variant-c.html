@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>De Fulde Fem — Etiketten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Gelasio:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --floede:#f1e8d0;
+  --floede-lys:#f9f3e3;
+  --gran:#1d3b2a;
+  --gran-lys:#2a5039;
+  --guld:#b98c2c;
+  --guld-lys:#d4ab4e;
+  --rust:#8c3b22;
+  --linje:#d9cca6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Gelasio',serif;
+  background:
+    repeating-linear-gradient(45deg, transparent 0 10px, rgba(185,140,44,.03) 10px 20px),
+    var(--floede);
+  color:var(--gran);
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  padding-bottom:84px;
+  border-left:6px double var(--guld);
+  border-right:6px double var(--guld);
+}
+.topbar{
+  background:var(--gran);
+  color:var(--floede);
+  padding:10px 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:10;
+  border-bottom:3px solid var(--guld);
+}
+.topbar-navn{font-family:'Alfa Slab One',serif;font-size:16px;letter-spacing:.04em}
+.topbar-aargang{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--guld-lys)}
+
+/* Etiketten / logo */
+.etiket{
+  margin:24px 18px 0;
+  background:var(--floede-lys);
+  border:2px solid var(--gran);
+  outline:1px solid var(--gran);
+  outline-offset:5px;
+  padding:26px 20px 22px;
+  text-align:center;
+  position:relative;
+}
+.etiket::before,.etiket::after{
+  content:"✦";position:absolute;top:8px;color:var(--guld);font-size:14px;
+}
+.etiket::before{left:12px}
+.etiket::after{right:12px}
+.baand{
+  font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.42em;
+  text-transform:uppercase;color:var(--rust);margin-bottom:14px;
+}
+.etiket h1{
+  font-family:'Alfa Slab One',serif;font-weight:400;
+  font-size:40px;line-height:.96;color:var(--gran);
+  text-shadow:2px 2px 0 rgba(185,140,44,.35);
+}
+.etiket .undertekst{
+  font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--guld);margin-top:12px;
+}
+.etiket .motto{font-style:italic;font-size:14px;color:var(--gran-lys);margin-top:12px}
+
+/* Segl-logo */
+.segl{margin:18px auto 0}
+
+.sektion{padding:0 18px;margin-top:28px}
+.sektion-hoved{text-align:center;margin-bottom:14px}
+.sektion-hoved h2{
+  font-family:'Alfa Slab One',serif;font-weight:400;font-size:20px;color:var(--gran);
+}
+.sektion-hoved .ramme{
+  display:flex;align-items:center;gap:10px;justify-content:center;margin-top:4px;
+}
+.sektion-hoved .ramme::before,.sektion-hoved .ramme::after{
+  content:"";width:50px;height:1px;background:var(--guld);
+}
+.sektion-hoved .ramme span{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--rust)}
+
+.kort{
+  background:var(--floede-lys);
+  border:1.5px solid var(--gran);
+  padding:18px;
+  position:relative;
+}
+.hjoerne{position:absolute;width:10px;height:10px;border-color:var(--guld);border-style:solid}
+.hjoerne.tv{top:4px;left:4px;border-width:2px 0 0 2px}
+.hjoerne.th{top:4px;right:4px;border-width:2px 2px 0 0}
+.hjoerne.bv{bottom:4px;left:4px;border-width:0 0 2px 2px}
+.hjoerne.bh{bottom:4px;right:4px;border-width:0 2px 2px 0}
+
+/* Næste møde */
+.moede-dato{font-family:'Alfa Slab One',serif;font-size:22px;line-height:1.15;color:var(--rust);text-align:center}
+.moede-detalje{font-size:14px;font-style:italic;color:var(--gran-lys);text-align:center;margin-top:8px}
+.svar-liste{margin-top:14px;border-top:1px solid var(--linje);padding-top:8px}
+.svar-raekke{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:14px}
+.svar{font-size:12px;font-style:italic;color:var(--gran-lys)}
+.svar.ja{color:var(--gran);font-weight:700;font-style:normal}
+.svar.ja::before{content:"✓ ";color:var(--guld)}
+.svar.nej{color:var(--rust)}
+
+/* Bødekassen */
+.saldo-omraade{text-align:center;padding:4px 0 14px}
+.saldo-etiket{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--rust)}
+.saldo{font-family:'Alfa Slab One',serif;font-size:46px;color:var(--gran);line-height:1.05;text-shadow:2px 2px 0 rgba(185,140,44,.3)}
+.saldo-note{font-size:12px;font-style:italic;color:var(--gran-lys);margin-top:4px}
+.boede{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--linje);font-size:14px}
+.boede .grund em{font-style:normal;color:var(--rust);font-weight:700}
+.boede .hvem{display:block;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--guld);margin-top:3px}
+.boede .takst{font-family:'Alfa Slab One',serif;font-size:16px;color:var(--gran);white-space:nowrap}
+
+/* Æresrækken — øl top 3 */
+.oel{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--linje)}
+.oel:last-child{border-bottom:none}
+.medalje{
+  width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Alfa Slab One',serif;font-size:17px;
+  border:2px solid var(--gran);
+  background:radial-gradient(circle at 35% 30%, var(--guld-lys), var(--guld));
+  color:var(--gran);
+  box-shadow:0 2px 0 rgba(29,59,42,.35);
+}
+.oel:nth-child(2) .medalje{background:radial-gradient(circle at 35% 30%, #e8e2d2, #bfb7a0)}
+.oel:nth-child(3) .medalje{background:radial-gradient(circle at 35% 30%, #d9a371, #a8714a)}
+.oel-info{flex:1;min-width:0}
+.oel-navn{font-weight:700;font-size:15px}
+.oel-meta{font-size:12px;font-style:italic;color:var(--gran-lys);margin-top:2px}
+.oel-score{font-family:'Alfa Slab One',serif;font-size:24px;color:var(--rust)}
+
+/* Ordbogen */
+.dom{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--linje);font-size:14px}
+.dom:last-child{border-bottom:none}
+.dom .ord{font-weight:700;font-size:15px}
+.dom .begrundelse{display:block;font-size:12px;font-style:italic;color:var(--gran-lys);font-weight:400}
+.maerke{
+  font-family:'Oswald',sans-serif;font-size:10px;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;padding:4px 9px;border:1.5px solid;white-space:nowrap;
+}
+.doemt{color:var(--rust);border-color:var(--rust)}
+.frikendt{color:var(--gran);border-color:var(--gran);background:rgba(185,140,44,.12)}
+
+/* Brygmestrene */
+.mester{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--linje)}
+.mester:last-child{border-bottom:none}
+.oval{
+  width:46px;height:38px;border-radius:50%;flex-shrink:0;
+  background:var(--gran);color:var(--floede);
+  font-family:'Alfa Slab One',serif;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--guld);
+}
+.mester-navn{font-weight:700;font-size:15px}
+.mester-titel{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--rust)}
+
+footer{
+  margin-top:32px;padding:22px 24px 26px;text-align:center;
+  background:var(--gran);color:var(--floede);
+  border-top:3px solid var(--guld);
+  font-size:12px;font-style:italic;line-height:1.7;
+}
+footer .brygget{font-family:'Oswald',sans-serif;font-style:normal;font-size:10px;letter-spacing:.34em;text-transform:uppercase;color:var(--guld-lys);display:block;margin-bottom:8px}
+
+nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  background:var(--gran);
+  border-top:2px solid var(--guld);
+  display:flex;z-index:20;
+}
+nav a{
+  flex:1;text-align:center;padding:10px 2px 12px;
+  color:var(--floede);text-decoration:none;
+  font-family:'Oswald',sans-serif;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  opacity:.6;
+}
+nav a.aktiv{opacity:1;color:var(--guld-lys);box-shadow:inset 0 3px 0 var(--guld)}
+nav a .ikon{display:block;font-size:16px;margin-bottom:3px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-navn">DE FULDE FEM</div>
+  <div class="topbar-aargang">Aftapning nr. 5</div>
+</header>
+
+<!-- Logoforslag C: Klassisk dansk bryggeri-etiket med segl -->
+<section class="etiket">
+  <div class="baand">★ Foreningsbryg af højeste karat ★</div>
+  <h1>DE<br>FULDE<br>FEM</h1>
+  <div class="undertekst">Brygget på venskab &amp; bøder</div>
+  <p class="motto">»Fem mand, én tørst — og ikke ét udenlandsk ord«</p>
+  <div class="segl">
+    <svg width="92" height="92" viewBox="0 0 100 100" aria-label="De Fulde Fems segl">
+      <circle cx="50" cy="50" r="47" fill="#1d3b2a" stroke="#b98c2c" stroke-width="3"/>
+      <circle cx="50" cy="50" r="38" fill="none" stroke="#b98c2c" stroke-width="1.2" stroke-dasharray="3 3"/>
+      <path id="bue-top" d="M 16 50 A 34 34 0 0 1 84 50" fill="none"/>
+      <text font-family="Oswald,sans-serif" font-size="9.5" fill="#f1e8d0" letter-spacing="2.5">
+        <textPath href="#bue-top" startOffset="50%" text-anchor="middle">DE FULDE FEM</textPath>
+      </text>
+      <path id="bue-bund" d="M 18 56 A 34 34 0 0 0 82 56" fill="none"/>
+      <text font-family="Oswald,sans-serif" font-size="8" fill="#d4ab4e" letter-spacing="2">
+        <textPath href="#bue-bund" startOffset="50%" text-anchor="middle">FYN · DANMARK</textPath>
+      </text>
+      <g transform="translate(50 52)">
+        <path d="M-9 -12 H9 V10 Q9 13 6 13 H-6 Q-9 13 -9 10 Z" fill="#d4ab4e"/>
+        <path d="M9 -8 H14 Q17 -8 17 -5 V2 Q17 5 14 5 H9" fill="none" stroke="#d4ab4e" stroke-width="2.5"/>
+        <path d="M-11 -13 Q-7 -19 -2 -15 Q1 -21 7 -16 Q11 -19 10 -13 Z" fill="#f1e8d0"/>
+      </g>
+      <g fill="#d4ab4e">
+        <circle cx="30" cy="78" r="2.2"/><circle cx="40" cy="81" r="2.2"/><circle cx="50" cy="82" r="2.2"/><circle cx="60" cy="81" r="2.2"/><circle cx="70" cy="78" r="2.2"/>
+      </g>
+    </svg>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Næste sammenkomst</h2>
+    <div class="ramme"><span>Kalenderen</span></div>
+  </div>
+  <div class="kort">
+    <span class="hjoerne tv"></span><span class="hjoerne th"></span><span class="hjoerne bv"></span><span class="hjoerne bh"></span>
+    <div class="moede-dato">Lørdag den 15. august 2026</div>
+    <div class="moede-detalje">Hos Finansministeren · »Belgien tur/retur — uden at rejse os fra havemøblerne«</div>
+    <div class="svar-liste">
+      <div class="svar-raekke"><span>Henning Trab</span><span class="svar ja">Kommer</span></div>
+      <div class="svar-raekke"><span>Jakob Jakobsen</span><span class="svar ja">Kommer</span></div>
+      <div class="svar-raekke"><span>Kim Hanen</span><span class="svar ja">Kommer (er vært)</span></div>
+      <div class="svar-raekke"><span>Anders Trab</span><span class="svar">Afventer konens kendelse</span></div>
+      <div class="svar-raekke"><span>Steffen Due Lund</span><span class="svar nej">Har hundesnor på den aften</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Bødekassen</h2>
+    <div class="ramme"><span>Ministeriets opgørelse</span></div>
+  </div>
+  <div class="kort">
+    <span class="hjoerne tv"></span><span class="hjoerne th"></span><span class="hjoerne bv"></span><span class="hjoerne bh"></span>
+    <div class="saldo-omraade">
+      <div class="saldo-etiket">Indestående</div>
+      <div class="saldo">1.420 kr</div>
+      <div class="saldo-note">Opgjort efter bedste evne og anden fadøl</div>
+    </div>
+    <div class="boede">
+      <div class="grund">Udtalte <em>»nice«</em> under hovedretten<span class="hvem">Henning Trab · 13. marts 2026</span></div>
+      <div class="takst">10 kr</div>
+    </div>
+    <div class="boede">
+      <div class="grund">Fremmøde 23 minutter efter aftalt tid<span class="hvem">Kim Hanen · 13. marts 2026</span></div>
+      <div class="takst">50 kr</div>
+    </div>
+    <div class="boede">
+      <div class="grund">Brugte Den Gyldne Måges udenlandske navn<span class="hvem">Steffen Due Lund · 13. marts 2026</span></div>
+      <div class="takst">10 kr</div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Æresrækken</h2>
+    <div class="ramme"><span>Bedste øl gennem tiderne</span></div>
+  </div>
+  <div class="kort">
+    <span class="hjoerne tv"></span><span class="hjoerne th"></span><span class="hjoerne bv"></span><span class="hjoerne bh"></span>
+    <div class="oel">
+      <div class="medalje">1</div>
+      <div class="oel-info">
+        <div class="oel-navn">Westvleteren 12</div>
+        <div class="oel-meta">Trappist · 10,2 % · fremlagt af Steffen · 13. marts 2026</div>
+      </div>
+      <div class="oel-score">9,4</div>
+    </div>
+    <div class="oel">
+      <div class="medalje">2</div>
+      <div class="oel-info">
+        <div class="oel-navn">Dangerously Close to Stupid</div>
+        <div class="oel-meta">To Øl · 9,3 % · fremlagt af Kim · 28. november 2025</div>
+      </div>
+      <div class="oel-score">8,8</div>
+    </div>
+    <div class="oel">
+      <div class="medalje">3</div>
+      <div class="oel-info">
+        <div class="oel-navn">Beer Geek Breakfast</div>
+        <div class="oel-meta">Mikkeller · 7,5 % · fremlagt af Henning · 13. marts 2026</div>
+      </div>
+      <div class="oel-score">8,6</div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Ordbogen</h2>
+    <div class="ramme"><span>Seneste kendelser</span></div>
+  </div>
+  <div class="kort">
+    <span class="hjoerne tv"></span><span class="hjoerne th"></span><span class="hjoerne bv"></span><span class="hjoerne bh"></span>
+    <div class="dom">
+      <div><span class="ord">»weekend«</span><span class="begrundelse">Optaget i Retskrivningsordbogen. Nævnet beklager.</span></div>
+      <span class="maerke frikendt">Frikendt</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»nice«</span><span class="begrundelse">Ikke dansk. Aldrig dansk. 10 kr.</span></div>
+      <span class="maerke doemt">Dømt</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»Den Gyldne Måge«</span><span class="begrundelse">Forbilledlig fordanskning. Til efterlevelse.</span></div>
+      <span class="maerke frikendt">Frikendt</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»sorry«</span><span class="begrundelse">Undskyld findes. Brug det.</span></div>
+      <span class="maerke doemt">Dømt</span>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Brygmestrene</h2>
+    <div class="ramme"><span>Regeringen</span></div>
+  </div>
+  <div class="kort">
+    <span class="hjoerne tv"></span><span class="hjoerne th"></span><span class="hjoerne bv"></span><span class="hjoerne bh"></span>
+    <div class="mester">
+      <div class="oval">H</div>
+      <div><div class="mester-navn">Henning Trab</div><div class="mester-titel">Turistminister</div></div>
+    </div>
+    <div class="mester">
+      <div class="oval">J</div>
+      <div><div class="mester-navn">Jakob Jakobsen</div><div class="mester-titel">Bødekasseminister</div></div>
+    </div>
+    <div class="mester">
+      <div class="oval">K</div>
+      <div><div class="mester-navn">Kim Hanen</div><div class="mester-titel">Finansminister</div></div>
+    </div>
+    <div class="mester">
+      <div class="oval">A</div>
+      <div><div class="mester-navn">Anders Trab</div><div class="mester-titel">Foreningssekretær</div></div>
+    </div>
+    <div class="mester">
+      <div class="oval">S</div>
+      <div><div class="mester-navn">Steffen Due Lund</div><div class="mester-titel">Joy — uden portefølje</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="brygget">Brygget &amp; aftappet på Fyn</span>
+  Indeholder spor af venskab, bøder og fynsk stædighed.<br>
+  Udenlandske gloser pantes ikke — de straffes.
+</footer>
+
+<nav>
+  <a href="#" class="aktiv"><span class="ikon">★</span>Forside</a>
+  <a href="#"><span class="ikon">⚖</span>Bøder</a>
+  <a href="#"><span class="ikon">🍺</span>Øllet</a>
+  <a href="#"><span class="ikon">✦</span>Kalender</a>
+  <a href="#"><span class="ikon">✒</span>Ordbogen</a>
+</nav>
+
+</body>
+</html>

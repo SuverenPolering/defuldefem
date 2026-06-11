@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>De Fulde Fem — Kancelliet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --papir:#f4eede;
+  --papir-moerk:#ece3cc;
+  --blaek:#211b12;
+  --blaek-svag:#5c5240;
+  --segl:#8f1d1d;
+  --segl-moerk:#6e1414;
+  --guld:#a8853a;
+  --linje:#cfc3a4;
+  --frikendt:#3d6b35;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Spectral',serif;
+  background:
+    radial-gradient(ellipse 120% 60% at 50% -10%, #fdf8ea 0%, transparent 60%),
+    repeating-linear-gradient(0deg, transparent 0 2px, rgba(92,82,64,.025) 2px 4px),
+    var(--papir);
+  color:var(--blaek);
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  padding-bottom:84px;
+  border-left:1px solid var(--linje);
+  border-right:1px solid var(--linje);
+}
+.topbar{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 18px;
+  border-bottom:3px double var(--blaek);
+  background:var(--papir);
+  position:sticky;top:0;z-index:10;
+}
+.topbar svg{flex-shrink:0}
+.topbar-titel{font-family:'Fraunces',serif;font-weight:900;font-size:17px;letter-spacing:.04em}
+.topbar-under{font-size:11px;color:var(--blaek-svag);font-style:italic;margin-top:-2px}
+
+.hero{text-align:center;padding:30px 24px 24px}
+.hero .vaaben{margin-bottom:14px}
+.hero h1{
+  font-family:'Fraunces',serif;font-weight:900;
+  font-size:34px;line-height:1.04;letter-spacing:.01em;
+}
+.hero h1 .rod{color:var(--segl)}
+.hero .embede{
+  font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--blaek-svag);margin-top:10px;
+}
+.hero .motto{
+  font-style:italic;font-size:14px;color:var(--blaek-svag);
+  margin-top:12px;
+}
+.ornament{display:flex;align-items:center;gap:10px;justify-content:center;margin:18px auto 0;max-width:280px}
+.ornament::before,.ornament::after{content:"";flex:1;height:1px;background:var(--blaek-svag)}
+.ornament span{font-size:13px;color:var(--guld)}
+
+.sektion{padding:0 18px;margin-top:26px}
+.sektion-hoved{
+  display:flex;align-items:baseline;justify-content:space-between;
+  border-bottom:2px solid var(--blaek);padding-bottom:6px;margin-bottom:14px;
+}
+.sektion-hoved h2{
+  font-family:'Fraunces',serif;font-weight:600;font-size:19px;
+}
+.sektion-hoved .paragraf{
+  font-family:'Fraunces',serif;font-size:13px;color:var(--segl);font-weight:600;
+}
+.kort{
+  background:#fdf9ee;
+  border:1px solid var(--linje);
+  box-shadow:3px 3px 0 rgba(33,27,18,.08);
+  padding:18px;
+  position:relative;
+}
+.kort + .kort{margin-top:12px}
+
+/* Dagsorden */
+.dagsorden-dato{
+  font-family:'Fraunces',serif;font-weight:900;font-size:24px;line-height:1.1;
+}
+.dagsorden-detalje{font-size:14px;color:var(--blaek-svag);margin-top:6px;font-style:italic}
+.fremmoede{margin-top:14px;border-top:1px dashed var(--linje);padding-top:12px}
+.fremmoede-titel{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--blaek-svag);margin-bottom:8px}
+.svar-raekke{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:14px}
+.svar{font-size:12px;font-style:italic}
+.svar.ja{color:var(--frikendt);font-weight:600;font-style:normal}
+.svar.nej{color:var(--segl)}
+.svar.tbd{color:var(--blaek-svag)}
+
+/* Bødekassen */
+.saldo-raekke{display:flex;align-items:flex-end;justify-content:space-between}
+.saldo{font-family:'Fraunces',serif;font-weight:900;font-size:42px;line-height:1;color:var(--segl)}
+.saldo-note{font-size:12px;font-style:italic;color:var(--blaek-svag);max-width:140px;text-align:right;padding-bottom:4px}
+.stempel{
+  position:absolute;top:-9px;right:12px;
+  transform:rotate(6deg);
+  border:2px solid var(--segl);color:var(--segl);
+  font-family:'Fraunces',serif;font-weight:900;font-size:11px;letter-spacing:.22em;
+  padding:3px 9px;background:rgba(244,238,222,.92);
+}
+.kendelser{margin-top:16px;border-top:1px dashed var(--linje);padding-top:6px}
+.kendelse{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dotted var(--linje);font-size:14px}
+.kendelse:last-child{border-bottom:none}
+.kendelse .grund{flex:1}
+.kendelse .grund em{color:var(--segl);font-style:normal;font-weight:600}
+.kendelse .takst{font-weight:600;white-space:nowrap}
+.kendelse .hvem{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--blaek-svag);margin-top:2px}
+
+/* Øl-protokollen */
+.podie{counter-reset:plads}
+.oel{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--linje);align-items:center}
+.oel:last-child{border-bottom:none}
+.plads{
+  font-family:'Fraunces',serif;font-weight:900;font-size:26px;width:34px;
+  color:var(--guld);text-align:center;flex-shrink:0;
+}
+.oel:first-child .plads{font-size:32px;color:var(--segl)}
+.oel-info{flex:1;min-width:0}
+.oel-navn{font-weight:600;font-size:15px}
+.oel-meta{font-size:12px;color:var(--blaek-svag);font-style:italic;margin-top:2px}
+.oel-score{
+  font-family:'Fraunces',serif;font-weight:900;font-size:22px;
+  border:2px solid var(--blaek);width:46px;height:46px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  background:#fdf9ee;
+}
+.oel:first-child .oel-score{background:var(--blaek);color:var(--papir)}
+
+/* Ordbogsnævnet */
+.dom{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dotted var(--linje);font-size:14px}
+.dom:last-child{border-bottom:none}
+.dom .ord{font-weight:600}
+.dom .begrundelse{display:block;font-size:11px;font-style:italic;color:var(--blaek-svag);font-weight:400;margin-top:1px}
+.kendelse-maerke{
+  font-family:'Fraunces',serif;font-size:10px;font-weight:900;letter-spacing:.18em;
+  padding:3px 8px;border:1.5px solid;white-space:nowrap;
+}
+.doemt{color:var(--segl);border-color:var(--segl);transform:rotate(-2deg)}
+.frikendt-m{color:var(--frikendt);border-color:var(--frikendt);transform:rotate(1.5deg)}
+
+/* Ministrene */
+.minister{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px dotted var(--linje)}
+.minister:last-child{border-bottom:none}
+.segl-mini{
+  width:40px;height:40px;border-radius:50%;flex-shrink:0;
+  background:var(--segl);color:var(--papir);
+  font-family:'Fraunces',serif;font-weight:900;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--segl-moerk);
+  box-shadow:inset 0 0 0 2px rgba(244,238,222,.35);
+}
+.minister:last-child .segl-mini{background:var(--guld);border-color:#8a6c2c}
+.minister-navn{font-weight:600;font-size:15px}
+.minister-titel{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--blaek-svag)}
+
+footer{
+  margin-top:34px;padding:22px 24px;text-align:center;
+  border-top:3px double var(--blaek);
+  font-size:12px;font-style:italic;color:var(--blaek-svag);line-height:1.6;
+}
+
+/* Bundnavigation */
+nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  background:var(--blaek);
+  display:flex;
+  z-index:20;
+}
+nav a{
+  flex:1;text-align:center;padding:10px 2px 12px;
+  color:var(--papir);text-decoration:none;
+  font-size:10px;letter-spacing:.06em;
+  opacity:.62;
+}
+nav a.aktiv{opacity:1;background:var(--segl)}
+nav a .ikon{display:block;font-size:17px;margin-bottom:2px;font-family:'Fraunces',serif;font-weight:900}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <svg width="30" height="30" viewBox="0 0 60 60" aria-hidden="true">
+    <rect x="2" y="2" width="56" height="56" fill="none" stroke="#211b12" stroke-width="3"/>
+    <path d="M12 14 L18 8 L24 14 L30 8 L36 14 L42 8 L48 14" fill="none" stroke="#8f1d1d" stroke-width="3" stroke-linejoin="round"/>
+    <text x="30" y="44" text-anchor="middle" font-family="Fraunces,serif" font-weight="900" font-size="26" fill="#211b12">V</text>
+  </svg>
+  <div>
+    <div class="topbar-titel">DE FULDE FEM</div>
+    <div class="topbar-under">Kancelliet — siden tidernes morgen</div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="vaaben">
+    <!-- Logoforslag A: Rigsvåben-parodi — krone af fem kapsler over skjold med ølglas -->
+    <svg width="120" height="130" viewBox="0 0 120 130" aria-label="De Fulde Fems våbenskjold">
+      <g fill="#a8853a">
+        <circle cx="18" cy="16" r="7" stroke="#211b12" stroke-width="2"/>
+        <circle cx="39" cy="10" r="7" stroke="#211b12" stroke-width="2"/>
+        <circle cx="60" cy="7" r="7" stroke="#211b12" stroke-width="2"/>
+        <circle cx="81" cy="10" r="7" stroke="#211b12" stroke-width="2"/>
+        <circle cx="102" cy="16" r="7" stroke="#211b12" stroke-width="2"/>
+      </g>
+      <path d="M20 30 H100 V78 Q100 108 60 122 Q20 108 20 78 Z" fill="#fdf9ee" stroke="#211b12" stroke-width="3"/>
+      <path d="M48 52 H66 V88 Q66 92 62 92 H52 Q48 92 48 88 Z" fill="#8f1d1d"/>
+      <path d="M66 58 H74 Q78 58 78 62 V72 Q78 76 74 76 H66" fill="none" stroke="#8f1d1d" stroke-width="4"/>
+      <path d="M46 50 Q50 42 57 46 Q60 38 68 44 Q72 40 70 50 Z" fill="#211b12" opacity=".85"/>
+      <text x="60" y="108" text-anchor="middle" font-family="Fraunces,serif" font-weight="900" font-size="13" fill="#211b12" letter-spacing="2">MMV</text>
+    </svg>
+  </div>
+  <h1>MINISTERIET FOR<br><span class="rod">DE FULDE FEM</span></h1>
+  <div class="embede">Kongeligt uautoriseret</div>
+  <p class="motto">»I ædruelighed intet vundet, i fadøl alt forladt«</p>
+  <div class="ornament"><span>❦</span></div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Dagsordenen</h2>
+    <span class="paragraf">§ 1</span>
+  </div>
+  <div class="kort">
+    <div class="dagsorden-dato">Lørdag den 15. august 2026</div>
+    <div class="dagsorden-detalje">Sommertopmøde hos Finansministeren. Tema: »Belgien tur/retur — uden at rejse os fra havemøblerne«.</div>
+    <div class="fremmoede">
+      <div class="fremmoede-titel">Fremmødeerklæringer</div>
+      <div class="svar-raekke"><span>Henning Trab</span><span class="svar ja">Giver møde</span></div>
+      <div class="svar-raekke"><span>Jakob Jakobsen</span><span class="svar ja">Giver møde</span></div>
+      <div class="svar-raekke"><span>Kim Hanen</span><span class="svar ja">Giver møde (er vært)</span></div>
+      <div class="svar-raekke"><span>Anders Trab</span><span class="svar tbd">Afventer hustruens kendelse</span></div>
+      <div class="svar-raekke"><span>Steffen Due Lund</span><span class="svar nej">Har hundesnor på</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Bødekassen</h2>
+    <span class="paragraf">§ 4</span>
+  </div>
+  <div class="kort">
+    <div class="stempel">INDDRIVES</div>
+    <div class="saldo-raekke">
+      <div class="saldo">1.420 kr</div>
+      <div class="saldo-note">Opgjort af Bødekasseministeriet. Klager afvises.</div>
+    </div>
+    <div class="kendelser">
+      <div class="kendelse">
+        <div class="grund">Udtalte ordet <em>»nice«</em> under hovedretten<span class="hvem">Henning Trab · 13. marts 2026</span></div>
+        <div class="takst">10 kr</div>
+      </div>
+      <div class="kendelse">
+        <div class="grund">Fremmøde 23 minutter efter fastsat tid<span class="hvem">Kim Hanen · 13. marts 2026</span></div>
+        <div class="takst">50 kr</div>
+      </div>
+      <div class="kendelse">
+        <div class="grund">Omtalte Den Gyldne Måge ved dens udenlandske navn<span class="hvem">Steffen Due Lund · 13. marts 2026</span></div>
+        <div class="takst">10 kr</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Øl-protokollen</h2>
+    <span class="paragraf">§ 6</span>
+  </div>
+  <div class="kort podie">
+    <div class="oel">
+      <div class="plads">1.</div>
+      <div class="oel-info">
+        <div class="oel-navn">Westvleteren 12</div>
+        <div class="oel-meta">Trappist · 10,2 % · fremlagt af Steffen · 13. marts 2026</div>
+      </div>
+      <div class="oel-score">9,4</div>
+    </div>
+    <div class="oel">
+      <div class="plads">2.</div>
+      <div class="oel-info">
+        <div class="oel-navn">Dangerously Close to Stupid</div>
+        <div class="oel-meta">To Øl · 9,3 % · fremlagt af Kim · 28. november 2025</div>
+      </div>
+      <div class="oel-score">8,8</div>
+    </div>
+    <div class="oel">
+      <div class="plads">3.</div>
+      <div class="oel-info">
+        <div class="oel-navn">Beer Geek Breakfast</div>
+        <div class="oel-meta">Mikkeller · 7,5 % · fremlagt af Henning · 13. marts 2026</div>
+      </div>
+      <div class="oel-score">8,6</div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Ordbogsnævnet</h2>
+    <span class="paragraf">§ 9</span>
+  </div>
+  <div class="kort">
+    <div class="dom">
+      <div><span class="ord">»weekend«</span><span class="begrundelse">Optaget i Retskrivningsordbogen. Nævnet beklager.</span></div>
+      <span class="kendelse-maerke frikendt-m">FRIKENDT</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»nice«</span><span class="begrundelse">Ikke dansk. Aldrig dansk. 10 kr.</span></div>
+      <span class="kendelse-maerke doemt">DØMT</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»Den Gyldne Måge«</span><span class="begrundelse">Forbilledlig fordanskning. Til efterlevelse.</span></div>
+      <span class="kendelse-maerke frikendt-m">FRIKENDT</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»sorry«</span><span class="begrundelse">Undskyld findes. Brug det.</span></div>
+      <span class="kendelse-maerke doemt">DØMT</span>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-hoved">
+    <h2>Regeringen</h2>
+    <span class="paragraf">§ 2</span>
+  </div>
+  <div class="kort">
+    <div class="minister">
+      <div class="segl-mini">H</div>
+      <div><div class="minister-navn">Henning Trab</div><div class="minister-titel">Turistminister</div></div>
+    </div>
+    <div class="minister">
+      <div class="segl-mini">J</div>
+      <div><div class="minister-navn">Jakob Jakobsen</div><div class="minister-titel">Bødekasseminister</div></div>
+    </div>
+    <div class="minister">
+      <div class="segl-mini">K</div>
+      <div><div class="minister-navn">Kim Hanen</div><div class="minister-titel">Finansminister</div></div>
+    </div>
+    <div class="minister">
+      <div class="segl-mini">A</div>
+      <div><div class="minister-navn">Anders Trab</div><div class="minister-titel">Foreningssekretær</div></div>
+    </div>
+    <div class="minister">
+      <div class="segl-mini">S</div>
+      <div><div class="minister-navn">Steffen Due Lund</div><div class="minister-titel">Joy — uden portefølje, uden forpligtelser</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  § 12. Denne hjemmeside er udfærdiget på dansk, om dansk og for danskere i festligt lag.<br>
+  Udenlandske gloser straffes efter gældende takst.
+</footer>
+
+<nav>
+  <a href="#" class="aktiv"><span class="ikon">§</span>Forkontoret</a>
+  <a href="#"><span class="ikon">⚖</span>Bøder</a>
+  <a href="#"><span class="ikon">☘</span>Protokollen</a>
+  <a href="#"><span class="ikon">✦</span>Kalender</a>
+  <a href="#"><span class="ikon">✍</span>Nævnet</a>
+</nav>
+
+</body>
+</html>
