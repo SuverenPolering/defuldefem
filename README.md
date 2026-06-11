@@ -4,15 +4,30 @@ Designfase for ølklubben **De Fulde Fems** webunivers. Ingen app-kode endnu —
 
 **Live:** https://suverenpolering.github.io/defuldefem/
 
-## Status: trin 1 — vælg stilretning
+## Status: runde 2 — videre på variant B
 
-Tre forside-varianter ligger live. Klubben vælger én retning, hvorefter alle sider bygges i den stil.
+Klubben valgte B's typografi som udgangspunkt med tilretninger: lysere, ingen bodega-humor, mere fynsk og mere stædighed. Tre nye bud ligger live:
+
+| Variant | Stil |
+|---------|------|
+| [B1 — Forsamlingshuset](variant-b1.html) | Varmt papir, træskilt, opslagstavle, vimpler, foreningsliv |
+| [B2 — Øhavet](variant-b2.html) | Lys maritim, havblå og sand, søfartssegl med Fyn-silhuet |
+| [B3 — Humlemarken](variant-b3.html) | Strågul almanak, humlegrøn, høstkrans, bondestædighed |
+
+### Arkiv: runde 1
 
 | Variant | Stil |
 |---------|------|
 | [A — Kancelliet](variant-a.html) | Ministerium-parodi: dokumentpapir, segl, paragraffer, stempler |
-| [B — Bodegaen](variant-b.html) | Værtshus: neonskilt, kridttavle, mørkt træ |
+| [B — Bodegaen](variant-b.html) | Værtshus: neonskilt, kridttavle, mørkt træ — **valgt som udgangspunkt for runde 2 (typografien)** |
 | [C — Etiketten](variant-c.html) | Klassisk dansk øletiket: fløde, mørkegrøn, guld, ornamenter |
+
+### Designbeslutninger fra runde 1 → 2
+
+- B's skrift og typografi beholdes (håndskrift-logotype + kondenseret grotesk)
+- Lysere flader — ikke sort/mørkt
+- Ingen bodega-/værtshushumor
+- Fynsk identitet (à la »FYN · DANMARK« fra variant C) og tydelig tone af fynsk stædighed
 
 ## Låste beslutninger (fra afklaringsrunden)
 

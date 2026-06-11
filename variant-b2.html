@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>De Fulde Fem — Øhavet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --himmel:#f1f6f4;
+  --sand:#f8f3e6;
+  --hvid:#fefdf9;
+  --hav:#1f4e5f;
+  --hav-lys:#3a7287;
+  --rav:#d2952f;
+  --rav-moerk:#aa7621;
+  --koral:#c75146;
+  --groen:#4f7a45;
+  --linje:#dde6e1;
+  --tekst:#27424d;
+  --tekst-svag:#6d8590;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Barlow Semi Condensed',sans-serif;
+  background:
+    linear-gradient(180deg, var(--himmel) 0%, var(--sand) 100%);
+  color:var(--tekst);
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  padding-bottom:84px;
+}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 18px;
+  position:sticky;top:0;z-index:10;
+  background:rgba(241,246,244,.95);
+  backdrop-filter:blur(4px);
+  border-bottom:2px solid var(--hav);
+}
+.topbar-navn{font-family:'Yellowtail',cursive;font-size:24px;color:var(--hav)}
+.badge{
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--hav);border:1.5px solid var(--hav);
+  padding:3px 10px;border-radius:99px;
+}
+
+/* Seglet med Fyn */
+.segl-omraade{text-align:center;padding:32px 20px 0}
+.segl-omraade h1{
+  font-family:'Yellowtail',cursive;font-weight:400;
+  font-size:52px;line-height:1;color:var(--hav);
+}
+.segl-omraade .fem{
+  display:block;font-size:12px;font-weight:700;letter-spacing:.5em;text-transform:uppercase;
+  color:var(--rav-moerk);margin-top:8px;margin-right:-.5em;
+}
+.segl{margin:20px auto 0}
+.segl-under{margin-top:14px;font-size:13px;color:var(--tekst-svag);font-style:italic}
+
+/* Bølge-skillelinje */
+.boelge{display:block;width:100%;height:22px;margin-top:18px}
+
+.sektion{padding:0 16px;margin-top:24px}
+.sektion-titel{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.sektion-titel h2{
+  font-size:14px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--hav);white-space:nowrap;
+}
+.sektion-titel .anker{font-size:12px;color:var(--rav)}
+.sektion-titel::after{content:"";flex:1;height:0;border-top:2px dashed var(--linje)}
+
+.kort{
+  background:var(--hvid);
+  border:1px solid var(--linje);
+  border-radius:12px;
+  padding:18px;
+  box-shadow:0 3px 10px rgba(31,78,95,.06);
+  position:relative;
+  overflow:hidden;
+}
+.kort::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:4px;
+  background:repeating-linear-gradient(90deg, var(--hav) 0 14px, var(--rav) 14px 28px);
+  opacity:.85;
+}
+
+/* Næste møde */
+.moede-dato{font-size:26px;font-weight:700;line-height:1.1;margin-top:4px}
+.moede-dato em{font-style:normal;color:var(--hav-lys)}
+.moede-detalje{font-size:14px;color:var(--tekst-svag);margin-top:6px}
+.stadig{
+  margin-top:10px;font-size:13px;font-style:italic;color:var(--koral);font-weight:600;
+}
+.svar-liste{margin-top:12px;border-top:1px dashed var(--linje);padding-top:10px}
+.svar-raekke{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:14px}
+.svar{font-size:12px;font-style:italic;color:var(--tekst-svag)}
+.svar.ja{color:var(--groen);font-weight:700;font-style:normal}
+.svar.ja::before{content:"⚓ ";font-size:10px}
+.svar.nej{color:var(--koral)}
+
+/* Bødekassen */
+.kasse{display:flex;align-items:center;gap:16px;margin-top:4px}
+.kasse-ikon{
+  width:56px;height:56px;border-radius:50%;flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%, #fff, var(--sand));
+  border:3px solid var(--rav);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+}
+.kasse-saldo{font-size:36px;font-weight:700;color:var(--hav);line-height:1}
+.kasse-note{font-size:12px;color:var(--tekst-svag);font-style:italic;margin-top:4px}
+.boede-liste{margin-top:14px;border-top:1px dashed var(--linje);padding-top:6px}
+.boede{display:flex;justify-content:space-between;gap:10px;padding:8px 0;font-size:14px;border-bottom:1px dashed var(--linje)}
+.boede:last-child{border-bottom:none}
+.boede .grund em{font-style:normal;color:var(--koral);font-weight:700}
+.boede .hvem{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tekst-svag);margin-top:2px}
+.boede .takst{font-weight:700;color:var(--hav);white-space:nowrap}
+
+/* Redningskrans-rangliste */
+.oel{display:flex;gap:14px;align-items:center;padding:11px 0;border-bottom:1px dashed var(--linje);margin-top:2px}
+.oel:last-child{border-bottom:none}
+.krans{
+  width:50px;height:50px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:17px;color:var(--hav);
+  background:
+    conic-gradient(var(--koral) 0 25%, #fff 25% 50%, var(--koral) 50% 75%, #fff 75% 100%);
+  border:3px solid var(--hav);
+  position:relative;
+}
+.krans span{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--hvid);
+  display:flex;align-items:center;justify-content:center;
+}
+.oel:first-child .krans{
+  background:conic-gradient(var(--rav) 0 25%, #fff 25% 50%, var(--rav) 50% 75%, #fff 75% 100%);
+}
+.oel-info{flex:1;min-width:0}
+.oel-navn{font-weight:700;font-size:15px}
+.oel-meta{font-size:12px;color:var(--tekst-svag);font-style:italic;margin-top:2px}
+.oel-score{font-size:26px;font-weight:700;color:var(--hav)}
+
+/* Forbudte ord */
+.dom{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--linje);font-size:14px}
+.dom:first-of-type{margin-top:4px}
+.dom:last-child{border-bottom:none}
+.dom .ord{font-weight:700;font-size:15px}
+.dom .begrundelse{display:block;font-size:12px;font-style:italic;color:var(--tekst-svag);font-weight:400}
+.maerke{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:4px 9px;border-radius:99px;white-space:nowrap}
+.doemt{background:rgba(199,81,70,.1);color:var(--koral);border:1px solid rgba(199,81,70,.35)}
+.frikendt{background:rgba(79,122,69,.1);color:var(--groen);border:1px solid rgba(79,122,69,.35)}
+
+/* Besætningen */
+.medlem{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--linje)}
+.medlem:first-of-type{margin-top:4px}
+.medlem:last-child{border-bottom:none}
+.bouy{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(180deg, var(--koral) 0 50%, #fff 50% 100%);
+  color:var(--hav);font-weight:700;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--hav);
+}
+.medlem-navn{font-weight:700;font-size:15px}
+.medlem-titel{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--hav-lys)}
+
+footer{
+  margin-top:30px;padding:24px 20px 26px;text-align:center;
+  background:var(--hav);color:#dceaf0;
+  font-size:12px;font-style:italic;line-height:1.7;
+}
+footer .skrift{font-family:'Yellowtail',cursive;font-size:24px;color:#fff;display:block;margin-bottom:6px;font-style:normal}
+
+nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  background:var(--hvid);
+  border-top:2px solid var(--hav);
+  display:flex;z-index:20;
+  box-shadow:0 -4px 14px rgba(31,78,95,.08);
+}
+nav a{
+  flex:1;text-align:center;padding:10px 2px 12px;
+  color:var(--tekst-svag);text-decoration:none;
+  font-size:10px;letter-spacing:.05em;font-weight:700;
+}
+nav a.aktiv{color:var(--hav)}
+nav a .ikon{display:block;font-size:17px;margin-bottom:2px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-navn">De Fulde Fem</div>
+  <div class="badge">Midt i Danmark</div>
+</header>
+
+<!-- Logoforslag B2: Søfartssegl med Fyn-silhuet og fem prikker -->
+<section class="segl-omraade">
+  <h1>De Fulde Fem</h1>
+  <span class="fem">Fyn · Danmark</span>
+  <div class="segl">
+    <svg width="120" height="120" viewBox="0 0 120 120" aria-label="De Fulde Fems ø-segl">
+      <circle cx="60" cy="60" r="57" fill="#fefdf9" stroke="#1f4e5f" stroke-width="3"/>
+      <circle cx="60" cy="60" r="48" fill="none" stroke="#d2952f" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <path id="b2-top" d="M 18 60 A 42 42 0 0 1 102 60" fill="none"/>
+      <text font-family="Barlow Semi Condensed,sans-serif" font-weight="700" font-size="10.5" fill="#1f4e5f" letter-spacing="3">
+        <textPath href="#b2-top" startOffset="50%" text-anchor="middle">DE FULDE FEM</textPath>
+      </text>
+      <path id="b2-bund" d="M 22 66 A 40 40 0 0 0 98 66" fill="none"/>
+      <text font-family="Barlow Semi Condensed,sans-serif" font-weight="700" font-size="9" fill="#aa7621" letter-spacing="2.5">
+        <textPath href="#b2-bund" startOffset="50%" text-anchor="middle">OMGIVET AF VAND</textPath>
+      </text>
+      <!-- Stiliseret Fyn -->
+      <path d="M42 52 Q46 42 56 42 Q66 38 74 44 Q84 46 82 56 Q86 64 76 68 Q74 76 66 74 Q60 80 54 74 Q44 74 44 64 Q38 58 42 52 Z"
+            fill="#4f7a45" stroke="#1f4e5f" stroke-width="2" stroke-linejoin="round"/>
+      <!-- Fem fuldmægtige prikker på øen -->
+      <g fill="#d2952f" stroke="#1f4e5f" stroke-width="1">
+        <circle cx="54" cy="52" r="3.2"/>
+        <circle cx="66" cy="49" r="3.2"/>
+        <circle cx="74" cy="58" r="3.2"/>
+        <circle cx="60" cy="63" r="3.2"/>
+        <circle cx="50" cy="64" r="3.2"/>
+      </g>
+      <!-- Bølger under øen -->
+      <path d="M34 86 Q40 82 46 86 Q52 90 58 86 Q64 82 70 86 Q76 90 82 86" fill="none" stroke="#3a7287" stroke-width="2" stroke-linecap="round"/>
+      <path d="M40 93 Q46 89 52 93 Q58 97 64 93 Q70 89 76 93" fill="none" stroke="#3a7287" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+    </svg>
+  </div>
+  <p class="segl-under">Fem mand på én ø. Ingen planer om at forlade den.</p>
+  <svg class="boelge" viewBox="0 0 480 22" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 14 Q30 4 60 14 Q90 24 120 14 Q150 4 180 14 Q210 24 240 14 Q270 4 300 14 Q330 24 360 14 Q390 4 420 14 Q450 24 480 14" fill="none" stroke="#1f4e5f" stroke-width="2" opacity=".25"/>
+  </svg>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Næste møde</h2><span class="anker">⚓</span></div>
+  <div class="kort">
+    <div class="moede-dato">Lørdag <em>15. august</em> 2026</div>
+    <div class="moede-detalje">Hos Kim · Tema: »Belgien tur/retur — uden at rejse os fra havemøblerne«</div>
+    <div class="stadig">Mødet holdes uanset vejret. Vejret er også fynsk.</div>
+    <div class="svar-liste">
+      <div class="svar-raekke"><span>Henning</span><span class="svar ja">Kommer</span></div>
+      <div class="svar-raekke"><span>Jakob</span><span class="svar ja">Kommer</span></div>
+      <div class="svar-raekke"><span>Kim</span><span class="svar ja">Kommer (er vært)</span></div>
+      <div class="svar-raekke"><span>Anders</span><span class="svar">Må ikke for konen — anker dommen</span></div>
+      <div class="svar-raekke"><span>Steffen</span><span class="svar nej">Har hundesnor på den aften</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Bødekassen</h2><span class="anker">⚓</span></div>
+  <div class="kort">
+    <div class="kasse">
+      <div class="kasse-ikon">🪙</div>
+      <div>
+        <div class="kasse-saldo">1.420 kr</div>
+        <div class="kasse-note">Tælles af Bødekasseministeren. Tæl aldrig efter.</div>
+      </div>
+    </div>
+    <div class="boede-liste">
+      <div class="boede">
+        <div class="grund">Sagde <em>»nice«</em> under hovedretten<span class="hvem">Henning · 13. marts</span></div>
+        <div class="takst">10 kr</div>
+      </div>
+      <div class="boede">
+        <div class="grund">Kom 23 minutter for sent<span class="hvem">Kim · 13. marts</span></div>
+        <div class="takst">50 kr</div>
+      </div>
+      <div class="boede">
+        <div class="grund">Sagde Den Gyldne Måges udenlandske navn<span class="hvem">Steffen · 13. marts</span></div>
+        <div class="takst">10 kr</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Toppen af Fyn</h2><span class="anker">⚓</span></div>
+  <div class="kort">
+    <div class="oel">
+      <div class="krans"><span>1</span></div>
+      <div class="oel-info">
+        <div class="oel-navn">Westvleteren 12</div>
+        <div class="oel-meta">Trappist · 10,2 % · Steffen havde den med · 13. marts 2026</div>
+      </div>
+      <div class="oel-score">9,4</div>
+    </div>
+    <div class="oel">
+      <div class="krans"><span>2</span></div>
+      <div class="oel-info">
+        <div class="oel-navn">Dangerously Close to Stupid</div>
+        <div class="oel-meta">To Øl · 9,3 % · Kim havde den med · 28. november 2025</div>
+      </div>
+      <div class="oel-score">8,8</div>
+    </div>
+    <div class="oel">
+      <div class="krans"><span>3</span></div>
+      <div class="oel-info">
+        <div class="oel-navn">Beer Geek Breakfast</div>
+        <div class="oel-meta">Mikkeller · 7,5 % · Henning havde den med · 13. marts 2026</div>
+      </div>
+      <div class="oel-score">8,6</div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Forbudte ord</h2><span class="anker">⚓</span></div>
+  <div class="kort">
+    <div class="dom">
+      <div><span class="ord">»weekend«</span><span class="begrundelse">Står i Retskrivningsordbogen. Nævnet beklager.</span></div>
+      <span class="maerke frikendt">Frikendt</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»nice«</span><span class="begrundelse">Ikke dansk. Aldrig dansk. 10 kr.</span></div>
+      <span class="maerke doemt">Dømt</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»Den Gyldne Måge«</span><span class="begrundelse">Forbilledlig fordanskning. Til efterlevelse.</span></div>
+      <span class="maerke frikendt">Frikendt</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»sorry«</span><span class="begrundelse">Undskyld findes. Brug det.</span></div>
+      <span class="maerke doemt">Dømt</span>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Regeringen</h2><span class="anker">⚓</span></div>
+  <div class="kort">
+    <div class="medlem">
+      <div class="bouy">H</div>
+      <div><div class="medlem-navn">Henning Trab</div><div class="medlem-titel">Turistminister</div></div>
+    </div>
+    <div class="medlem">
+      <div class="bouy">J</div>
+      <div><div class="medlem-navn">Jakob Jakobsen</div><div class="medlem-titel">Bødekasseminister</div></div>
+    </div>
+    <div class="medlem">
+      <div class="bouy">K</div>
+      <div><div class="medlem-navn">Kim Hanen</div><div class="medlem-titel">Finansminister</div></div>
+    </div>
+    <div class="medlem">
+      <div class="bouy">A</div>
+      <div><div class="medlem-navn">Anders Trab</div><div class="medlem-titel">Foreningssekretær</div></div>
+    </div>
+    <div class="medlem">
+      <div class="bouy">S</div>
+      <div><div class="medlem-navn">Steffen Due Lund</div><div class="medlem-titel">Joy — nyder bare udsigten</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="skrift">Fyn er fin</span>
+  Omgivet af vand til alle sider — og dog aldrig tørstige.<br>
+  Resten af Danmark er mest broer og meninger.
+</footer>
+
+<nav>
+  <a href="#" class="aktiv"><span class="ikon">🏝️</span>Øen</a>
+  <a href="#"><span class="ikon">🪙</span>Bøder</a>
+  <a href="#"><span class="ikon">🍺</span>Øllet</a>
+  <a href="#"><span class="ikon">📅</span>Kalender</a>
+  <a href="#"><span class="ikon">🗣️</span>Ord</a>
+</nav>
+
+</body>
+</html>

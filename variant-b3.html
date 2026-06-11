@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>De Fulde Fem — Humlemarken</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --straa:#f8f3e0;
+  --straa-lys:#fdfaf0;
+  --humle:#56743a;
+  --humle-moerk:#3e552a;
+  --gylden:#d9a833;
+  --gylden-moerk:#b3851f;
+  --muld:#5c4628;
+  --muld-svag:#8d7a5c;
+  --rust:#a64b2a;
+  --linje:#e8dfc2;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Barlow Semi Condensed',sans-serif;
+  background:
+    repeating-linear-gradient(118deg, transparent 0 26px, rgba(217,168,51,.05) 26px 52px),
+    var(--straa);
+  color:var(--muld);
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  padding-bottom:84px;
+}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 18px;
+  position:sticky;top:0;z-index:10;
+  background:rgba(248,243,224,.95);
+  backdrop-filter:blur(4px);
+  border-bottom:2px solid var(--humle);
+}
+.topbar-navn{font-family:'Yellowtail',cursive;font-size:24px;color:var(--humle-moerk)}
+.badge{
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--humle-moerk);border:1.5px solid var(--humle);
+  padding:3px 10px;border-radius:99px;
+  background:rgba(86,116,58,.07);
+}
+
+/* Kransen / logo */
+.krans-omraade{text-align:center;padding:32px 20px 0}
+.krans-omraade .aargang{
+  font-size:11px;font-weight:700;letter-spacing:.42em;text-transform:uppercase;
+  color:var(--gylden-moerk);margin-bottom:10px;
+}
+.krans-omraade h1{
+  font-family:'Yellowtail',cursive;font-weight:400;
+  font-size:52px;line-height:1;color:var(--humle-moerk);
+  text-shadow:1px 2px 0 rgba(217,168,51,.3);
+}
+.krans-omraade .fem{
+  display:block;font-size:12px;font-weight:700;letter-spacing:.5em;text-transform:uppercase;
+  color:var(--rust);margin-top:8px;margin-right:-.5em;
+}
+.krans{margin:16px auto 0}
+.krans-under{margin-top:12px;font-size:13px;color:var(--muld-svag);font-style:italic}
+
+.sektion{padding:0 16px;margin-top:26px}
+.sektion-titel{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.sektion-titel h2{
+  font-size:14px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--humle-moerk);white-space:nowrap;
+}
+.sektion-titel .akser{flex:1;height:7px;background:
+  radial-gradient(circle 2.5px at 8px 3.5px, var(--gylden) 95%, transparent) 0 0/16px 7px repeat-x;
+  opacity:.6;
+}
+
+.kort{
+  background:var(--straa-lys);
+  border:1.5px solid var(--humle);
+  border-radius:4px;
+  padding:18px;
+  box-shadow:3px 3px 0 rgba(86,116,58,.12);
+}
+
+/* Almanak-hoved på kort */
+.almanak-hoved{
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:2px solid var(--humle);
+  padding-bottom:8px;margin-bottom:12px;
+  font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--humle-moerk);
+}
+.almanak-hoved .nr{color:var(--gylden-moerk)}
+
+/* Næste møde */
+.moede-dato{font-size:26px;font-weight:700;line-height:1.1}
+.moede-dato em{font-style:normal;color:var(--humle)}
+.moede-detalje{font-size:14px;color:var(--muld-svag);margin-top:6px}
+.stadig{
+  margin-top:10px;font-size:13px;font-style:italic;color:var(--rust);font-weight:600;
+  border-left:3px solid var(--gylden);padding-left:10px;
+}
+.svar-liste{margin-top:12px;border-top:1px dotted var(--linje);padding-top:10px}
+.svar-raekke{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:14px}
+.svar{font-size:12px;font-style:italic;color:var(--muld-svag)}
+.svar.ja{color:var(--humle-moerk);font-weight:700;font-style:normal}
+.svar.ja::before{content:"🌾 ";font-size:11px}
+.svar.nej{color:var(--rust)}
+
+/* Bødekassen */
+.kasse{display:flex;align-items:center;gap:16px}
+.kasse-ikon{
+  width:56px;height:56px;border-radius:6px;flex-shrink:0;
+  background:linear-gradient(160deg,#e9d9ad,#d4bd82);
+  border:2px solid var(--gylden-moerk);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+}
+.kasse-saldo{font-size:36px;font-weight:700;color:var(--humle-moerk);line-height:1}
+.kasse-note{font-size:12px;color:var(--muld-svag);font-style:italic;margin-top:4px}
+.boede-liste{margin-top:14px;border-top:1px dotted var(--linje);padding-top:6px}
+.boede{display:flex;justify-content:space-between;gap:10px;padding:8px 0;font-size:14px;border-bottom:1px dotted var(--linje)}
+.boede:last-child{border-bottom:none}
+.boede .grund em{font-style:normal;color:var(--rust);font-weight:700}
+.boede .hvem{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muld-svag);margin-top:2px}
+.boede .takst{font-weight:700;color:var(--gylden-moerk);white-space:nowrap}
+
+/* Høstudbyttet — øl top 3 */
+.oel{display:flex;gap:13px;align-items:center;padding:11px 0;border-bottom:1px dotted var(--linje)}
+.oel:last-child{border-bottom:none}
+.kogle{
+  width:46px;height:46px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:17px;color:#fff;
+  background:radial-gradient(circle at 35% 30%, #6d8f4c, var(--humle-moerk));
+  border-radius:50% 50% 50% 50% / 42% 42% 58% 58%;
+  border:2px solid var(--humle-moerk);
+  box-shadow:0 2px 0 rgba(86,116,58,.3);
+}
+.oel:first-child .kogle{
+  background:radial-gradient(circle at 35% 30%, #e8c04f, var(--gylden-moerk));
+  border-color:var(--gylden-moerk);
+}
+.oel-info{flex:1;min-width:0}
+.oel-navn{font-weight:700;font-size:15px}
+.oel-meta{font-size:12px;color:var(--muld-svag);font-style:italic;margin-top:2px}
+.oel-score{font-size:26px;font-weight:700;color:var(--humle-moerk)}
+
+/* Forbudte ord */
+.dom{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dotted var(--linje);font-size:14px}
+.dom:last-child{border-bottom:none}
+.dom .ord{font-weight:700;font-size:15px}
+.dom .begrundelse{display:block;font-size:12px;font-style:italic;color:var(--muld-svag);font-weight:400}
+.maerke{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:4px 9px;border-radius:3px;white-space:nowrap}
+.doemt{background:rgba(166,75,42,.1);color:var(--rust);border:1px solid rgba(166,75,42,.35)}
+.frikendt{background:rgba(86,116,58,.1);color:var(--humle-moerk);border:1px solid rgba(86,116,58,.35)}
+
+/* Avlerne */
+.medlem{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dotted var(--linje)}
+.medlem:last-child{border-bottom:none}
+.sael{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%, #e8c04f, var(--gylden-moerk));
+  color:var(--muld);font-weight:700;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px dashed var(--muld);
+}
+.medlem-navn{font-weight:700;font-size:15px}
+.medlem-titel{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--humle)}
+
+footer{
+  margin-top:32px;padding:24px 20px 26px;text-align:center;
+  background:var(--humle-moerk);color:#ece5cd;
+  border-top:4px solid var(--gylden);
+  font-size:12px;font-style:italic;line-height:1.7;
+}
+footer .skrift{font-family:'Yellowtail',cursive;font-size:24px;color:var(--gylden);display:block;margin-bottom:6px;font-style:normal}
+
+nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  background:var(--straa-lys);
+  border-top:2px solid var(--humle);
+  display:flex;z-index:20;
+  box-shadow:0 -4px 14px rgba(92,70,40,.1);
+}
+nav a{
+  flex:1;text-align:center;padding:10px 2px 12px;
+  color:var(--muld-svag);text-decoration:none;
+  font-size:10px;letter-spacing:.05em;font-weight:700;
+}
+nav a.aktiv{color:var(--humle-moerk)}
+nav a .ikon{display:block;font-size:17px;margin-bottom:2px}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-navn">De Fulde Fem</div>
+  <div class="badge">Dyrket i fynsk muld</div>
+</header>
+
+<!-- Logoforslag B3: Skriftlogo i høstkrans af humle og aks -->
+<section class="krans-omraade">
+  <div class="aargang">Almanak for foreningsåret</div>
+  <h1>De Fulde Fem</h1>
+  <span class="fem">Avlerlav for specialøl</span>
+  <div class="krans">
+    <svg width="130" height="96" viewBox="0 0 130 96" aria-label="Høstkrans med fem humlekogler">
+      <!-- Kransens to buer -->
+      <path d="M14 50 Q24 86 65 88 Q106 86 116 50" fill="none" stroke="#56743a" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Blade langs kransen -->
+      <g fill="#56743a">
+        <path d="M18 58 Q12 64 16 70 Q24 68 22 60 Z"/>
+        <path d="M28 72 Q24 80 30 84 Q37 79 33 72 Z"/>
+        <path d="M97 72 Q101 80 95 84 Q88 79 92 72 Z"/>
+        <path d="M107 58 Q113 64 109 70 Q101 68 103 60 Z"/>
+      </g>
+      <!-- Aks venstre og højre -->
+      <g fill="#d9a833" stroke="#b3851f" stroke-width=".8">
+        <ellipse cx="44" cy="82" rx="4" ry="7" transform="rotate(28 44 82)"/>
+        <ellipse cx="55" cy="86" rx="4" ry="7" transform="rotate(12 55 86)"/>
+        <ellipse cx="75" cy="86" rx="4" ry="7" transform="rotate(-12 75 86)"/>
+        <ellipse cx="86" cy="82" rx="4" ry="7" transform="rotate(-28 86 82)"/>
+      </g>
+      <!-- Fem humlekogler hen over toppen -->
+      <g fill="#6d8f4c" stroke="#3e552a" stroke-width="1.5">
+        <path d="M20 28 q7 -9 14 0 q1 10 -7 13 q-8 -3 -7 -13 Z"/>
+        <path d="M42 16 q7 -9 14 0 q1 10 -7 13 q-8 -3 -7 -13 Z"/>
+        <path d="M58 10 q7 -9 14 0 q1 10 -7 13 q-8 -3 -7 -13 Z" fill="#d9a833" stroke="#b3851f"/>
+        <path d="M74 16 q7 -9 14 0 q1 10 -7 13 q-8 -3 -7 -13 Z"/>
+        <path d="M96 28 q7 -9 14 0 q1 10 -7 13 q-8 -3 -7 -13 Z"/>
+      </g>
+      <!-- Skæl på den gyldne midterkogle -->
+      <path d="M61 12 q4 3 8 0 M60 16 q5 4 10 0 M61 20 q4 3 8 0" fill="none" stroke="#b3851f" stroke-width="1"/>
+    </svg>
+  </div>
+  <p class="krans-under">Sået i venskab. Gødet med bøder. Høstes 4–6 gange om året.</p>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Næste høstdag</h2><span class="akser"></span></div>
+  <div class="kort">
+    <div class="almanak-hoved"><span>Almanakken</span><span class="nr">Opslag nr. 1</span></div>
+    <div class="moede-dato">Lørdag <em>15. august</em> 2026</div>
+    <div class="moede-detalje">Hos Kim · Tema: »Belgien tur/retur — uden at rejse os fra havemøblerne«</div>
+    <div class="stadig">Sådan har vi altid gjort. Og før det gjorde vi det også sådan.</div>
+    <div class="svar-liste">
+      <div class="svar-raekke"><span>Henning</span><span class="svar ja">Kommer</span></div>
+      <div class="svar-raekke"><span>Jakob</span><span class="svar ja">Kommer</span></div>
+      <div class="svar-raekke"><span>Kim</span><span class="svar ja">Kommer (er vært)</span></div>
+      <div class="svar-raekke"><span>Anders</span><span class="svar">Må ikke for konen — anker dommen</span></div>
+      <div class="svar-raekke"><span>Steffen</span><span class="svar nej">Har hundesnor på den aften</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Bødekassen</h2><span class="akser"></span></div>
+  <div class="kort">
+    <div class="almanak-hoved"><span>Laden</span><span class="nr">Opslag nr. 2</span></div>
+    <div class="kasse">
+      <div class="kasse-ikon">🪙</div>
+      <div>
+        <div class="kasse-saldo">1.420 kr</div>
+        <div class="kasse-note">Tælles af Bødekasseministeren. Tæl aldrig efter.</div>
+      </div>
+    </div>
+    <div class="boede-liste">
+      <div class="boede">
+        <div class="grund">Sagde <em>»nice«</em> under hovedretten<span class="hvem">Henning · 13. marts</span></div>
+        <div class="takst">10 kr</div>
+      </div>
+      <div class="boede">
+        <div class="grund">Kom 23 minutter for sent<span class="hvem">Kim · 13. marts</span></div>
+        <div class="takst">50 kr</div>
+      </div>
+      <div class="boede">
+        <div class="grund">Sagde Den Gyldne Måges udenlandske navn<span class="hvem">Steffen · 13. marts</span></div>
+        <div class="takst">10 kr</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Høstudbyttet</h2><span class="akser"></span></div>
+  <div class="kort">
+    <div class="almanak-hoved"><span>Bedste øl gennem tiderne</span><span class="nr">Opslag nr. 3</span></div>
+    <div class="oel">
+      <div class="kogle">1</div>
+      <div class="oel-info">
+        <div class="oel-navn">Westvleteren 12</div>
+        <div class="oel-meta">Trappist · 10,2 % · Steffen havde den med · 13. marts 2026</div>
+      </div>
+      <div class="oel-score">9,4</div>
+    </div>
+    <div class="oel">
+      <div class="kogle">2</div>
+      <div class="oel-info">
+        <div class="oel-navn">Dangerously Close to Stupid</div>
+        <div class="oel-meta">To Øl · 9,3 % · Kim havde den med · 28. november 2025</div>
+      </div>
+      <div class="oel-score">8,8</div>
+    </div>
+    <div class="oel">
+      <div class="kogle">3</div>
+      <div class="oel-info">
+        <div class="oel-navn">Beer Geek Breakfast</div>
+        <div class="oel-meta">Mikkeller · 7,5 % · Henning havde den med · 13. marts 2026</div>
+      </div>
+      <div class="oel-score">8,6</div>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Forbudte ord</h2><span class="akser"></span></div>
+  <div class="kort">
+    <div class="almanak-hoved"><span>Ordbogsnævnet</span><span class="nr">Opslag nr. 4</span></div>
+    <div class="dom">
+      <div><span class="ord">»weekend«</span><span class="begrundelse">Står i Retskrivningsordbogen. Nævnet beklager.</span></div>
+      <span class="maerke frikendt">Frikendt</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»nice«</span><span class="begrundelse">Ikke dansk. Aldrig dansk. 10 kr.</span></div>
+      <span class="maerke doemt">Dømt</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»Den Gyldne Måge«</span><span class="begrundelse">Forbilledlig fordanskning. Til efterlevelse.</span></div>
+      <span class="maerke frikendt">Frikendt</span>
+    </div>
+    <div class="dom">
+      <div><span class="ord">»sorry«</span><span class="begrundelse">Undskyld findes. Brug det.</span></div>
+      <span class="maerke doemt">Dømt</span>
+    </div>
+  </div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Regeringen</h2><span class="akser"></span></div>
+  <div class="kort">
+    <div class="almanak-hoved"><span>Avlerlavets bestyrelse</span><span class="nr">Opslag nr. 5</span></div>
+    <div class="medlem">
+      <div class="sael">H</div>
+      <div><div class="medlem-navn">Henning Trab</div><div class="medlem-titel">Turistminister</div></div>
+    </div>
+    <div class="medlem">
+      <div class="sael">J</div>
+      <div><div class="medlem-navn">Jakob Jakobsen</div><div class="medlem-titel">Bødekasseminister</div></div>
+    </div>
+    <div class="medlem">
+      <div class="sael">K</div>
+      <div><div class="medlem-navn">Kim Hanen</div><div class="medlem-titel">Finansminister</div></div>
+    </div>
+    <div class="medlem">
+      <div class="sael">A</div>
+      <div><div class="medlem-navn">Anders Trab</div><div class="medlem-titel">Foreningssekretær</div></div>
+    </div>
+    <div class="medlem">
+      <div class="sael">S</div>
+      <div><div class="medlem-navn">Steffen Due Lund</div><div class="medlem-titel">Joy — høster kun æren</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="skrift">Fynsk muld glemmer aldrig</span>
+  Sået i venskab, gødet med bøder, vandet efter behov.<br>
+  Vi flytter os ikke. Det er marken heller aldrig gjort.
+</footer>
+
+<nav>
+  <a href="#" class="aktiv"><span class="ikon">🌾</span>Marken</a>
+  <a href="#"><span class="ikon">🪙</span>Bøder</a>
+  <a href="#"><span class="ikon">🍺</span>Øllet</a>
+  <a href="#"><span class="ikon">📅</span>Kalender</a>
+  <a href="#"><span class="ikon">🗣️</span>Ord</a>
+</nav>
+
+</body>
+</html>

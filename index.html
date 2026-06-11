@@ -42,7 +42,7 @@ h1{
   margin:16px auto 0;max-width:420px;line-height:1.6;
 }
 .intro em{color:var(--lys)}
-.valg{margin-top:38px;display:flex;flex-direction:column;gap:16px}
+.valg{margin-top:34px;display:flex;flex-direction:column;gap:16px}
 .retning{
   display:block;text-decoration:none;color:inherit;
   border:1px solid rgba(240,234,217,.18);
@@ -56,11 +56,11 @@ h1{
 .bogstav{
   width:46px;height:46px;border-radius:10px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Fraunces',serif;font-weight:900;font-size:22px;
+  font-family:'Fraunces',serif;font-weight:900;font-size:19px;
 }
-.retning.a .bogstav{background:#efe7d2;color:#8f1d1d}
-.retning.b .bogstav{background:#100b07;color:#ff5c4d;border:1px solid #ff5c4d;box-shadow:0 0 12px rgba(255,92,77,.35)}
-.retning.c .bogstav{background:#1d3b2a;color:#d4ab4e;border:1px solid #b98c2c}
+.retning.b1 .bogstav{background:#faf5e8;color:#a86f1d;border:1px solid #c9882b}
+.retning.b2 .bogstav{background:#f1f6f4;color:#1f4e5f;border:1px solid #1f4e5f}
+.retning.b3 .bogstav{background:#f8f3e0;color:#3e552a;border:1px solid #56743a}
 .retning h2{font-family:'Fraunces',serif;font-weight:600;font-size:21px}
 .retning .stikord{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--rav);margin-top:2px}
 .retning p{font-size:14px;color:var(--svag);line-height:1.6}
@@ -69,66 +69,93 @@ h1{
   font-size:13px;font-weight:700;color:var(--rav);
 }
 .retning .knap::after{content:" →"}
+
+.arkiv{margin-top:48px}
+.arkiv-titel{
+  display:flex;align-items:center;gap:12px;
+  font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--svag);
+  margin-bottom:14px;
+}
+.arkiv-titel::before,.arkiv-titel::after{content:"";flex:1;height:1px;background:rgba(240,234,217,.15)}
+.arkiv-liste{display:flex;gap:10px}
+.arkiv-led{
+  flex:1;display:block;text-decoration:none;color:var(--svag);
+  border:1px dashed rgba(240,234,217,.2);border-radius:8px;
+  padding:12px 10px;text-align:center;font-size:12px;
+  transition:color .15s ease, border-color .15s ease;
+}
+.arkiv-led:hover{color:var(--lys);border-color:var(--svag)}
+.arkiv-led strong{display:block;font-family:'Fraunces',serif;font-size:15px;margin-bottom:2px}
+
 .fodnote{
-  margin-top:44px;text-align:center;
+  margin-top:40px;text-align:center;
   font-size:13px;color:var(--svag);font-style:italic;line-height:1.7;
-  max-width:420px;
+  max-width:420px;margin-left:auto;margin-right:auto;
 }
 .fodnote strong{color:var(--lys);font-style:normal}
 </style>
 </head>
 <body>
 <div class="indhold">
-  <div class="haevet">Designfasen · trin 1 af 2</div>
+  <div class="haevet">Designfasen · runde 2</div>
   <h1>DE FULDE FEM<br>vælger udseende</h1>
   <p class="intro">
-    Tre bud på universets stil — samme indhold, tre vidt forskellige stemninger.
-    Åbn dem på <em>telefonen</em>, mærk efter, og meld tilbage hvilken retning vi kører.
-    Derefter bygges <em>alle</em> sider i den valgte stil.
+    I valgte <em>B's typografi</em> — her er tre bud der bygger videre på den:
+    lysere, mere fynsk, mere stædighed. Åbn dem på <em>telefonen</em>,
+    mærk efter, og meld tilbage hvilken vi kører.
   </p>
 
   <div class="valg">
-    <a class="retning a" href="variant-a.html">
+    <a class="retning b1" href="variant-b1.html">
       <div class="retning-hoved">
-        <div class="bogstav">A</div>
+        <div class="bogstav">B1</div>
         <div>
-          <h2>Kancelliet</h2>
-          <div class="stikord">Ministerium · segl · paragraffer</div>
+          <h2>Forsamlingshuset</h2>
+          <div class="stikord">Opslagstavle · vimpler · foreningsliv</div>
         </div>
       </div>
-      <p>Tør embedsmands-parodi på dokumentpapir. Rigsvåben med fem kapsler, stempler der siger »INDDRIVES«, og kancellisprog der knækker over i værtshussprog. Den mest gennemførte parodi.</p>
+      <p>Varmt papir og malet træskilt over døren. Mødet hænger med knappenål på opslagstavlen, de bedste øl har fået rosetter som til dyrskue, og datoer flyttes ikke — »det gør datoer ikke her«.</p>
       <span class="knap">Se forsiden</span>
     </a>
 
-    <a class="retning b" href="variant-b.html">
+    <a class="retning b2" href="variant-b2.html">
       <div class="retning-hoved">
-        <div class="bogstav">B</div>
+        <div class="bogstav">B2</div>
         <div>
-          <h2>Bodegaen</h2>
-          <div class="stikord">Neon · kridttavle · mørkt træ</div>
+          <h2>Øhavet</h2>
+          <div class="stikord">Havblå · sand · Fyn-segl</div>
         </div>
       </div>
-      <p>Jeres eget værtshus der aldrig lukker. Summende neonskilt, øl-top-3 skrevet med kridt, og en bødekasse der står bag baren. Den varmeste og mest stemningsfulde.</p>
+      <p>Lys og maritim med søfartssegl: Fyn som grøn ø med fem gyldne prikker, omgivet af vand og selvtillid. Redningskranse om ranglisten, og »resten af Danmark er mest broer og meninger«.</p>
       <span class="knap">Se forsiden</span>
     </a>
 
-    <a class="retning c" href="variant-c.html">
+    <a class="retning b3" href="variant-b3.html">
       <div class="retning-hoved">
-        <div class="bogstav">C</div>
+        <div class="bogstav">B3</div>
         <div>
-          <h2>Etiketten</h2>
-          <div class="stikord">Bryggeri · guld · ornamenter</div>
+          <h2>Humlemarken</h2>
+          <div class="stikord">Strågul · humlegrøn · almanak</div>
         </div>
       </div>
-      <p>Klassisk dansk øletiket i fløde, mørkegrøn og guld. Rundt segl-logo, medaljer til de bedste øl og »aftapning nr. 5«. Den fineste — som et gammelt fynsk bryggeri.</p>
+      <p>Landbrugsalmanak fra den fynske muld. Høstkrans med fem humlekogler som logo, alle sektioner som nummererede opslag, og bondestædighed: »Sådan har vi altid gjort. Og før det gjorde vi det også sådan.«</p>
       <span class="knap">Se forsiden</span>
     </a>
   </div>
 
+  <div class="arkiv">
+    <div class="arkiv-titel">Arkiv · runde 1</div>
+    <div class="arkiv-liste">
+      <a class="arkiv-led" href="variant-a.html"><strong>A</strong>Kancelliet</a>
+      <a class="arkiv-led" href="variant-b.html"><strong>B</strong>Bodegaen</a>
+      <a class="arkiv-led" href="variant-c.html"><strong>C</strong>Etiketten</a>
+    </div>
+  </div>
+
   <p class="fodnote">
     Alt på siderne er <strong>attrap med eksempeldata</strong> — knapper og tal virker ikke endnu.
-    Login-siden (»dørmanden«), bødekatalog, øl-protokol pr. mødedato og resten af universet
-    bygges i den valgte stil i næste trin.
+    Når retningen er valgt, bygges hele universet i den stil: dørmanden (login),
+    Bødekassen, Øl-protokollen, Kalenderen og Ordbogsnævnet.
   </p>
 </div>
 </body>
