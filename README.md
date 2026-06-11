@@ -4,14 +4,18 @@ Designfase for ølklubben **De Fulde Fems** webunivers. Ingen app-kode endnu —
 
 **Live:** https://suverenpolering.github.io/defuldefem/
 
-## Status: runde 2 — videre på variant B
+## Status: runde 3 — B1 + B2 kombineret
 
-Klubben valgte B's typografi som udgangspunkt med tilretninger: lysere, ingen bodega-humor, mere fynsk og mere stædighed. Tre nye bud ligger live:
+Nyeste bud: [B4 — Forsamlingshuset ved Øhavet](variant-b4.html) — B1's layout, skørhed og stædighed (træskilt, vimpler, knappenål, rosetter, »100 % fynsk«) i B2's lyse maritime palet (havblå og sand).
+
+### Runde 2 — videre på variant B
+
+Klubben valgte B's typografi som udgangspunkt med tilretninger: lysere, ingen bodega-humor, mere fynsk og mere stædighed. Tre bud:
 
 | Variant | Stil |
 |---------|------|
-| [B1 — Forsamlingshuset](variant-b1.html) | Varmt papir, træskilt, opslagstavle, vimpler, foreningsliv |
-| [B2 — Øhavet](variant-b2.html) | Lys maritim, havblå og sand, søfartssegl med Fyn-silhuet |
+| [B1 — Forsamlingshuset](variant-b1.html) | Varmt papir, træskilt, opslagstavle, vimpler, foreningsliv — **layoutet valgt til B4** |
+| [B2 — Øhavet](variant-b2.html) | Lys maritim, havblå og sand, søfartssegl med Fyn-silhuet — **paletten valgt til B4** |
 | [B3 — Humlemarken](variant-b3.html) | Strågul almanak, humlegrøn, høstkrans, bondestædighed |
 
 ### Arkiv: runde 1
