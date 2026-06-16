@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>De Fulde Fem — Forsiden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-side="tavlen">
+
+<!-- app.js injicerer selv .topbar øverst og <nav> nederst. -->
+
+<!-- Skiltet over døren (statisk — ordret fra B4) -->
+<section class="skilt">
+  <div class="skilt-braet">
+    <h1>De Fulde Fem</h1>
+    <span class="fem">Fynsk Forening for Specialøl</span>
+  </div>
+  <div class="vimpler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <p class="skilt-under">Stiftet på Fyn. Bliver på Fyn. Punktum.</p>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Opslagstavlen</h2><span class="nips">næste møde</span></div>
+  <div id="moede-vaert"></div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Bødekassen</h2><span class="nips">står ved siden af kaffekassen</span></div>
+  <div id="kasse-vaert"></div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Æresvæggen</h2><span class="nips">bedste øl gennem tiderne</span></div>
+  <div class="aeresvaeg" id="aeresvaeg-vaert"></div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Forbudte ord</h2><span class="nips">Ordbogsnævnet har talt</span></div>
+  <div id="ord-vaert"></div>
+</section>
+
+<section class="sektion">
+  <div class="sektion-titel"><h2>Regeringen</h2><span class="nips">valgt uden modkandidater</span></div>
+  <div id="regering-vaert"></div>
+</section>
+
+<footer>
+  <span class="haandskrift">Vel mødt — og husk selv at stille stolene op</span>
+  Foreningen har til huse på Fyn, verdens midtpunkt.<br>
+  Broen kan bruges i begge retninger. Vi anbefaler hjemturen.
+</footer>
+
+<!-- Fundament: præcis inkluderingsrækkefølge -->
+<script src="assets/js/config.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/seed.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/app.js"></script>
+
+<!-- Side-script: render alt fra DB -->
+<script>
+(function () {
+  'use strict';
+
+  // Lille html-escaper: ALT data fra DB køres igennem denne før det sættes
+  // som innerHTML, så fri brugertekst ikke kan bryde markup/injicere script.
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Snit (fx 9.4) -> dansk visning "9,4" (én decimal, komma).
+  function snitTekst(n) {
+    return (Math.round((Number(n) || 0) * 10) / 10).toFixed(1).replace('.', ',');
+  }
+
+  // Procent (fx 10.2) -> "10,2 %". null/tom -> "".
+  function pctTekst(p) {
+    if (p == null || p === '') return '';
+    return snitTekst(p) + ' %';
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- (1) Opslagstavlen / næste møde ---------- */
+  function renderMoede(moeder, medlemNavn) {
+    var vaert = $('moede-vaert');
+    // Første ikke-arkiverede møde = næste møde.
+    var naeste = null;
+    for (var i = 0; i < moeder.length; i++) {
+      if (!moeder[i].arkiveret) { naeste = moeder[i]; break; }
+    }
+    if (!naeste) naeste = moeder[0] || null;
+
+    if (!naeste) {
+      vaert.innerHTML =
+        '<div class="kort">' +
+          '<span class="pin" style="top:-6px;left:9px"></span>' +
+          '<div class="tom">' +
+            '<span class="tom-ikon">📌</span>' +
+            '<div class="tom-titel">Tavlen er tom</div>' +
+            '<p>Ingen møder vedtaget endnu. Nogen må tage initiativet — ' +
+            'helst ikke Joy.</p>' +
+          '</div>' +
+        '</div>';
+      return;
+    }
+
+    // Dato: "Lørdag 15. august 2026" -> split så dag+måned kan vises i <em>,
+    // jf. B4-mønstret. Falder pænt tilbage til ren tekst hvis formatet afviger.
+    var datoTekst = App.formatDato(naeste.dato);
+    var datoHtml = esc(datoTekst);
+    var m = datoTekst.match(/^(\S+)\s+(\d+\.\s+\S+)\s+(\d{4})$/);
+    if (m) {
+      datoHtml = esc(m[1]) + ' <em>' + esc(m[2]) + '</em> ' + esc(m[3]);
+    }
+
+    var detaljer = [];
+    if (naeste.sted) detaljer.push(esc(naeste.sted));
+    if (naeste.tema) detaljer.push('Tema: »' + esc(naeste.tema) + '«');
+
+    var svarHtml = '';
+    var svar = naeste.svar || [];
+    if (svar.length) {
+      svarHtml = '<div class="svar-liste">';
+      for (var j = 0; j < svar.length; j++) {
+        var r = svar[j];
+        var navn = medlemNavn[r.memberId] || r.memberId;
+        var klasse = r.svar === 'ja' ? 'svar ja' : (r.svar === 'nej' ? 'svar nej' : 'svar');
+        var tekst = r.tekst || (r.svar === 'ja' ? 'Kommer' : (r.svar === 'nej' ? 'Kommer ikke' : 'Måske'));
+        svarHtml +=
+          '<div class="svar-raekke"><span>' + esc(navn) + '</span>' +
+          '<span class="' + klasse + '">' + esc(tekst) + '</span></div>';
+      }
+      svarHtml += '</div>';
+    }
+
+    vaert.innerHTML =
+      '<div class="kort">' +
+        '<span class="pin" style="top:-6px;left:9px"></span>' +
+        '<span class="pin hav" style="top:-6px;right:9px"></span>' +
+        '<span class="pin hav" style="bottom:-6px;left:9px"></span>' +
+        '<span class="pin" style="bottom:-6px;right:9px"></span>' +
+        '<div class="moede-dato">' + datoHtml + '</div>' +
+        (detaljer.length ? '<div class="moede-detalje">' + detaljer.join(' · ') + '</div>' : '') +
+        '<div class="stadig">Datoen blev vedtaget. Den flyttes ikke. Det gør datoer ikke her.</div>' +
+        svarHtml +
+      '</div>';
+  }
+
+  /* ---------- (2) Bødekassen ---------- */
+  function renderKasse(saldo, fines, medlemNavn) {
+    var vaert = $('kasse-vaert');
+
+    // Seneste 3 bøder, nyeste dato først.
+    var sorteret = fines.slice().sort(function (a, b) {
+      return String(b.dato || '').localeCompare(String(a.dato || ''));
+    });
+    var seneste = sorteret.slice(0, 3);
+
+    var listeHtml = '';
+    if (seneste.length) {
+      listeHtml = '<div class="boede-liste">';
+      for (var i = 0; i < seneste.length; i++) {
+        var f = seneste[i];
+        var navn = medlemNavn[f.memberId] || f.memberId;
+        listeHtml +=
+          '<div class="boede">' +
+            '<div class="grund">' + esc(f.grund) +
+              '<span class="hvem">' + esc(navn) + ' · ' + esc(App.formatDato(f.dato)) + '</span>' +
+            '</div>' +
+            '<div class="takst">' + esc(App.formatKr(f.beloeb)) + '</div>' +
+          '</div>';
+      }
+      listeHtml += '</div>';
+    } else {
+      listeHtml =
+        '<div class="boede-liste"><div class="mappe-tom">' +
+        'Ingen bøder endnu. Mistænkeligt.</div></div>';
+    }
+
+    vaert.innerHTML =
+      '<div class="kort skaev-a">' +
+        '<span class="kapsel" style="top:-9px;left:18px"></span>' +
+        '<span class="pin hav" style="top:-6px;right:22px"></span>' +
+        '<div class="kasse">' +
+          '<div class="kasse-ikon">🪙</div>' +
+          '<div>' +
+            '<div class="kasse-saldo">' + esc(App.formatKr(saldo)) + '</div>' +
+            '<div class="kasse-note">Tælles af Bødekasseministeren. Tæl aldrig efter.</div>' +
+          '</div>' +
+        '</div>' +
+        listeHtml +
+        '<div class="handlinger hoejre">' +
+          '<a class="knap-lille" href="boder.html">Hele bødekassen →</a>' +
+        '</div>' +
+      '</div>';
+  }
+
+  /* ---------- (3) Æresvæggen — øl top 3 ---------- */
+  function renderAeresvaeg(top3) {
+    var vaert = $('aeresvaeg-vaert');
+    if (!top3.length) {
+      vaert.innerHTML =
+        '<div class="kort">' +
+          '<span class="pin" style="top:-6px;left:14px"></span>' +
+          '<div class="tom">' +
+            '<span class="tom-ikon">🍺</span>' +
+            '<div class="tom-titel">Væggen er bar</div>' +
+            '<p>Ingen øl er bedømt endnu. Det retter sig til næste møde.</p>' +
+          '</div>' +
+        '</div>';
+      return;
+    }
+
+    // B4-detaljer pr. plads: guld+kapsel+pin / pin+ring / tape.
+    var pynt = [
+      '<span class="kapsel" style="top:-9px;left:14px"></span>' +
+      '<span class="pin" style="top:-6px;right:16px"></span>',
+      '<span class="pin hav" style="top:-6px;left:50%;margin-left:-7px"></span>' +
+      '<span class="ring" style="top:-14px;right:34px"></span>',
+      '<span class="tape" style="top:-10px;left:50%;transform:translateX(-50%) rotate(-6deg)"></span>'
+    ];
+
+    var html = '';
+    for (var i = 0; i < top3.length; i++) {
+      var o = top3[i];
+      var rang = i + 1;
+      var metaDele = [];
+      if (o.type) metaDele.push(esc(o.type));
+      var p = pctTekst(o.pct);
+      if (p) metaDele.push(esc(p));
+      if (o.havdeMedNavn) metaDele.push(esc(o.havdeMedNavn) + ' havde den med');
+      if (o.dato) metaDele.push(esc(App.formatDato(o.dato)));
+
+      html +=
+        '<div class="oel' + (rang === 1 ? ' guld' : '') + '">' +
+          (pynt[i] || '') +
+          '<div class="roset r' + rang + '">' + rang + '</div>' +
+          '<div class="oel-info">' +
+            '<div class="oel-navn">' + esc(o.navn) + '</div>' +
+            (metaDele.length ? '<div class="oel-meta">' + metaDele.join(' · ') + '</div>' : '') +
+          '</div>' +
+          '<div class="oel-score">' + esc(snitTekst(o.snit)) + '</div>' +
+        '</div>';
+    }
+    html +=
+      '<div class="handlinger hoejre">' +
+        '<a class="knap-lille" href="protokol.html">Hele protokollen →</a>' +
+      '</div>';
+
+    vaert.innerHTML = html;
+  }
+
+  /* ---------- (4) Forbudte ord — seneste domme ---------- */
+  function renderOrd(words) {
+    var vaert = $('ord-vaert');
+
+    // Seneste først (på 'oprettet'). Vis op til 4 — som B4.
+    var sorteret = words.slice().sort(function (a, b) {
+      return String(b.oprettet || '').localeCompare(String(a.oprettet || ''));
+    });
+    var vis = sorteret.slice(0, 4);
+
+    if (!vis.length) {
+      vaert.innerHTML =
+        '<div class="kort skaev-b">' +
+          '<span class="pin" style="top:-6px;left:14px"></span>' +
+          '<div class="tom">' +
+            '<span class="tom-ikon">🗣️</span>' +
+            '<div class="tom-titel">Nævnet sover</div>' +
+            '<p>Ingen ord er indstillet endnu. Hold tungen lige i munden.</p>' +
+          '</div>' +
+        '</div>';
+      return;
+    }
+
+    var domme = '';
+    for (var i = 0; i < vis.length; i++) {
+      var o = vis[i];
+      var maerke, maerkeTekst;
+      // Neutral inline-stil til 'afventer' (ingen egen B4-klasse) — matcher
+      // ordbogsnaevnet.html: grå tekst + grå kant, IKKE den grønne frikendt-stil.
+      var maerkeStil = '';
+      if (o.status === 'doemt') { maerke = 'doemt'; maerkeTekst = 'Dømt'; }
+      else if (o.status === 'frikendt') { maerke = 'frikendt'; maerkeTekst = 'Frikendt'; }
+      else {
+        // 'afventer' vises neutralt (grå), så det ikke forveksles med frikendt.
+        maerke = ''; maerkeTekst = 'Afventer';
+        maerkeStil = ' style="color:var(--tekst-svag);border:1px solid var(--linje)"';
+      }
+      domme +=
+        '<div class="dom">' +
+          '<div><span class="ord">»' + esc(o.ord) + '«</span>' +
+          (o.begrundelse ? '<span class="begrundelse">' + esc(o.begrundelse) + '</span>' : '') +
+          '</div>' +
+          '<span class="' + (maerke ? 'maerke ' + maerke : 'maerke') + '"' + maerkeStil + '>' + esc(maerkeTekst) + '</span>' +
+        '</div>';
+    }
+
+    vaert.innerHTML =
+      '<div class="kort skaev-b">' +
+        '<span class="pin" style="top:-6px;left:14px"></span>' +
+        '<span class="kapsel" style="top:-9px;right:20px"></span>' +
+        '<span class="pin hav" style="bottom:-6px;left:30px"></span>' +
+        '<span class="aeseloere"></span>' +
+        domme +
+        '<div class="handlinger hoejre">' +
+          '<a class="knap-lille" href="ordbogsnaevnet.html">Hele nævnet →</a>' +
+        '</div>' +
+      '</div>';
+  }
+
+  /* ---------- (5) Regeringen — alle 5 ministre ---------- */
+  function renderRegering(members) {
+    var vaert = $('regering-vaert');
+    if (!members.length) {
+      vaert.innerHTML =
+        '<div class="kort"><div class="tom">' +
+          '<span class="tom-ikon">🪑</span>' +
+          '<div class="tom-titel">Tomme stole</div>' +
+          '<p>Regeringen er endnu ikke dannet.</p>' +
+        '</div></div>';
+      return;
+    }
+
+    // Joy står for sig selv på sin egen seddel (én nål). Resten i ét kort.
+    var regering = members.filter(function (m) { return m.rolle !== 'joy'; });
+    var joy = members.filter(function (m) { return m.rolle === 'joy'; });
+
+    function medlemRaekke(m) {
+      var init = m.initial || (m.navn ? m.navn.charAt(0) : '?');
+      return '<div class="medlem">' +
+        '<div class="brik">' + esc(init) + '</div>' +
+        '<div><div class="medlem-navn">' + esc(m.navn) + '</div>' +
+        '<div class="medlem-titel">' + esc(m.titel) + '</div></div>' +
+      '</div>';
+    }
+
+    var regeringHtml = '';
+    for (var i = 0; i < regering.length; i++) regeringHtml += medlemRaekke(regering[i]);
+
+    var html =
+      '<div class="kort">' +
+        '<span class="pin" style="top:-6px;left:12px"></span>' +
+        '<span class="pin hav" style="top:-6px;right:12px"></span>' +
+        '<span class="kapsel" style="bottom:-9px;right:38px"></span>' +
+        regeringHtml +
+      '</div>';
+
+    for (var k = 0; k < joy.length; k++) {
+      html +=
+        '<div class="kort joy-seddel">' +
+          '<span class="pin" style="top:-6px;left:16px"></span>' +
+          medlemRaekke(joy[k]) +
+        '</div>';
+    }
+
+    vaert.innerHTML = html;
+  }
+
+  /* ---------- opstart: hent alt fra DB parallelt ---------- */
+  function navnOpslag(members) {
+    var map = {};
+    members.forEach(function (m) { map[m.id] = m.navn; });
+    return map;
+  }
+
+  Promise.all([
+    DB.getMembers(),
+    DB.getMeetings(),
+    DB.getBalance(),
+    DB.getFines(),
+    DB.getBeerTop3(),
+    DB.getWords()
+  ]).then(function (res) {
+    var members = res[0] || [];
+    var moeder = res[1] || [];
+    var saldo = res[2] || 0;
+    var fines = res[3] || [];
+    var top3 = res[4] || [];
+    var words = res[5] || [];
+
+    var medlemNavn = navnOpslag(members);
+
+    renderMoede(moeder, medlemNavn);
+    renderKasse(saldo, fines, medlemNavn);
+    renderAeresvaeg(top3);
+    renderOrd(words);
+    renderRegering(members);
+  }).catch(function (e) {
+    App.toast('Noget gik galt i Forsamlingshuset. Prøv at åbne døren igen.');
+    if (window.console && console.error) console.error(e);
+  });
+})();
+</script>
+
+</body>
+</html>

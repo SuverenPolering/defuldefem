@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>De Fulde Fem — Dørmanden</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-side="login">
+
+  <div class="login-wrap">
+
+    <!-- Skiltet over døren (B4) -->
+    <div class="skilt">
+      <div class="skilt-braet">
+        <h1>De Fulde Fem</h1>
+        <span class="fem">Fem mand · ét øhav</span>
+      </div>
+      <div class="vimpler">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <p class="skilt-under">Dørmanden lukker kun de rette ind.</p>
+    </div>
+
+    <!-- Dørmandens kort -->
+    <form class="login-kort" id="login-form" autocomplete="off" novalidate>
+      <span class="pin" style="top:-7px;left:24px;transform:rotate(-8deg)"></span>
+      <span class="pin hav" style="top:-7px;right:30px;transform:rotate(6deg)"></span>
+
+      <div class="login-titel">Dørmanden</div>
+      <span class="login-under">Hvem banker på? Og kender du ordet?</span>
+
+      <!-- Navnevælger: 5 brik-knapper fra DB.getMembers() -->
+      <div class="navnevaelger" id="navnevaelger" role="radiogroup" aria-label="Vælg minister">
+        <!-- udfyldes af side-script fra DB -->
+      </div>
+
+      <!-- Klubbens fælles kodeord -->
+      <div class="kodeord-felt">
+        <label for="kodeord">Klubbens ord</label>
+        <input type="password" id="kodeord" name="kodeord"
+               placeholder="hviskes kun ædru"
+               autocomplete="off" autocapitalize="off" spellcheck="false">
+      </div>
+
+      <button type="submit" class="knap knap-bred" id="luk-ind">Luk mig ind</button>
+
+      <p class="login-fejl" id="login-fejl" aria-live="polite"></p>
+    </form>
+
+    <footer style="background:none;border:none;margin-top:18px;padding:14px 6px">
+      <span class="haandskrift">Datoen flyttes ikke. Det gør døren heller ikke.</span>
+      Står du udenfor, har du sagt noget jysk.
+    </footer>
+
+  </div>
+
+  <!-- Datalag + stel (præcis rækkefølge) -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/db.js"></script>
+  <script src="assets/js/seed.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/app.js"></script>
+
+  <!-- Side-script: Dørmanden -->
+  <script>
+  (function () {
+    'use strict';
+
+    // Sikr eksempeldata (idempotent — gør intet hvis allerede sået).
+    if (typeof window.seed === 'function') { try { window.seed(); } catch (e) {} }
+
+    var vaelger = document.getElementById('navnevaelger');
+    var form    = document.getElementById('login-form');
+    var feltKode = document.getElementById('kodeord');
+    var fejl    = document.getElementById('login-fejl');
+    var knap    = document.getElementById('luk-ind');
+
+    var valgtId = null;
+
+    // Skæve afvisninger i klubbens tone — Dørmanden roterer dem.
+    var AFVISNINGER = [
+      'Forkert. Dørmanden rører sig ikke.',
+      'Nej. Det ord lukker ingen ind her.',
+      'Tjah. Prøv igen — og denne gang ædru.',
+      'Døren bliver hvor den er. Det gør døre her.'
+    ];
+    var afvisNr = 0;
+
+    function visFejl(tekst) {
+      fejl.textContent = tekst;
+    }
+
+    function ryddFejl() {
+      if (fejl.textContent) fejl.textContent = '';
+    }
+
+    function toemNoder(el) {
+      while (el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    function tegnBrikker(members) {
+      toemNoder(vaelger);
+      members.forEach(function (m) {
+        var knapEl = document.createElement('button');
+        knapEl.type = 'button';
+        knapEl.className = 'navn-brik' + (m.rolle === 'joy' ? ' joy' : '');
+        knapEl.setAttribute('role', 'radio');
+        knapEl.setAttribute('aria-checked', 'false');
+        knapEl.setAttribute('data-id', m.id);
+        knapEl.title = m.navn + ' — ' + m.titel;
+
+        var brik = document.createElement('span');
+        brik.className = 'brik';
+        brik.textContent = m.initial || (m.navn ? m.navn.charAt(0) : '?');
+
+        var label = document.createElement('span');
+        label.className = 'navn-label';
+        // Kun fornavn på briken — der er ikke plads til efternavnet.
+        label.textContent = (m.navn || '').split(' ')[0];
+
+        knapEl.appendChild(brik);
+        knapEl.appendChild(label);
+
+        knapEl.addEventListener('click', function () {
+          vaelg(m.id);
+        });
+
+        vaelger.appendChild(knapEl);
+      });
+    }
+
+    function vaelg(id) {
+      valgtId = id;
+      var alle = vaelger.querySelectorAll('.navn-brik');
+      for (var i = 0; i < alle.length; i++) {
+        var er = alle[i].getAttribute('data-id') === id;
+        alle[i].classList.toggle('valgt', er);
+        alle[i].setAttribute('aria-checked', er ? 'true' : 'false');
+      }
+      ryddFejl();
+    }
+
+    // Hent medlemmer fra DB og tegn navnevælgeren.
+    window.DB.getMembers().then(function (members) {
+      if (!members || !members.length) {
+        visFejl('Ingen ministre fundet. Mistænkeligt.');
+        return;
+      }
+      tegnBrikker(members);
+    }).catch(function () {
+      visFejl('Døren driller. Genindlæs siden.');
+    });
+
+    // Ryd fejl når man begynder at skrive kodeordet.
+    feltKode.addEventListener('input', ryddFejl);
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      if (!valgtId) {
+        visFejl('Vælg hvem du er. Dørmanden gætter ikke.');
+        return;
+      }
+      var kode = feltKode.value;
+      if (!kode) {
+        visFejl('Ordet mangler. Det er hele pointen.');
+        feltKode.focus();
+        return;
+      }
+
+      knap.disabled = true;
+      var gammel = knap.textContent;
+      knap.textContent = 'Dørmanden kigger…';
+
+      window.Auth.login(valgtId, kode).then(function (ok) {
+        if (ok) {
+          location.replace('index.html');
+          return;
+        }
+        // Forkert kodeord (eller ukendt minister) — skæv afvisning.
+        knap.disabled = false;
+        knap.textContent = gammel;
+        visFejl(AFVISNINGER[afvisNr % AFVISNINGER.length]);
+        afvisNr++;
+        feltKode.select();
+      }).catch(function () {
+        knap.disabled = false;
+        knap.textContent = gammel;
+        visFejl('Døren gik i baglås. Prøv igen.');
+      });
+    });
+  })();
+  </script>
+
+</body>
+</html>

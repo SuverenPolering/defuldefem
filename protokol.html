@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>De Fulde Fem — Øl-protokollen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-side="ollet">
+
+<section class="skilt">
+  <div class="skilt-braet">
+    <h1>Øl-protokollen</h1>
+    <span class="fem">Logbog &amp; rangliste</span>
+  </div>
+  <div class="vimpler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <p class="skilt-under">Hvad vi drak, og hvad vi mente om det. Ført til protokols.</p>
+</section>
+
+<!-- ===== Æresvæggen: top 3 ===== -->
+<section class="sektion">
+  <div class="sektion-titel"><h2>Æresvæggen</h2><span class="nips">bedste øl gennem tiderne</span></div>
+  <div class="aeresvaeg" id="top3"></div>
+</section>
+
+<!-- ===== Mapperne: øl pr. mødedato ===== -->
+<section class="sektion">
+  <div class="sektion-titel"><h2>Protokollen</h2><span class="nips">én mappe pr. aften</span></div>
+  <div class="fane-raekke" id="faner"></div>
+  <div id="mapper"></div>
+</section>
+
+<footer>
+  <span class="haandskrift">Skål — og før det til protokols</span>
+  Hver dråbe noteret. Hver karakter står ved magt.<br>
+  Klager over en score rettes til glasset, ikke til Bødekasseministeren.
+</footer>
+
+<!-- Flydende + : ny session -->
+<button class="tilfoej-knap" id="ny-session-knap" type="button" aria-label="Ny aften">
+  <span>+</span>
+</button>
+
+<!-- ===== Ark: ny session ===== -->
+<div class="ark-baggrund" id="bg-session"></div>
+<aside class="ark" id="ark-session" aria-hidden="true" role="dialog" aria-label="Ny aften">
+  <button class="luk-knap" type="button" data-luk="ark-session" aria-label="Luk">×</button>
+  <div class="ark-titel">Ny aften i protokollen</div>
+  <span class="ark-under">Hvornår, hvor — og hvad var temaet?</span>
+  <form id="form-session" novalidate>
+    <label class="felt">
+      <span class="felt-label">Dato</span>
+      <input type="date" name="dato" id="s-dato" required>
+      <span class="fejl skjult" id="fejl-s-dato">Datoen flyttes ikke. Men den skal sættes.</span>
+    </label>
+    <label class="felt">
+      <span class="felt-label">Sted</span>
+      <input type="text" name="sted" id="s-sted" placeholder="Hos hvem?" autocomplete="off">
+    </label>
+    <label class="felt">
+      <span class="felt-label">Tema</span>
+      <input type="text" name="tema" id="s-tema" placeholder="Trappist-aften, vinterstærke sager …" autocomplete="off">
+    </label>
+    <div class="felt" role="group" aria-labelledby="s-deltagere-label">
+      <span class="felt-label" id="s-deltagere-label">Deltagere</span>
+      <div id="s-deltagere"></div>
+      <span class="felt-note">Joy tæller med, selvom han bare nyder turen.</span>
+    </div>
+    <button class="knap knap-bred" type="submit">Åbn mappen</button>
+  </form>
+</aside>
+
+<!-- ===== Ark: ny øl ===== -->
+<div class="ark-baggrund" id="bg-oel"></div>
+<aside class="ark" id="ark-oel" aria-hidden="true" role="dialog" aria-label="Ny øl">
+  <button class="luk-knap" type="button" data-luk="ark-oel" aria-label="Luk">×</button>
+  <div class="ark-titel">Ny øl i protokollen</div>
+  <span class="ark-under" id="ark-oel-under">Før den til protokols, inden den er drukket.</span>
+  <form id="form-oel" novalidate>
+    <input type="hidden" name="sessionId" id="o-session">
+    <label class="felt">
+      <span class="felt-label">Navn</span>
+      <input type="text" name="navn" id="o-navn" placeholder="Hvad hed den?" autocomplete="off" required>
+      <span class="fejl skjult" id="fejl-o-navn">En øl uden navn er bare væske. Giv den et navn.</span>
+    </label>
+    <label class="felt">
+      <span class="felt-label">Bryggeri</span>
+      <input type="text" name="bryggeri" id="o-bryggeri" placeholder="Hvem har bryggeriet på samvittigheden?" autocomplete="off">
+    </label>
+    <label class="felt">
+      <span class="felt-label">Type</span>
+      <input type="text" name="type" id="o-type" placeholder="Trappist, Imperial IPA, Stout …" autocomplete="off">
+    </label>
+    <label class="felt">
+      <span class="felt-label">Alkohol %</span>
+      <input type="number" name="pct" id="o-pct" placeholder="10,2" step="0.1" min="0" max="99" inputmode="decimal">
+    </label>
+    <label class="felt">
+      <span class="felt-label">Hvem havde den med?</span>
+      <select name="havdeMedId" id="o-havde"></select>
+    </label>
+    <button class="knap knap-bred" type="submit">Skænk den i protokollen</button>
+  </form>
+</aside>
+
+<!-- ===== Ark: rating ===== -->
+<div class="ark-baggrund" id="bg-rating"></div>
+<aside class="ark" id="ark-rating" aria-hidden="true" role="dialog" aria-label="Giv karakter">
+  <button class="luk-knap" type="button" data-luk="ark-rating" aria-label="Luk">×</button>
+  <div class="ark-titel">Afsig din dom</div>
+  <span class="ark-under" id="ark-rating-under"></span>
+  <form id="form-rating" novalidate>
+    <input type="hidden" name="beerId" id="r-beer">
+    <label class="felt">
+      <span class="felt-label">Hvem dømmer?</span>
+      <select name="memberId" id="r-medlem"></select>
+    </label>
+    <label class="felt">
+      <span class="felt-label">Karakter (1–10)</span>
+      <input type="number" name="score" id="r-score" min="1" max="10" step="1" inputmode="numeric" placeholder="1 til 10, heltal — ingen kommaer, ingen smør">
+      <span class="fejl skjult" id="fejl-r-score">Heltal mellem 1 og 10. Halve point er for de svage.</span>
+    </label>
+    <button class="knap knap-bred" type="submit">Før dommen til protokols</button>
+  </form>
+</aside>
+
+<!-- ===== Datalag + stel ===== -->
+<script src="assets/js/config.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/seed.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/app.js"></script>
+
+<!-- ===== Side-script: Øl-protokollen ===== -->
+<script>
+(function () {
+  'use strict';
+
+  var top3El   = document.getElementById('top3');
+  var fanerEl  = document.getElementById('faner');
+  var mapperEl = document.getElementById('mapper');
+
+  var members = [];
+  var memMap  = {};
+  var aktivSessionId = null; // valgt fane (mappe)
+  var aabentOel = null;      // det øl rating-arket aktuelt er åbnet for (fund 1)
+
+  var MAANED_KORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+  function maanedKort(n) { return MAANED_KORT[n - 1] || ''; }
+
+  // Score med dansk komma. Heltal vises uden decimal.
+  function visScore(n) {
+    if (!n) return '–';
+    var afrundet = Math.round(n * 10) / 10;
+    var s = (afrundet % 1 === 0) ? String(afrundet) : afrundet.toFixed(1);
+    return s.replace('.', ',');
+  }
+
+  function visPct(p) {
+    if (p == null || p === '') return null;
+    return String(p).replace('.', ',') + ' %';
+  }
+
+  function fornavn(navnEllerId) {
+    if (!navnEllerId) return '';
+    return String(navnEllerId).split(' ')[0];
+  }
+
+  /* ---------- Æresvæggen (top 3) ---------- */
+
+  function renderTop3() {
+    return window.DB.getBeerTop3().then(function (top) {
+      top3El.innerHTML = '';
+      var medStemmer = top.filter(function (b) { return b.antalStemmer > 0; });
+
+      if (!medStemmer.length) {
+        var tom = document.createElement('div');
+        tom.className = 'tom';
+        var ikon = document.createElement('span');
+        ikon.className = 'tom-ikon';
+        ikon.textContent = '🏅';
+        var titel = document.createElement('div');
+        titel.className = 'tom-titel';
+        titel.textContent = 'Væggen er pinligt bar';
+        var p = document.createElement('p');
+        p.textContent = 'Ingen øl har fået en karakter endnu. ' +
+          'En rangliste uden domme er bare en indkøbsseddel.';
+        tom.appendChild(ikon);
+        tom.appendChild(titel);
+        tom.appendChild(p);
+        top3El.appendChild(tom);
+        return;
+      }
+
+      medStemmer.forEach(function (b, i) {
+        var plads = i + 1;
+        var kort = document.createElement('div');
+        kort.className = 'oel' + (plads === 1 ? ' guld' : '');
+
+        // Opslagstavle-detaljer pr. plads (statisk markup, jf. B4)
+        var detalje = document.createElement('span');
+        if (plads === 1) {
+          var kapsel = document.createElement('span');
+          kapsel.className = 'kapsel';
+          kapsel.style.cssText = 'top:-9px;left:14px';
+          var pin1 = document.createElement('span');
+          pin1.className = 'pin';
+          pin1.style.cssText = 'top:-6px;right:16px';
+          kort.appendChild(kapsel);
+          kort.appendChild(pin1);
+        } else if (plads === 2) {
+          var pinH = document.createElement('span');
+          pinH.className = 'pin hav';
+          pinH.style.cssText = 'top:-6px;left:50%;margin-left:-7px';
+          var ring = document.createElement('span');
+          ring.className = 'ring';
+          ring.style.cssText = 'top:-14px;right:34px';
+          kort.appendChild(pinH);
+          kort.appendChild(ring);
+        } else {
+          var tape = document.createElement('span');
+          tape.className = 'tape';
+          tape.style.cssText = 'top:-10px;left:50%;transform:translateX(-50%) rotate(-6deg)';
+          kort.appendChild(tape);
+        }
+
+        var roset = document.createElement('div');
+        roset.className = 'roset r' + plads;
+        roset.textContent = plads;
+
+        var info = document.createElement('div');
+        info.className = 'oel-info';
+        var navn = document.createElement('div');
+        navn.className = 'oel-navn';
+        navn.textContent = b.navn;
+        var meta = document.createElement('div');
+        meta.className = 'oel-meta';
+        var metaDele = [];
+        if (b.bryggeri) metaDele.push(b.bryggeri);
+        if (b.type) metaDele.push(b.type);
+        var pp = visPct(b.pct);
+        if (pp) metaDele.push(pp);
+        if (b.havdeMedNavn) metaDele.push(fornavn(b.havdeMedNavn) + ' havde den med');
+        if (b.dato) metaDele.push(window.App.formatDato(b.dato).replace(/^[^ ]+ /, ''));
+        meta.textContent = metaDele.join(' · ');
+        info.appendChild(navn);
+        info.appendChild(meta);
+
+        var score = document.createElement('div');
+        score.className = 'oel-score';
+        score.textContent = visScore(b.snit);
+
+        kort.appendChild(roset);
+        kort.appendChild(info);
+        kort.appendChild(score);
+        top3El.appendChild(kort);
+      });
+    });
+  }
+
+  /* ---------- Mapper (sessioner) ---------- */
+
+  function renderSessioner() {
+    return window.DB.getSessions().then(function (sessioner) {
+      // Nyeste aften først.
+      sessioner.sort(function (a, b) {
+        return String(b.dato || '').localeCompare(String(a.dato || ''));
+      });
+
+      fanerEl.innerHTML = '';
+      mapperEl.innerHTML = '';
+
+      if (!sessioner.length) {
+        var kort = document.createElement('div');
+        kort.className = 'kort skaev-a';
+        var pin = document.createElement('span');
+        pin.className = 'pin';
+        pin.style.cssText = 'top:-6px;left:24px';
+        var tom = document.createElement('div');
+        tom.className = 'tom';
+        var ikon = document.createElement('span');
+        ikon.className = 'tom-ikon';
+        ikon.textContent = '📒';
+        var titel = document.createElement('div');
+        titel.className = 'tom-titel';
+        titel.textContent = 'Protokollen er jomfruelig';
+        var p = document.createElement('p');
+        p.textContent = 'Ingen aftener ført endnu. Tryk på det rav-gule plus ' +
+          'og åbn klubbens første mappe.';
+        tom.appendChild(ikon);
+        tom.appendChild(titel);
+        tom.appendChild(p);
+        kort.appendChild(pin);
+        kort.appendChild(tom);
+        mapperEl.appendChild(kort);
+        return;
+      }
+
+      // Hold valgt fane gyldig.
+      var findes = sessioner.some(function (s) { return s.id === aktivSessionId; });
+      if (!findes) aktivSessionId = sessioner[0].id;
+
+      // Faner
+      sessioner.forEach(function (s) {
+        var f = document.createElement('button');
+        f.type = 'button';
+        f.className = 'fane' + (s.id === aktivSessionId ? ' aktiv' : '');
+        var m = String(s.dato || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+        f.textContent = m
+          ? (Number(m[3]) + '. ' + maanedKort(Number(m[2])) + ' ' + m[1].slice(2))
+          : (s.tema || 'Aften');
+        f.addEventListener('click', function () {
+          aktivSessionId = s.id;
+          renderSessioner();
+        });
+        fanerEl.appendChild(f);
+      });
+
+      // Den valgte mappe
+      var valgt = null;
+      for (var i = 0; i < sessioner.length; i++) {
+        if (sessioner[i].id === aktivSessionId) { valgt = sessioner[i]; break; }
+      }
+      if (valgt) mapperEl.appendChild(byggMappe(valgt));
+    });
+  }
+
+  function byggMappe(s) {
+    var mappe = document.createElement('div');
+    mappe.className = 'mappe skaev-a';
+
+    var fane = document.createElement('div');
+    fane.className = 'mappe-fane';
+    fane.textContent = s.tema || 'Aften uden tema';
+    mappe.appendChild(fane);
+
+    var dato = document.createElement('div');
+    dato.className = 'moede-detalje';
+    var detaljer = [];
+    if (s.dato) detaljer.push(window.App.formatDato(s.dato));
+    if (s.sted) detaljer.push(s.sted);
+    if (s.deltagere && s.deltagere.length) {
+      var navne = s.deltagere.map(function (id) {
+        var m = memMap[id];
+        return m ? fornavn(m.navn) : id;
+      });
+      detaljer.push(navne.join(', '));
+    }
+    dato.textContent = detaljer.join('  ·  ');
+    mappe.appendChild(dato);
+
+    // Øl-liste
+    if (!s.oel.length) {
+      var tomMappe = document.createElement('div');
+      tomMappe.className = 'mappe-tom';
+      tomMappe.textContent = 'Ingen øl ført på denne aften endnu. Tørt arbejde.';
+      mappe.appendChild(tomMappe);
+    } else {
+      // Sortér øl efter snit, bedste først.
+      var oel = s.oel.slice().sort(function (a, b) { return b.snit - a.snit; });
+      var liste = document.createElement('div');
+      liste.className = 'boede-liste';
+      oel.forEach(function (b) {
+        liste.appendChild(byggOelRaekke(b));
+      });
+      mappe.appendChild(liste);
+    }
+
+    // Tilføj øl-knap
+    var handlinger = document.createElement('div');
+    handlinger.className = 'handlinger';
+    var tilfoej = document.createElement('button');
+    tilfoej.type = 'button';
+    tilfoej.className = 'knap-lille';
+    tilfoej.textContent = '+ Øl';
+    tilfoej.addEventListener('click', function () { aabnOelArk(s); });
+    handlinger.appendChild(tilfoej);
+    mappe.appendChild(handlinger);
+
+    return mappe;
+  }
+
+  function byggOelRaekke(b) {
+    var raekke = document.createElement('div');
+    raekke.className = 'boede';
+
+    var venstre = document.createElement('div');
+    venstre.className = 'grund';
+    var navn = document.createElement('div');
+    navn.style.cssText = 'font-weight:700;font-size:15px';
+    navn.textContent = b.navn;
+    venstre.appendChild(navn);
+
+    var meta = document.createElement('span');
+    meta.className = 'hvem';
+    var metaDele = [];
+    if (b.bryggeri) metaDele.push(b.bryggeri);
+    if (b.type) metaDele.push(b.type);
+    var p = visPct(b.pct);
+    if (p) metaDele.push(p);
+    meta.textContent = metaDele.join(' · ');
+    venstre.appendChild(meta);
+
+    // Antal stemmer
+    var antal = (b.ratings && b.ratings.length) || 0;
+    var stemmeNote = document.createElement('span');
+    stemmeNote.className = 'svar';
+    stemmeNote.style.cssText = 'display:block;margin-top:4px';
+    stemmeNote.textContent = antal
+      ? (antal + (antal === 1 ? ' dom afsagt' : ' domme afsagt'))
+      : 'Endnu udømt';
+    venstre.appendChild(stemmeNote);
+
+    raekke.appendChild(venstre);
+
+    // Højre: snit + dom-knap
+    var hoejre = document.createElement('div');
+    hoejre.style.cssText = 'text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px';
+
+    var score = document.createElement('span');
+    score.className = 'takst';
+    score.style.fontSize = '20px';
+    score.textContent = visScore(b.snit);
+    hoejre.appendChild(score);
+
+    var domKnap = document.createElement('button');
+    domKnap.type = 'button';
+    domKnap.className = 'knap-lille';
+    domKnap.textContent = 'Bedøm';
+    domKnap.addEventListener('click', function () { aabnRatingArk(b); });
+    hoejre.appendChild(domKnap);
+
+    raekke.appendChild(hoejre);
+    return raekke;
+  }
+
+  /* ---------- Ark-styring ---------- */
+
+  var aabentArkId = null;     // hvilket ark der er åbent (eller null)
+  var udloeserEl  = null;     // knappen der åbnede arket — fokus føres tilbage hertil
+  var FOKUS_VAELGER =
+    'a[href], button:not([disabled]), input:not([disabled]), ' +
+    'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  // Skjul resten af siden for tastatur + skærmlæsere, mens et ark er åbent.
+  function saetBaggrundInert(ark, inert) {
+    Array.prototype.forEach.call(document.body.children, function (el) {
+      if (el === ark) return;
+      // Lad arkene og deres baggrunde styre deres egen aria-hidden.
+      if (el.classList && (el.classList.contains('ark') || el.classList.contains('ark-baggrund'))) return;
+      if (inert) {
+        el.setAttribute('aria-hidden', 'true');
+        el.setAttribute('inert', '');
+      } else {
+        el.removeAttribute('aria-hidden');
+        el.removeAttribute('inert');
+      }
+    });
+  }
+
+  function fokusbareI(ark) {
+    return Array.prototype.filter.call(
+      ark.querySelectorAll(FOKUS_VAELGER),
+      function (el) { return el.offsetParent !== null || el === document.activeElement; }
+    );
+  }
+
+  function aabn(arkId) {
+    var ark = document.getElementById(arkId);
+    var bg = document.getElementById('bg-' + arkId.replace('ark-', ''));
+    udloeserEl = (document.activeElement instanceof HTMLElement) ? document.activeElement : null;
+    if (bg) bg.classList.add('aaben');
+    ark.classList.add('aaben');
+    ark.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    aabentArkId = arkId;
+    saetBaggrundInert(ark, true);
+    // Flyt fokus ind i dialogen (første interaktive element).
+    var fokusbare = fokusbareI(ark);
+    setTimeout(function () {
+      if (fokusbare.length) fokusbare[0].focus();
+    }, 0);
+  }
+
+  function luk(arkId) {
+    var ark = document.getElementById(arkId);
+    var bg = document.getElementById('bg-' + arkId.replace('ark-', ''));
+    if (bg) bg.classList.remove('aaben');
+    if (ark) {
+      ark.classList.remove('aaben');
+      ark.setAttribute('aria-hidden', 'true');
+      saetBaggrundInert(ark, false);
+    }
+    document.body.style.overflow = '';
+    if (aabentArkId === arkId) aabentArkId = null;
+    // Returnér fokus til den udløsende knap.
+    if (udloeserEl && typeof udloeserEl.focus === 'function') {
+      udloeserEl.focus();
+    }
+    udloeserEl = null;
+  }
+
+  function lukAlle() {
+    luk('ark-session');
+    luk('ark-oel');
+    luk('ark-rating');
+  }
+
+  // Luk-knapper + baggrunde
+  Array.prototype.forEach.call(document.querySelectorAll('[data-luk]'), function (knap) {
+    knap.addEventListener('click', function () { luk(knap.getAttribute('data-luk')); });
+  });
+  ['bg-session', 'bg-oel', 'bg-rating'].forEach(function (id) {
+    document.getElementById(id).addEventListener('click', lukAlle);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      lukAlle();
+      return;
+    }
+    // Fokusfælde: Tab/Shift+Tab cykler inden for det åbne ark.
+    if (e.key === 'Tab' && aabentArkId) {
+      var ark = document.getElementById(aabentArkId);
+      if (!ark) return;
+      var fokusbare = fokusbareI(ark);
+      if (!fokusbare.length) { e.preventDefault(); return; }
+      var foerste = fokusbare[0];
+      var sidste = fokusbare[fokusbare.length - 1];
+      var aktiv = document.activeElement;
+      if (e.shiftKey) {
+        if (aktiv === foerste || !ark.contains(aktiv)) {
+          e.preventDefault();
+          sidste.focus();
+        }
+      } else {
+        if (aktiv === sidste || !ark.contains(aktiv)) {
+          e.preventDefault();
+          foerste.focus();
+        }
+      }
+    }
+  });
+
+  /* ---------- + : ny session ---------- */
+
+  document.getElementById('ny-session-knap').addEventListener('click', function () {
+    document.getElementById('form-session').reset();
+    skjulFejl('fejl-s-dato');
+    Array.prototype.forEach.call(
+      document.querySelectorAll('#s-deltagere input[type=checkbox]'),
+      function (cb) { cb.checked = true; }
+    );
+    aabn('ark-session');
+  });
+
+  document.getElementById('form-session').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var dato = document.getElementById('s-dato').value.trim();
+    if (!dato) {
+      visFejl('fejl-s-dato', 's-dato');
+      return;
+    }
+    skjulFejl('fejl-s-dato');
+    var deltagere = [];
+    Array.prototype.forEach.call(
+      document.querySelectorAll('#s-deltagere input[type=checkbox]:checked'),
+      function (cb) { deltagere.push(cb.value); }
+    );
+    window.DB.addSession({
+      dato: dato,
+      sted: document.getElementById('s-sted').value.trim(),
+      tema: document.getElementById('s-tema').value.trim(),
+      deltagere: deltagere
+    }).then(function (ny) {
+      aktivSessionId = ny.id;
+      luk('ark-session');
+      window.App.toast('Mappen er åbnet. Nu mangler bare øllet.');
+      return renderSessioner();
+    }).catch(function (err) {
+      console.error('Kunne ikke åbne mappen:', err);
+      luk('ark-session');
+      window.App.toast('Mappen nægtede at åbne. Protokollen er stædig — prøv igen.');
+    });
+  });
+
+  /* ---------- + : ny øl ---------- */
+
+  function aabnOelArk(s) {
+    document.getElementById('form-oel').reset();
+    skjulFejl('fejl-o-navn');
+    document.getElementById('o-session').value = s.id;
+    document.getElementById('ark-oel-under').textContent =
+      (s.tema || 'Aften') + (s.dato ? ' · ' + window.App.formatDato(s.dato) : '');
+    var valg = (s.deltagere && s.deltagere.length)
+      ? members.filter(function (m) { return s.deltagere.indexOf(m.id) !== -1; })
+      : members;
+    fyldMedlemSelect(document.getElementById('o-havde'), valg, true);
+    aabn('ark-oel');
+  }
+
+  document.getElementById('form-oel').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var navn = document.getElementById('o-navn').value.trim();
+    if (!navn) {
+      visFejl('fejl-o-navn', 'o-navn');
+      return;
+    }
+    skjulFejl('fejl-o-navn');
+    var sessionId = document.getElementById('o-session').value;
+    var pctRaw = document.getElementById('o-pct').value.trim().replace(',', '.');
+    window.DB.addBeer(sessionId, {
+      navn: navn,
+      bryggeri: document.getElementById('o-bryggeri').value.trim(),
+      type: document.getElementById('o-type').value.trim(),
+      pct: pctRaw === '' ? null : Number(pctRaw),
+      havdeMedId: document.getElementById('o-havde').value || null
+    }).then(function () {
+      luk('ark-oel');
+      window.App.toast('Ført til protokols. Skål.');
+      return Promise.all([renderSessioner(), renderTop3()]);
+    }).catch(function (err) {
+      console.error('Kunne ikke føre øllet til protokols:', err);
+      luk('ark-oel');
+      window.App.toast('Øllet løb i sandet. Det blev ikke ført — prøv igen.');
+    });
+  });
+
+  /* ---------- Rating ---------- */
+
+  function aabnRatingArk(b) {
+    aabentOel = b; // gem hele øl-objektet, så scoren kan slås op lokalt (fund 1)
+    document.getElementById('form-rating').reset();
+    skjulFejl('fejl-r-score');
+    document.getElementById('r-beer').value = b.id;
+    document.getElementById('ark-rating-under').textContent =
+      b.navn + (b.snit ? ' · står nu til ' + visScore(b.snit) : ' · endnu udømt');
+    fyldMedlemSelect(document.getElementById('r-medlem'), members, false);
+    // Forvælg den indloggede, hvis vi kender ham.
+    var sess = window.Auth && window.Auth.current ? window.Auth.current() : null;
+    if (sess && sess.memberId) {
+      document.getElementById('r-medlem').value = sess.memberId;
+      if (b.ratings) {
+        for (var i = 0; i < b.ratings.length; i++) {
+          if (b.ratings[i].memberId === sess.memberId) {
+            document.getElementById('r-score').value = b.ratings[i].score;
+            break;
+          }
+        }
+      }
+    }
+    aabn('ark-rating');
+  }
+
+  document.getElementById('r-medlem').addEventListener('change', function () {
+    // Vis valgte medlems tidligere karakter, hvis nogen. Slå op i det allerede
+    // hentede øl-objekt (fund 1) — intet nyt DB-kald.
+    var memberId = this.value;
+    var fundet = '';
+    if (aabentOel && aabentOel.ratings) {
+      aabentOel.ratings.forEach(function (r) {
+        if (r.memberId === memberId) fundet = r.score;
+      });
+    }
+    document.getElementById('r-score').value = fundet;
+  });
+
+  document.getElementById('form-rating').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var beerId = document.getElementById('r-beer').value;
+    var memberId = document.getElementById('r-medlem').value;
+    var score = Number(document.getElementById('r-score').value);
+    if (!memberId || !(score >= 1 && score <= 10) || score % 1 !== 0) {
+      visFejl('fejl-r-score', 'r-score');
+      return;
+    }
+    skjulFejl('fejl-r-score');
+    window.DB.rateBeer(beerId, memberId, score).then(function () {
+      luk('ark-rating');
+      window.App.toast('Dommen står ved magt. Tæl aldrig efter.');
+      return Promise.all([renderSessioner(), renderTop3()]);
+    }).catch(function (err) {
+      console.error('Kunne ikke føre dommen til protokols:', err);
+      luk('ark-rating');
+      window.App.toast('Dommen blev ikke afsagt. Glasset svigtede — prøv igen.');
+    });
+  });
+
+  /* ---------- felt-hjælpere ---------- */
+
+  function fyldMedlemSelect(sel, liste, medTom) {
+    sel.innerHTML = '';
+    if (medTom) {
+      var tom = document.createElement('option');
+      tom.value = '';
+      tom.textContent = 'Ingen / ukendt';
+      sel.appendChild(tom);
+    }
+    liste.forEach(function (m) {
+      var o = document.createElement('option');
+      o.value = m.id;
+      o.textContent = m.navn;
+      sel.appendChild(o);
+    });
+  }
+
+  function byggDeltagerTjek() {
+    var wrap = document.getElementById('s-deltagere');
+    wrap.innerHTML = '';
+    members.forEach(function (m) {
+      var lab = document.createElement('label');
+      lab.style.cssText =
+        'display:flex;align-items:center;gap:9px;padding:6px 0;font-size:15px;font-weight:600;';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = m.id;
+      cb.checked = true;
+      cb.style.cssText = 'width:20px;height:20px;flex:0 0 auto;';
+      lab.appendChild(cb);
+      lab.appendChild(document.createTextNode(m.navn));
+      wrap.appendChild(lab);
+    });
+  }
+
+  function visFejl(fejlId, feltId) {
+    document.getElementById(fejlId).classList.remove('skjult');
+    var inp = document.getElementById(feltId);
+    if (inp && inp.parentNode) inp.parentNode.classList.add('har-fejl');
+  }
+  function skjulFejl(fejlId) {
+    var f = document.getElementById(fejlId);
+    if (f) f.classList.add('skjult');
+    Array.prototype.forEach.call(document.querySelectorAll('.felt.har-fejl'), function (el) {
+      el.classList.remove('har-fejl');
+    });
+  }
+
+  /* ---------- opstart ---------- */
+
+  window.DB.getMembers().then(function (m) {
+    members = m;
+    memMap = {};
+    members.forEach(function (x) { memMap[x.id] = x; });
+    byggDeltagerTjek();
+    return Promise.all([renderTop3(), renderSessioner()]);
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>De Fulde Fem — Ordbogsnævnet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-side="ord">
+
+  <!-- .topbar og <nav> injiceres af app.js -->
+
+  <!-- Skiltet over doeren -->
+  <div class="skilt">
+    <div class="skilt-braet">
+      <h1>Ordbogsnævnet</h1>
+      <span class="fem">Sproget skal passes</span>
+    </div>
+    <div class="vimpler">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <p class="skilt-under">Her afgøres, om et ord er dansk — eller en bøde værd.</p>
+  </div>
+
+  <!-- Regelsaettet -->
+  <section class="sektion">
+    <div class="sektion-titel">
+      <h2>Regelsættet</h2>
+      <span class="nips">§ vedtaget ved bordet</span>
+    </div>
+    <div class="kort skaev-a">
+      <span class="pin hav" style="top:-6px;left:18px"></span>
+      <span class="pin" style="top:-6px;right:24px"></span>
+      <span class="tape" style="top:-12px;left:50%;transform:translateX(-50%) rotate(-3deg)"></span>
+      <p style="font-size:14px;line-height:1.55;margin-bottom:10px">
+        Et ord er <strong>gyldigt dansk</strong>, hvis det står i
+        <strong>Den Danske Ordbog (DDO)</strong> <em>eller</em> i
+        <strong>Retskrivningsordbogen</strong>. Står det i mindst én af dem,
+        frikendes det. Står det i ingen af dem, falder dommen.
+      </p>
+      <p style="font-size:14px;line-height:1.55;margin-bottom:10px">
+        Udenlandske egennavne er <strong>forbudt</strong>: »McDonald&#39;s« er en
+        bøde værd. En ordentlig fordanskning er <strong>tilladt</strong>:
+        »Den Gyldne Måge« er til efterlevelse.
+      </p>
+      <p class="stadig">Nævnet tager ikke imod anker. Det gør nævn ikke her.</p>
+    </div>
+  </section>
+
+  <!-- Dommene -->
+  <section class="sektion">
+    <div class="sektion-titel">
+      <h2>Domme</h2>
+      <span class="nips">Ordbogsnævnet har talt</span>
+    </div>
+    <div class="kort skaev-b">
+      <span class="pin" style="top:-6px;left:14px"></span>
+      <span class="kapsel" style="top:-9px;right:20px"></span>
+      <span class="pin hav" style="bottom:-6px;left:30px"></span>
+      <span class="aeseloere"></span>
+      <div id="dom-liste"></div>
+    </div>
+  </section>
+
+  <!-- Indstil nyt ord -->
+  <button id="indstil-knap" class="tilfoej-knap" type="button" aria-label="Indstil nyt ord">
+    <span>+</span>
+  </button>
+
+  <!-- Ark: indstil nyt ord -->
+  <div id="ord-ark" class="ark" aria-hidden="true" role="dialog" aria-label="Indstil nyt ord">
+    <button class="luk-knap" type="button" id="ark-luk" aria-label="Luk">&times;</button>
+    <div class="ark-titel">Indstil nyt ord</div>
+    <span class="ark-under">Nævnet vurderer. Du venter.</span>
+    <form id="ord-form" novalidate>
+      <div class="felt" id="felt-ord">
+        <label for="ord-input">Ordet (eller udtrykket)</label>
+        <input type="text" id="ord-input" name="ord" autocomplete="off"
+               placeholder="f.eks. »cringe« eller »Den Gyldne Måge«">
+        <span class="felt-note">Sættes til afventer, indtil nævnet har talt.</span>
+        <span class="fejl skjult" id="ord-fejl">Skriv et ord. Tomme indstillinger afvises ved døren.</span>
+      </div>
+      <button type="submit" class="knap knap-bred">Indstil til vurdering</button>
+    </form>
+  </div>
+
+  <!-- Ark: afsig dom (kun Boedekasseministeren) -->
+  <div id="dom-ark" class="ark kun-minister" aria-hidden="true" role="dialog" aria-label="Afsig dom">
+    <button class="luk-knap" type="button" id="dom-ark-luk" aria-label="Luk">&times;</button>
+    <div class="ark-titel">Afsig dom</div>
+    <span class="ark-under" id="dom-ark-under">Nævnet sætter sig til rette.</span>
+    <form id="dom-form" novalidate>
+      <input type="hidden" id="dom-word-id">
+      <div class="felt">
+        <span class="felt-label">Kendelse</span>
+        <select id="dom-status">
+          <option value="frikendt">Frikendt — står i ordbogen</option>
+          <option value="doemt">Dømt — ikke dansk</option>
+          <option value="afventer">Sat til side — afventer igen</option>
+        </select>
+      </div>
+      <div class="felt">
+        <label for="dom-begrundelse">Begrundelse</label>
+        <textarea id="dom-begrundelse" name="begrundelse"
+                  placeholder="Nævnets ord. Kort og hårdt."></textarea>
+        <span class="felt-note">Ses af hele regeringen. Vej dine ord.</span>
+      </div>
+      <button type="submit" class="knap knap-bred">Lad dommen falde</button>
+    </form>
+  </div>
+
+  <footer>
+    <span class="haandskrift">Sproget er fynsk, eller også er det forkert.</span>
+    Ordbogsnævnet · De Fulde Fem
+  </footer>
+
+  <!-- Datalag + stel (praecis raekkefoelge) -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/db.js"></script>
+  <script src="assets/js/seed.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    var listeEl = document.getElementById('dom-liste');
+
+    var STATUS_MAERKE = {
+      doemt:    { klasse: 'doemt',    tekst: 'Dømt' },
+      frikendt: { klasse: 'frikendt', tekst: 'Frikendt' },
+      afventer: { klasse: '',         tekst: 'Afventer' }
+    };
+
+    // Er den indloggede Boedekasseministeren? (styrer dom-knapper i listen)
+    function erMinister() {
+      var sess = (window.Auth && window.Auth.current) ? window.Auth.current() : null;
+      return !!(sess && sess.rolle === 'boedekasseminister');
+    }
+
+    // Byg en .dom-raekke som DOM-noder (textContent — ingen innerHTML med data).
+    function byggRaekke(o, minister) {
+      var st = STATUS_MAERKE[o.status] || STATUS_MAERKE.afventer;
+
+      var rk = document.createElement('div');
+      rk.className = 'dom';
+
+      var venstre = document.createElement('div');
+      var ord = document.createElement('span');
+      ord.className = 'ord';
+      ord.textContent = '»' + o.ord + '«';
+      venstre.appendChild(ord);
+
+      var begrundelseTekst = o.begrundelse
+        ? o.begrundelse
+        : (o.status === 'afventer' ? 'Indstillet. Afventer nævnets kendelse.' : '');
+      if (begrundelseTekst) {
+        var b = document.createElement('span');
+        b.className = 'begrundelse';
+        b.textContent = begrundelseTekst;
+        venstre.appendChild(b);
+      }
+      rk.appendChild(venstre);
+
+      if (minister) {
+        var knap = document.createElement('button');
+        knap.type = 'button';
+        knap.className = 'knap-lille kun-minister';
+        knap.textContent = 'Afsig dom';
+        knap.addEventListener('click', function () { aabnDomArk(o); });
+        rk.appendChild(knap);
+      } else if (st.tekst) {
+        var maerke = document.createElement('span');
+        maerke.className = st.klasse ? ('maerke ' + st.klasse) : 'maerke';
+        if (!st.klasse) {
+          maerke.style.color = 'var(--tekst-svag)';
+          maerke.style.border = '1px solid var(--linje)';
+        }
+        maerke.textContent = st.tekst;
+        rk.appendChild(maerke);
+      }
+      return rk;
+    }
+
+    function visTom() {
+      listeEl.textContent = '';
+      var tom = document.createElement('div');
+      tom.className = 'tom';
+      var ikon = document.createElement('span');
+      ikon.className = 'tom-ikon';
+      ikon.textContent = '🗣️';
+      var titel = document.createElement('div');
+      titel.className = 'tom-titel';
+      titel.textContent = 'Nævnet har fri';
+      var p = document.createElement('p');
+      p.textContent = 'Ingen ord er indstillet endnu. Sproget er — indtil videre — rent.';
+      tom.appendChild(ikon);
+      tom.appendChild(titel);
+      tom.appendChild(p);
+      listeEl.appendChild(tom);
+    }
+
+    function render() {
+      return window.DB.getWords().then(function (ord) {
+        if (!ord || !ord.length) { visTom(); return; }
+        // Nyeste indstillinger oeverst.
+        ord = ord.slice().sort(function (a, b) {
+          return String(b.oprettet || '').localeCompare(String(a.oprettet || ''));
+        });
+        var minister = erMinister();
+        listeEl.textContent = '';
+        for (var i = 0; i < ord.length; i++) {
+          listeEl.appendChild(byggRaekke(ord[i], minister));
+        }
+      });
+    }
+
+    /* ---------- Indstil nyt ord ---------- */
+    var ordArk = document.getElementById('ord-ark');
+    var ordForm = document.getElementById('ord-form');
+    var ordInput = document.getElementById('ord-input');
+    var ordFelt = document.getElementById('felt-ord');
+    var ordFejl = document.getElementById('ord-fejl');
+
+    document.getElementById('indstil-knap').addEventListener('click', function () {
+      ordForm.reset();
+      ordFelt.classList.remove('har-fejl');
+      ordFejl.classList.add('skjult');
+      window.App.ark.open(ordArk);
+      setTimeout(function () { ordInput.focus(); }, 220);
+    });
+    document.getElementById('ark-luk').addEventListener('click', function () {
+      window.App.ark.close(ordArk);
+    });
+
+    ordForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var tekst = (ordInput.value || '').trim();
+      if (!tekst) {
+        ordFelt.classList.add('har-fejl');
+        ordFejl.classList.remove('skjult');
+        ordInput.focus();
+        return;
+      }
+      window.DB.addWord({ ord: tekst }).then(function () {
+        window.App.ark.close(ordArk);
+        window.App.toast('»' + tekst + '« er indstillet. Nævnet vender tilbage.');
+        return render();
+      }).catch(function (err) {
+        window.App.toast('Indstillingen blev afvist ved døren. Prøv igen.');
+        if (window.console && console.error) console.error(err);
+      });
+    });
+
+    /* ---------- Afsig dom (kun Boedekasseministeren) ---------- */
+    var domArk = document.getElementById('dom-ark');
+    var domForm = document.getElementById('dom-form');
+    var domWordId = document.getElementById('dom-word-id');
+    var domStatus = document.getElementById('dom-status');
+    var domBegrundelse = document.getElementById('dom-begrundelse');
+    var domUnder = document.getElementById('dom-ark-under');
+
+    function aabnDomArk(o) {
+      if (!erMinister()) return;
+      domWordId.value = o.id;
+      domStatus.value = o.status || 'afventer';
+      domBegrundelse.value = o.begrundelse || '';
+      domUnder.textContent = '»' + o.ord + '« — nævnet sætter sig til rette.';
+      window.App.ark.open(domArk);
+    }
+
+    document.getElementById('dom-ark-luk').addEventListener('click', function () {
+      window.App.ark.close(domArk);
+    });
+
+    domForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!erMinister()) return;
+      var id = domWordId.value;
+      var status = domStatus.value;
+      var begrundelse = (domBegrundelse.value || '').trim();
+      window.DB.ruleWord(id, { status: status, begrundelse: begrundelse }).then(function () {
+        window.App.ark.close(domArk);
+        var melding = status === 'doemt' ? 'Dommen er faldet. Sproget er renset.'
+                    : status === 'frikendt' ? 'Frikendt. Nævnet beklager.'
+                    : 'Sat til side. Nævnet tygger videre.';
+        window.App.toast(melding);
+        return render();
+      }).catch(function (err) {
+        window.App.toast('Dommen kunne ikke afsiges. Nævnet prøver igen.');
+        if (window.console && console.error) console.error(err);
+      });
+    });
+
+    /* ---------- Opstart ---------- */
+    render().catch(function (err) {
+      visTom();
+      window.App.toast('Nævnet kunne ikke kaldes ind. Prøv at åbne døren igen.');
+      if (window.console && console.error) console.error(err);
+    });
+  })();
+  </script>
+</body>
+</html>

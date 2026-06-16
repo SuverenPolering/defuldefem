@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>De Fulde Fem — Bødekassen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-side="boder">
+
+  <div class="skilt">
+    <div class="skilt-braet">
+      <h1>Bødekassen</h1>
+      <span class="fem">De Fulde Fem</span>
+    </div>
+    <div class="vimpler">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <p class="skilt-under">Føres af Bødekasseministeren. Tæl aldrig efter.</p>
+  </div>
+
+  <section class="sektion">
+    <div class="sektion-titel">
+      <h2>Kassens saldo</h2>
+      <span class="nips">til øl, naturligvis</span>
+    </div>
+    <div class="kort skaev-a" id="saldo-kort">
+      <span class="pin" style="top:-6px;left:24px"></span>
+      <span class="pin hav" style="top:-6px;right:30px"></span>
+      <span class="ring" style="bottom:-14px;right:-8px"></span>
+      <div class="kasse">
+        <div class="kasse-ikon">🪙</div>
+        <div>
+          <div class="kasse-saldo" id="kasse-saldo">—</div>
+          <div class="kasse-note">Beløb er eksempeldata, indtil det rigtige bødekatalog leveres.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sektion">
+    <div class="sektion-titel">
+      <h2>Skyld pr. mand</h2>
+      <span class="nips">ingen slipper</span>
+    </div>
+    <div class="kort skaev-b">
+      <span class="kapsel" style="top:-8px;left:30px"></span>
+      <div id="saldo-pr-medlem"></div>
+    </div>
+  </section>
+
+  <section class="sektion">
+    <div class="sektion-titel">
+      <h2>Bødeprotokollen</h2>
+      <span class="nips">alt bogføres</span>
+    </div>
+    <div class="kort skaev-a">
+      <span class="pin" style="top:-6px;right:34px"></span>
+      <span class="aeseloere"></span>
+      <div id="boede-liste"></div>
+    </div>
+  </section>
+
+  <section class="sektion">
+    <div class="sektion-titel">
+      <h2>Bødekataloget</h2>
+      <span class="nips">de faste takster</span>
+    </div>
+    <div class="kort skaev-b">
+      <span class="pin hav" style="top:-6px;left:28px"></span>
+      <div id="katalog-liste"></div>
+      <div class="handlinger hoejre kun-minister">
+        <button type="button" class="knap-lille" id="aabn-katalog">+ Ny takst</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="sektion">
+    <div class="sektion-titel">
+      <h2>Ønskelisten</h2>
+      <span class="nips">når kassen bugner</span>
+    </div>
+    <div class="kort skaev-a">
+      <span class="kapsel" style="top:-8px;right:32px"></span>
+      <div id="oenske-liste"></div>
+      <div class="handlinger hoejre">
+        <button type="button" class="knap-lille" id="aabn-oenske">+ Tilføj ønske</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="haandskrift">Tælles af Bødekasseministeren.</span>
+    Tæl aldrig efter. Det fører kun til flere bøder.
+  </footer>
+
+  <button type="button" class="tilfoej-knap kun-minister" id="aabn-boede" aria-label="Registrér bøde">
+    <span>+</span>
+  </button>
+
+  <div class="ark" id="ark-boede" aria-hidden="true">
+    <button type="button" class="luk-knap" data-luk aria-label="Luk">×</button>
+    <div class="ark-titel">Registrér bøde</div>
+    <span class="ark-under">Kendelsen er afsagt. Anke har ingen opsættende virkning.</span>
+    <form id="form-boede">
+      <label class="felt">
+        <span class="felt-label">Hvem har syndet?</span>
+        <select id="boede-medlem" required></select>
+      </label>
+      <label class="felt">
+        <span class="felt-label">Forseelse fra kataloget</span>
+        <select id="boede-katalog">
+          <option value="">— Fri kendelse (skriv selv) —</option>
+        </select>
+        <span class="felt-note">Vælger du en takst, udfyldes beløbet selv.</span>
+      </label>
+      <label class="felt" id="felt-fri">
+        <span class="felt-label">Fri kendelse</span>
+        <input type="text" id="boede-grund" placeholder="F.eks. Sagde nice under hovedretten" maxlength="120">
+        <span class="felt-note skjult" id="fejl-boede-grund" role="alert">Skriv hvad der blev syndet.</span>
+      </label>
+      <label class="felt">
+        <span class="felt-label">Beløb (kr)</span>
+        <input type="number" id="boede-beloeb" min="0" step="5" inputmode="numeric" placeholder="10" required>
+      </label>
+      <label class="felt">
+        <span class="felt-label">Dato</span>
+        <input type="date" id="boede-dato" required>
+      </label>
+      <button type="submit" class="knap knap-bred">Slå dommen fast</button>
+    </form>
+  </div>
+
+  <div class="ark" id="ark-katalog" aria-hidden="true">
+    <button type="button" class="luk-knap" data-luk aria-label="Luk">×</button>
+    <div class="ark-titel" id="katalog-ark-titel">Ny takst</div>
+    <span class="ark-under">Taksten gælder fra nu. Den forhandles ikke.</span>
+    <form id="form-katalog">
+      <input type="hidden" id="katalog-id">
+      <label class="felt">
+        <span class="felt-label">Forseelse</span>
+        <input type="text" id="katalog-forseelse" placeholder="F.eks. Et engelsk ord (pr. stk.)" maxlength="120" required>
+        <span class="felt-note skjult" id="fejl-katalog-forseelse" role="alert">Forseelsen mangler navn.</span>
+      </label>
+      <label class="felt">
+        <span class="felt-label">Takst (kr)</span>
+        <input type="number" id="katalog-takst" min="0" step="5" inputmode="numeric" placeholder="10" required>
+      </label>
+      <button type="submit" class="knap knap-bred">Før i kataloget</button>
+    </form>
+  </div>
+
+  <div class="ark" id="ark-oenske" aria-hidden="true">
+    <button type="button" class="luk-knap" data-luk aria-label="Luk">×</button>
+    <div class="ark-titel">Tilføj ønske</div>
+    <span class="ark-under">Hvad skal kassen bruges på, når den engang bugner?</span>
+    <form id="form-oenske">
+      <label class="felt">
+        <span class="felt-label">Ønske</span>
+        <input type="text" id="oenske-tekst" placeholder="F.eks. En ordentlig ølkøler til havemøblerne" maxlength="140" required>
+        <span class="felt-note skjult" id="fejl-oenske-tekst" role="alert">Et tomt ønske er bare en tom seddel.</span>
+      </label>
+      <button type="submit" class="knap knap-bred">Hæng det op</button>
+    </form>
+  </div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/db.js"></script>
+  <script src="assets/js/seed.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    var sess = (window.Auth && Auth.current) ? Auth.current() : null;
+    var erMinister = !!(sess && sess.rolle === "boedekasseminister");
+
+    var membersCache = [];
+    var katalogCache = [];
+
+    function esc(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function markerFejl(feltId, fejlId) {
+      var inp = document.getElementById(feltId);
+      if (!inp) return;
+      inp.setAttribute("aria-invalid", "true");
+      if (fejlId) {
+        inp.setAttribute("aria-describedby", fejlId);
+        var f = document.getElementById(fejlId);
+        if (f) f.classList.remove("skjult");
+      }
+      if (inp.parentNode) inp.parentNode.classList.add("har-fejl");
+      if (inp.focus) inp.focus();
+    }
+
+    function rydFejl(feltId, fejlId) {
+      var inp = document.getElementById(feltId);
+      if (!inp) return;
+      inp.removeAttribute("aria-invalid");
+      inp.removeAttribute("aria-describedby");
+      if (fejlId) {
+        var f = document.getElementById(fejlId);
+        if (f) f.classList.add("skjult");
+      }
+      if (inp.parentNode) inp.parentNode.classList.remove("har-fejl");
+    }
+
+    function navnFor(memberId) {
+      for (var i = 0; i < membersCache.length; i++) {
+        if (membersCache[i].id === memberId) return membersCache[i].navn;
+      }
+      return "Ukendt synder";
+    }
+
+    function renderSaldo() {
+      return DB.getBalance().then(function (sum) {
+        document.getElementById("kasse-saldo").textContent = App.formatKr(sum);
+      });
+    }
+
+    function renderSaldoPrMedlem() {
+      return DB.getBalanceByMember().then(function (liste) {
+        var el = document.getElementById("saldo-pr-medlem");
+        if (!liste.length) {
+          el.innerHTML = '<div class="tom"><span class="tom-ikon">🪙</span>' +
+            '<div class="tom-titel">Tom kasse, ren samvittighed</div>' +
+            '<p>Ingen har syndet endnu. Det varer.</p></div>';
+          return;
+        }
+        var html = "";
+        liste.forEach(function (r) {
+          var klasse = r.beloeb > 0 ? "saldo-belob skyld" : "saldo-belob";
+          html += '<div class="saldo-raekke">' +
+            "<span>" + esc(r.navn) + "</span>" +
+            '<span class="' + klasse + '">' + App.formatKr(r.beloeb) + "</span>" +
+            "</div>";
+        });
+        el.innerHTML = html;
+      });
+    }
+
+    function renderBoeder() {
+      return DB.getFines().then(function (fines) {
+        var el = document.getElementById("boede-liste");
+        if (!fines.length) {
+          el.innerHTML = '<div class="tom"><span class="tom-ikon">📜</span>' +
+            '<div class="tom-titel">Blankt protokol-ark</div>' +
+            '<p>Ingen bøder ført endnu. Mistænkeligt stille.</p></div>';
+          return;
+        }
+        var sorteret = fines.slice().sort(function (a, b) {
+          return String(b.dato || "").localeCompare(String(a.dato || ""));
+        });
+        var html = "";
+        sorteret.forEach(function (f) {
+          html += '<div class="boede">' +
+            '<div class="grund">' +
+              "<em>" + esc(f.grund) + "</em>" +
+              '<span class="hvem">' + esc(navnFor(f.memberId)) + " · " + esc(App.formatDato(f.dato)) + "</span>" +
+            "</div>" +
+            '<div class="takst">' + App.formatKr(f.beloeb) +
+              (erMinister
+                ? ' <button type="button" class="knap-lille fare" data-slet-boede="' + esc(f.id) + '">Slet</button>'
+                : "") +
+            "</div>" +
+          "</div>";
+        });
+        el.innerHTML = html;
+
+        if (erMinister) {
+          var knapper = el.querySelectorAll("[data-slet-boede]");
+          for (var i = 0; i < knapper.length; i++) {
+            knapper[i].addEventListener("click", function () {
+              var id = this.getAttribute("data-slet-boede");
+              if (!window.confirm("Slette bøden? Bødekasseministeren tilgiver, men glemmer ikke.")) return;
+              DB.removeFine(id).then(function () {
+                App.toast("Bøden er slettet. Held og lykke næste gang.");
+                opdaterAlt();
+              }).catch(function (e) {
+                App.toast("Bødekassen driller. Bøden blev ikke slettet — prøv igen.");
+                if (window.console && console.error) console.error(e);
+              });
+            });
+          }
+        }
+      });
+    }
+
+    function renderKatalog() {
+      return DB.getCatalog().then(function (katalog) {
+        katalogCache = katalog;
+        fyldKatalogVaelger();
+        var el = document.getElementById("katalog-liste");
+        if (!katalog.length) {
+          el.innerHTML = '<div class="tom"><span class="tom-ikon">📖</span>' +
+            '<div class="tom-titel">Tomt katalog</div>' +
+            '<p>Ingen takster endnu. Det er nærmest en forseelse i sig selv.</p></div>';
+          return;
+        }
+        var html = "";
+        katalog.forEach(function (k) {
+          html += '<div class="katalog-raekke">' +
+            '<span class="forseelse">' + esc(k.forseelse) + "</span>" +
+            '<span class="takst">' + App.formatKr(k.takst) +
+              (erMinister
+                ? ' <button type="button" class="knap-lille" data-rediger-katalog="' + esc(k.id) + '">Ret</button>' +
+                  ' <button type="button" class="knap-lille fare" data-slet-katalog="' + esc(k.id) + '">Slet</button>'
+                : "") +
+            "</span>" +
+          "</div>";
+        });
+        el.innerHTML = html;
+
+        if (erMinister) {
+          var ret = el.querySelectorAll("[data-rediger-katalog]");
+          for (var i = 0; i < ret.length; i++) {
+            ret[i].addEventListener("click", function () {
+              aabnKatalogArk(this.getAttribute("data-rediger-katalog"));
+            });
+          }
+          var slet = el.querySelectorAll("[data-slet-katalog]");
+          for (var j = 0; j < slet.length; j++) {
+            slet[j].addEventListener("click", function () {
+              var id = this.getAttribute("data-slet-katalog");
+              if (!window.confirm("Fjerne taksten fra kataloget?")) return;
+              DB.removeCatalogItem(id).then(function () {
+                App.toast("Taksten er strøget.");
+                renderKatalog();
+              }).catch(function (e) {
+                App.toast("Bødekassen driller. Taksten blev ikke strøget — prøv igen.");
+                if (window.console && console.error) console.error(e);
+              });
+            });
+          }
+        }
+      });
+    }
+
+    function renderOensker() {
+      return DB.getWishlist().then(function (liste) {
+        var el = document.getElementById("oenske-liste");
+        if (!liste.length) {
+          el.innerHTML = '<div class="tom"><span class="tom-ikon">🍺</span>' +
+            '<div class="tom-titel">Ingen ønsker endnu</div>' +
+            '<p>Hvad skulle kassen ellers være til?</p></div>';
+          return;
+        }
+        var html = "";
+        liste.forEach(function (w) {
+          html += '<div class="oenske">' + esc(w.tekst) + "</div>";
+        });
+        el.innerHTML = html;
+      });
+    }
+
+    function fyldKatalogVaelger() {
+      var sel = document.getElementById("boede-katalog");
+      if (!sel) return;
+      var html = '<option value="">— Fri kendelse (skriv selv) —</option>';
+      katalogCache.forEach(function (k) {
+        html += '<option value="' + esc(k.id) + '" data-takst="' + esc(k.takst) + '">' +
+          esc(k.forseelse) + " (" + App.formatKr(k.takst) + ")</option>";
+      });
+      sel.innerHTML = html;
+    }
+
+    function fyldMedlemsVaelger() {
+      return DB.getMembers().then(function (members) {
+        membersCache = members;
+        var sel = document.getElementById("boede-medlem");
+        var html = '<option value="" disabled selected>Vælg synder…</option>';
+        members.forEach(function (m) {
+          html += '<option value="' + esc(m.id) + '">' + esc(m.navn) + " · " + esc(m.titel) + "</option>";
+        });
+        sel.innerHTML = html;
+      });
+    }
+
+    function lukAlleArk() { App.ark.close(); }
+
+    document.querySelectorAll("[data-luk]").forEach(function (b) {
+      b.addEventListener("click", function () { lukAlleArk(); });
+    });
+
+    function aabnBoedeArk() {
+      var form = document.getElementById("form-boede");
+      form.reset();
+      rydFejl("boede-medlem");
+      rydFejl("boede-grund", "fejl-boede-grund");
+      rydFejl("boede-dato");
+      document.getElementById("felt-fri").classList.remove("skjult");
+      document.getElementById("boede-dato").value = new Date().toISOString().slice(0, 10);
+      App.ark.open(document.getElementById("ark-boede"));
+    }
+
+    document.getElementById("boede-katalog").addEventListener("change", function () {
+      var valgt = this.options[this.selectedIndex];
+      var friFelt = document.getElementById("felt-fri");
+      if (this.value) {
+        document.getElementById("boede-beloeb").value = valgt.getAttribute("data-takst");
+        document.getElementById("boede-grund").value = "";
+        rydFejl("boede-grund", "fejl-boede-grund");
+        friFelt.classList.add("skjult");
+      } else {
+        friFelt.classList.remove("skjult");
+      }
+    });
+
+    document.getElementById("boede-grund").addEventListener("input", function () {
+      if (this.value.trim()) rydFejl("boede-grund", "fejl-boede-grund");
+    });
+
+    document.getElementById("form-boede").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var memberId = document.getElementById("boede-medlem").value;
+      var katSel = document.getElementById("boede-katalog");
+      var katId = katSel.value;
+      var friGrund = document.getElementById("boede-grund").value.trim();
+      var beloeb = document.getElementById("boede-beloeb").value;
+      var dato = document.getElementById("boede-dato").value;
+
+      var grund = "";
+      if (katId) {
+        grund = katSel.options[katSel.selectedIndex].text.replace(/\s*\([^)]*\)\s*$/, "");
+      } else {
+        grund = friGrund;
+      }
+
+      if (!memberId) {
+        markerFejl("boede-medlem");
+        App.toast("Vælg en synder først.");
+        return;
+      }
+      rydFejl("boede-medlem");
+
+      if (!grund) {
+        markerFejl("boede-grund", "fejl-boede-grund");
+        App.toast("Skriv hvad der blev syndet.");
+        return;
+      }
+      rydFejl("boede-grund", "fejl-boede-grund");
+
+      if (!dato) {
+        markerFejl("boede-dato");
+        App.toast("Datoen mangler. Det gør datoer ikke her.");
+        return;
+      }
+      rydFejl("boede-dato");
+
+      DB.addFine({ memberId: memberId, grund: grund, beloeb: beloeb, dato: dato }).then(function () {
+        lukAlleArk();
+        App.toast("Dommen er slået fast. Pengene i kassen.");
+        opdaterAlt();
+      }).catch(function (e) {
+        App.toast("Bødekassen driller. Dommen kom ikke i protokollen — prøv igen.");
+        if (window.console && console.error) console.error(e);
+      });
+    });
+
+    function aabnKatalogArk(id) {
+      var form = document.getElementById("form-katalog");
+      form.reset();
+      rydFejl("katalog-forseelse", "fejl-katalog-forseelse");
+      var titel = document.getElementById("katalog-ark-titel");
+      if (id) {
+        var post = null;
+        for (var i = 0; i < katalogCache.length; i++) {
+          if (katalogCache[i].id === id) { post = katalogCache[i]; break; }
+        }
+        if (post) {
+          document.getElementById("katalog-id").value = post.id;
+          document.getElementById("katalog-forseelse").value = post.forseelse;
+          document.getElementById("katalog-takst").value = post.takst;
+          titel.textContent = "Redigér takst";
+        }
+      } else {
+        document.getElementById("katalog-id").value = "";
+        titel.textContent = "Ny takst";
+      }
+      App.ark.open(document.getElementById("ark-katalog"));
+    }
+
+    document.getElementById("form-katalog").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var id = document.getElementById("katalog-id").value;
+      var forseelse = document.getElementById("katalog-forseelse").value.trim();
+      var takst = document.getElementById("katalog-takst").value;
+      if (!forseelse) {
+        markerFejl("katalog-forseelse", "fejl-katalog-forseelse");
+        App.toast("Forseelsen mangler navn.");
+        return;
+      }
+      rydFejl("katalog-forseelse", "fejl-katalog-forseelse");
+      var post = { forseelse: forseelse, takst: takst };
+      if (id) post.id = id;
+      DB.upsertCatalogItem(post).then(function () {
+        lukAlleArk();
+        App.toast(id ? "Taksten er rettet." : "Ny takst i kataloget.");
+        renderKatalog();
+      }).catch(function (e) {
+        App.toast("Bødekassen driller. Taksten kom ikke i kataloget — prøv igen.");
+        if (window.console && console.error) console.error(e);
+      });
+    });
+
+    function aabnOenskeArk() {
+      document.getElementById("form-oenske").reset();
+      rydFejl("oenske-tekst", "fejl-oenske-tekst");
+      App.ark.open(document.getElementById("ark-oenske"));
+    }
+
+    document.getElementById("form-oenske").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var tekst = document.getElementById("oenske-tekst").value.trim();
+      if (!tekst) {
+        markerFejl("oenske-tekst", "fejl-oenske-tekst");
+        App.toast("Et tomt ønske er bare en tom seddel.");
+        return;
+      }
+      rydFejl("oenske-tekst", "fejl-oenske-tekst");
+      DB.addWish({ tekst: tekst }).then(function () {
+        lukAlleArk();
+        App.toast("Ønsket hænger på tavlen.");
+        renderOensker();
+      }).catch(function (e) {
+        App.toast("Bødekassen driller. Ønsket kom ikke op — prøv igen.");
+        if (window.console && console.error) console.error(e);
+      });
+    });
+
+    var bAabnBoede = document.getElementById("aabn-boede");
+    if (bAabnBoede) bAabnBoede.addEventListener("click", aabnBoedeArk);
+    var bAabnKatalog = document.getElementById("aabn-katalog");
+    if (bAabnKatalog) bAabnKatalog.addEventListener("click", function () { aabnKatalogArk(null); });
+    var bAabnOenske = document.getElementById("aabn-oenske");
+    if (bAabnOenske) bAabnOenske.addEventListener("click", aabnOenskeArk);
+
+    function opdaterAlt() {
+      return Promise.all([renderSaldo(), renderSaldoPrMedlem(), renderBoeder()]);
+    }
+
+    fyldMedlemsVaelger()
+      .then(renderKatalog)
+      .then(opdaterAlt)
+      .then(renderOensker);
+  })();
+  </script>
+</body>
+</html>

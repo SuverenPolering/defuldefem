@@ -1,0 +1,704 @@
+/* ============================================================
+   De Fulde Fem — app.css
+   LÅST BASE: variant-b4 »Forsamlingshuset ved Øhavet«
+   Stilen herunder er kopieret ordret fra variant-b4.html,
+   og derefter udvidet med app-komponenter i NØJAGTIG samme æstetik.
+   Vanilla CSS. Mobil-først. Body max-width 480px.
+   ============================================================ */
+
+:root{
+  --himmel:#f1f6f4;
+  --sand:#f8f3e6;
+  --hvid:#fefdf9;
+  --hav:#1f4e5f;
+  --hav-lys:#3a7287;
+  --rav:#d2952f;
+  --rav-moerk:#aa7621;
+  --koral:#c75146;
+  --groen:#4f7a45;
+  --linje:#dde6e1;
+  --tekst:#27424d;
+  --tekst-svag:#54707e; /* a11y: mørknet fra #6d8590 -> ~4,6:1 mod --hvid for AA på brødtekst */
+  /* a11y: mørkere koral KUN til informationsbærende tekst (saldo i restance,
+     nej-svar, fejl). Den lyse --koral beholdes til borders/pynt (nåle, vimpler,
+     mærker) hvor 4,5:1-kravet ikke gælder. */
+  --koral-tekst:#b5392f;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Barlow Semi Condensed',sans-serif;
+  background:
+    linear-gradient(180deg, var(--himmel) 0%, var(--sand) 100%);
+  color:var(--tekst);
+  max-width:480px;
+  margin:0 auto;
+  min-height:100vh;
+  padding-bottom:84px;
+}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 18px;
+  position:sticky;top:0;z-index:10;
+  background:rgba(241,246,244,.95);
+  backdrop-filter:blur(4px);
+  border-bottom:2px solid var(--hav);
+}
+.topbar-navn{
+  font-family:'Yellowtail',cursive;font-size:24px;color:var(--hav);
+}
+.fynsk-badge{
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--koral);border:1.5px solid var(--koral);
+  padding:3px 10px;border-radius:99px;
+  transform:rotate(-2deg);
+}
+
+/* Skiltet over døren */
+.skilt{text-align:center;padding:34px 20px 6px}
+.skilt-braet{
+  display:inline-block;
+  background:var(--hvid);
+  border:2px solid var(--hav);
+  border-radius:8px;
+  padding:20px 30px 16px;
+  box-shadow:0 4px 0 rgba(31,78,95,.25), 0 8px 22px rgba(31,78,95,.08);
+  position:relative;
+}
+.skilt-braet::before,.skilt-braet::after{
+  content:"";position:absolute;top:-12px;width:3px;height:14px;
+  background:var(--hav);border-radius:2px;
+}
+.skilt-braet::before{left:26%}
+.skilt-braet::after{right:26%}
+.skilt h1{
+  font-family:'Yellowtail',cursive;font-weight:400;
+  font-size:50px;line-height:1;color:var(--hav);
+  text-shadow:1px 2px 0 rgba(58,114,135,.18);
+}
+.skilt .fem{
+  display:block;
+  font-size:12px;font-weight:700;letter-spacing:.5em;text-transform:uppercase;
+  color:var(--rav-moerk);margin-top:8px;margin-right:-.5em;
+}
+.skilt-under{margin-top:14px;font-size:13px;color:var(--tekst-svag);font-style:italic}
+.vimpler{display:flex;justify-content:center;gap:2px;margin-top:14px;overflow:hidden}
+.vimpler span{
+  width:0;height:0;
+  border-left:9px solid transparent;border-right:9px solid transparent;
+  border-top:14px solid var(--rav);
+}
+.vimpler span:nth-child(odd){border-top-color:var(--koral)}
+.vimpler span:nth-child(3n){border-top-color:var(--hav)}
+
+.sektion{padding:0 16px;margin-top:26px}
+.sektion-titel{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.sektion-titel h2{
+  font-size:14px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--hav);white-space:nowrap;
+}
+.sektion-titel .nips{font-family:'Caveat',cursive;font-size:16px;color:var(--tekst-svag);transform:rotate(-1deg);white-space:nowrap}
+.sektion-titel::after{content:"";flex:1;height:2px;background:linear-gradient(90deg,var(--linje),transparent)}
+
+.kort{
+  background:var(--hvid);
+  border:1px solid var(--linje);
+  border-radius:10px;
+  padding:18px;
+  box-shadow:0 2px 8px rgba(31,78,95,.06);
+  position:relative;
+}
+/* Opslagstavle-detaljer: nåle, kapsler, tape, ølring, æseløre */
+.pin{
+  position:absolute;width:13px;height:13px;border-radius:50%;z-index:3;
+  background:radial-gradient(circle at 35% 30%, #e25550, var(--koral));
+  box-shadow:0 2px 3px rgba(31,78,95,.4), inset -2px -2px 3px rgba(0,0,0,.18);
+}
+.pin.hav{background:radial-gradient(circle at 35% 30%, #4d8aa1, var(--hav))}
+.kapsel{
+  position:absolute;width:19px;height:19px;border-radius:50%;z-index:3;
+  background:radial-gradient(circle at 35% 30%, #f4cd72 0%, var(--rav) 55%, var(--rav-moerk) 100%);
+  box-shadow:0 2px 3px rgba(31,78,95,.4), inset 0 0 0 2.5px rgba(170,118,33,.55);
+}
+.kapsel::before{
+  content:"";position:absolute;inset:-3px;border-radius:50%;
+  background:repeating-conic-gradient(var(--rav-moerk) 0 11deg, transparent 11deg 22deg);
+  -webkit-mask:radial-gradient(circle, transparent 55%, #000 57%);
+  mask:radial-gradient(circle, transparent 55%, #000 57%);
+}
+.tape{
+  position:absolute;width:66px;height:20px;z-index:3;
+  background:linear-gradient(180deg, rgba(244,240,224,.95), rgba(233,228,206,.85));
+  box-shadow:0 1px 3px rgba(31,78,95,.22);
+  clip-path:polygon(2% 0,98% 5%,100% 32%,96% 50%,100% 74%,97% 100%,3% 95%,0 68%,3% 45%,0 20%);
+}
+.ring{
+  position:absolute;width:76px;height:76px;border-radius:50%;z-index:0;pointer-events:none;
+  border:8px solid rgba(210,149,47,.25);
+  -webkit-mask:conic-gradient(#000 0 62%, rgba(0,0,0,.3) 62% 84%, #000 84%);
+  mask:conic-gradient(#000 0 62%, rgba(0,0,0,.3) 62% 84%, #000 84%);
+}
+.aeseloere{
+  position:absolute;bottom:0;right:0;width:0;height:0;z-index:2;
+  border-bottom:26px solid #d5e1dc;
+  border-left:26px solid transparent;
+  filter:drop-shadow(-2px -2px 2px rgba(31,78,95,.22));
+}
+.skaev-a{transform:rotate(.7deg)}
+.skaev-b{transform:rotate(-.6deg)}
+.joy-seddel{
+  margin:16px 26px 0 8px;
+  transform:rotate(6.5deg);
+  transform-origin:22px 6px;
+  box-shadow:0 7px 14px rgba(31,78,95,.16);
+}
+
+/* Næste møde */
+.moede-dato{font-size:26px;font-weight:700;line-height:1.1}
+.moede-dato em{font-style:normal;color:var(--hav-lys)}
+.moede-detalje{font-size:14px;color:var(--tekst-svag);margin-top:6px}
+.stadig{
+  margin-top:10px;font-family:'Caveat',cursive;font-size:17px;color:var(--koral);
+  transform:rotate(-.8deg);
+}
+.svar-liste{margin-top:12px;border-top:1px dashed var(--linje);padding-top:10px}
+.svar-raekke{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:14px}
+.svar{font-size:12px;font-style:italic;color:var(--tekst-svag)}
+.svar.ja{color:var(--groen);font-weight:700;font-style:normal}
+.svar.ja::before{content:"✓ "}
+.svar.nej{color:var(--koral-tekst)} /* a11y: mørkere koral til afbud-tekst */
+
+/* Bødekassen */
+.kasse{display:flex;align-items:center;gap:16px}
+.kasse-ikon{
+  width:56px;height:56px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(160deg,#eaf1ee,#d8e5e0);
+  border:2px solid var(--hav);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+}
+.kasse-saldo{font-size:36px;font-weight:700;color:var(--hav);line-height:1}
+.kasse-note{font-size:12px;color:var(--tekst-svag);font-style:italic;margin-top:4px}
+.boede-liste{margin-top:14px;border-top:1px dashed var(--linje);padding-top:6px}
+.boede{display:flex;justify-content:space-between;gap:10px;padding:8px 0;font-size:14px;border-bottom:1px dashed var(--linje)}
+.boede:last-child{border-bottom:none}
+.boede .grund em{font-style:normal;color:var(--koral);font-weight:700}
+.boede .hvem{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--tekst-svag);margin-top:2px}
+.boede .takst{font-weight:700;color:var(--hav);white-space:nowrap}
+
+/* Æresvæggen — øl top 3 */
+.aeresvaeg{display:flex;flex-direction:column;gap:10px}
+.oel{
+  display:flex;gap:12px;align-items:center;
+  position:relative;
+  background:var(--hvid);
+  border:1px solid var(--linje);border-radius:10px;
+  padding:13px 14px;
+  box-shadow:0 2px 6px rgba(31,78,95,.05);
+}
+.oel.guld{border:2px solid var(--rav);transform:rotate(-.5deg)}
+.oel:nth-child(2){transform:rotate(.4deg)}
+.oel:nth-child(3){transform:rotate(-.3deg)}
+.roset{
+  width:46px;height:46px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:18px;color:#fff;
+  position:relative;
+}
+.roset::after{
+  content:"";position:absolute;bottom:-9px;
+  width:0;height:0;
+  border-left:6px solid transparent;border-right:6px solid transparent;
+}
+.roset.r1{background:radial-gradient(circle at 35% 30%, #ddb14e, var(--rav-moerk))}
+.roset.r1::after{border-top:10px solid var(--rav-moerk)}
+.roset.r2{background:radial-gradient(circle at 35% 30%, #9eb6bd, var(--hav-lys))}
+.roset.r2::after{border-top:10px solid var(--hav-lys)}
+.roset.r3{background:radial-gradient(circle at 35% 30%, #d6826f, var(--koral))}
+.roset.r3::after{border-top:10px solid var(--koral)}
+.oel-info{flex:1;min-width:0}
+.oel-navn{font-weight:700;font-size:15px}
+.oel-meta{font-size:12px;color:var(--tekst-svag);font-style:italic;margin-top:2px}
+.oel-score{font-size:26px;font-weight:700;color:var(--hav)}
+
+/* Forbudte ord */
+.dom{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px dashed var(--linje);font-size:14px}
+.dom:last-child{border-bottom:none}
+.dom .ord{font-weight:700;font-size:15px}
+.dom .begrundelse{display:block;font-size:12px;font-style:italic;color:var(--tekst-svag);font-weight:400}
+.maerke{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:4px 9px;border-radius:5px;white-space:nowrap}
+.doemt{background:rgba(199,81,70,.1);color:var(--koral);border:1px solid rgba(199,81,70,.35)}
+.frikendt{background:rgba(79,122,69,.1);color:var(--groen);border:1px solid rgba(79,122,69,.35)}
+
+/* Regeringen */
+.medlem{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--linje)}
+.medlem:last-child{border-bottom:none}
+.brik{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%, var(--hav-lys), var(--hav));
+  color:#fff;font-weight:700;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--hvid);
+  box-shadow:0 2px 5px rgba(31,78,95,.2);
+}
+.medlem-navn{font-weight:700;font-size:15px}
+.medlem-titel{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--hav-lys)}
+
+footer{
+  margin-top:32px;padding:24px 20px;text-align:center;
+  border-top:2px solid var(--hav);
+  font-size:12px;font-style:italic;color:var(--tekst-svag);line-height:1.7;
+  background:var(--hvid);
+}
+footer .haandskrift{font-family:'Caveat',cursive;font-size:22px;color:var(--hav);display:block;margin-bottom:6px;font-style:normal}
+
+nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:480px;
+  background:var(--hvid);
+  border-top:2px solid var(--hav);
+  display:flex;z-index:20;
+  box-shadow:0 -4px 14px rgba(31,78,95,.07);
+}
+nav a{
+  flex:1;
+  /* a11y: garanterer ≥44px tap-target-højde (WCAG 2.5.5) og centrerer
+     ikon+label vertikalt. Label hævet til 11px for læsbarhed; inaktiv farve
+     følger automatisk det mørknede --tekst-svag. */
+  min-height:44px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:8px 2px 10px;
+  color:var(--tekst-svag);text-decoration:none;
+  font-size:11px;letter-spacing:.05em;font-weight:700;
+}
+nav a.aktiv{color:var(--hav)}
+nav a.aktiv .ikon{transform:scale(1.1)}
+nav a .ikon{display:block;font-size:17px;margin-bottom:2px}
+
+/* ============================================================
+   UDVIDELSE — app-komponenter i B4-æstetik
+   Samme palet, samme nåle/tape/ring-detaljer, lette rotationer,
+   håndskrevne accenter. Ingen nye fonte. Ingen AI-slop.
+   ============================================================ */
+
+/* ---- Formularer ---- */
+.felt{display:block;margin-bottom:14px}
+.felt-label,
+.felt > label{
+  display:block;
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--hav);
+  margin-bottom:6px;
+}
+.felt-note{
+  display:block;
+  font-family:'Caveat',cursive;font-size:15px;color:var(--tekst-svag);
+  margin-top:5px;transform:rotate(-.6deg);
+}
+
+input,select,textarea{
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:16px;
+  color:var(--tekst);
+  width:100%;
+  background:var(--hvid);
+  border:2px solid var(--linje);
+  border-radius:8px;
+  padding:11px 13px;
+  -webkit-appearance:none;appearance:none;
+  transition:border-color .12s ease, box-shadow .12s ease;
+}
+textarea{min-height:84px;resize:vertical;line-height:1.5}
+select{
+  background-image:linear-gradient(45deg,transparent 50%,var(--hav) 50%),
+    linear-gradient(135deg,var(--hav) 50%,transparent 50%);
+  background-position:calc(100% - 18px) calc(50% - 2px),calc(100% - 13px) calc(50% - 2px);
+  background-size:5px 5px,5px 5px;
+  background-repeat:no-repeat;
+  padding-right:36px;
+  cursor:pointer;
+}
+input::placeholder,textarea::placeholder{color:var(--tekst-svag);opacity:.7;font-style:italic}
+input:focus,select:focus,textarea:focus{
+  outline:none;
+  border-color:var(--hav);
+  box-shadow:0 0 0 3px rgba(31,78,95,.12);
+}
+input:disabled,select:disabled,textarea:disabled{
+  background:#eef2f0;color:var(--tekst-svag);cursor:not-allowed;
+}
+
+/* Tal-input til beløb/score: lidt strammere */
+input[type="number"]{font-weight:700}
+
+/* ---- Knapper ---- */
+/* Primær: malet havblå med hård offset-skygge à la .skilt-braet.
+   IKKE en pille, IKKE bouncy. */
+.knap{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--hvid);
+  background:var(--hav);
+  border:2px solid var(--hav);
+  border-radius:8px;
+  padding:12px 22px;
+  cursor:pointer;
+  text-decoration:none;
+  box-shadow:0 4px 0 var(--hav-lys), 0 8px 16px rgba(31,78,95,.14);
+  transition:transform .08s ease, box-shadow .08s ease, background-color .12s ease;
+  -webkit-appearance:none;appearance:none;
+}
+.knap:hover{background:#235665}
+.knap:active{
+  transform:translateY(3px);
+  box-shadow:0 1px 0 var(--hav-lys), 0 3px 8px rgba(31,78,95,.14);
+}
+.knap:disabled{
+  background:#9fb4ba;border-color:#9fb4ba;
+  box-shadow:0 4px 0 #c2d0d3;
+  cursor:not-allowed;
+}
+
+/* Sekundær: sand/hvid bræt med havblå kant — samme hårde skygge */
+.knap-sekundaer{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--hav);
+  background:var(--hvid);
+  border:2px solid var(--hav);
+  border-radius:8px;
+  padding:12px 22px;
+  cursor:pointer;
+  text-decoration:none;
+  box-shadow:0 4px 0 rgba(31,78,95,.25), 0 8px 16px rgba(31,78,95,.08);
+  transition:transform .08s ease, box-shadow .08s ease, background-color .12s ease;
+  -webkit-appearance:none;appearance:none;
+}
+.knap-sekundaer:hover{background:#f4efe1}
+.knap-sekundaer:active{
+  transform:translateY(3px);
+  box-shadow:0 1px 0 rgba(31,78,95,.25), 0 3px 8px rgba(31,78,95,.08);
+}
+
+/* Lille: kompakt variant til rækker, kort, inline-handlinger */
+.knap-lille{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--hav);
+  background:var(--hvid);
+  border:1.5px solid var(--hav);
+  border-radius:6px;
+  padding:6px 12px;
+  cursor:pointer;
+  text-decoration:none;
+  box-shadow:0 2px 0 rgba(31,78,95,.22);
+  transition:transform .08s ease, box-shadow .08s ease, background-color .12s ease;
+  -webkit-appearance:none;appearance:none;
+}
+.knap-lille:hover{background:#f4efe1}
+.knap-lille:active{transform:translateY(2px);box-shadow:0 0 0 rgba(31,78,95,.22)}
+.knap-lille.fare{color:var(--koral);border-color:var(--koral);box-shadow:0 2px 0 rgba(199,81,70,.3)}
+.knap-lille.fare:hover{background:rgba(199,81,70,.07)}
+
+/* Knap i fuld bredde — typisk submit i et ark */
+.knap-bred{width:100%}
+
+/* ---- Flydende »+«-knap (åbner ark) ---- */
+.tilfoej-knap{
+  position:fixed;
+  bottom:96px;
+  /* Hold FAB'en inde i den centrerede 480px-kolonne på alle bredder: 16px inde
+     fra kolonnens højrekant på brede skærme, 16px fra skærmkanten på telefoner.
+     (Tidligere left:50% + fast 188px gav right=410 på en 390px-telefon = overløb.) */
+  right:max(16px, calc(50vw - 240px + 16px));left:auto;
+  width:54px;height:54px;border-radius:50%;
+  /* a11y: --rav-moerk (#aa7621) giver hvid-på-mørk ~3,9:1 for +-symbolet
+     (WCAG 1.4.11/1.4.3 ≥3:1). Den hårde offset-skygge beholdes i en endnu
+     mørkere ravtone, så B4-æstetikken holdes. */
+  background:var(--rav-moerk);
+  border:2.5px solid var(--hvid);
+  color:var(--hvid);
+  font-size:30px;line-height:1;font-weight:400;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:25;
+  box-shadow:0 3px 0 #835c19, 0 6px 16px rgba(31,78,95,.28);
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.tilfoej-knap span{display:block;margin-top:-2px}
+.tilfoej-knap:active{
+  transform:translateY(3px);
+  box-shadow:0 0 0 var(--rav-moerk), 0 3px 10px rgba(31,78,95,.28);
+}
+
+/* ---- Ark / bottom-sheet (»+«-flows) ---- */
+.ark-baggrund{
+  position:fixed;inset:0;z-index:40;
+  background:rgba(31,78,95,.42);
+  backdrop-filter:blur(2px);
+  display:none;
+  opacity:0;
+  transition:opacity .18s ease;
+}
+.ark-baggrund.aaben{display:block;opacity:1}
+
+.ark{
+  position:fixed;
+  left:50%;bottom:0;transform:translateX(-50%) translateY(100%);
+  width:100%;max-width:480px;
+  background:var(--sand);
+  border-top:3px solid var(--hav);
+  border-radius:18px 18px 0 0;
+  padding:14px 20px calc(26px + env(safe-area-inset-bottom));
+  z-index:41;
+  max-height:88vh;overflow-y:auto;
+  box-shadow:0 -8px 30px rgba(31,78,95,.22);
+  transition:transform .22s cubic-bezier(.22,.61,.36,1);
+}
+.ark.aaben{transform:translateX(-50%) translateY(0)}
+/* Trækhåndtag — som en lille nål-skinne */
+.ark::before{
+  content:"";display:block;
+  width:46px;height:5px;border-radius:99px;
+  background:var(--linje);
+  margin:0 auto 16px;
+}
+.ark-titel{
+  font-size:14px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--hav);
+  margin-bottom:4px;
+}
+.ark-under{
+  font-family:'Caveat',cursive;font-size:17px;color:var(--tekst-svag);
+  transform:rotate(-.8deg);
+  margin-bottom:18px;display:block;
+}
+.ark form,.ark .ark-krop{margin-top:4px}
+
+.luk-knap{
+  position:absolute;top:14px;right:16px;
+  width:34px;height:34px;border-radius:50%;
+  background:var(--hvid);
+  border:2px solid var(--hav);
+  color:var(--hav);
+  font-size:18px;line-height:1;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:0 2px 0 rgba(31,78,95,.22);
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.luk-knap:active{transform:translateY(2px);box-shadow:0 0 0 rgba(31,78,95,.22)}
+
+/* ---- Tom tilstand ---- */
+.tom{
+  text-align:center;
+  padding:30px 22px;
+  color:var(--tekst-svag);
+}
+.tom .tom-ikon{font-size:34px;display:block;margin-bottom:10px;opacity:.65}
+.tom .tom-titel{
+  font-family:'Caveat',cursive;font-size:23px;color:var(--hav);
+  transform:rotate(-1deg);margin-bottom:4px;
+}
+.tom p{font-size:14px;font-style:italic;line-height:1.5}
+
+/* ---- Toast / fejl (i tonen) ---- */
+.toast{
+  position:fixed;
+  left:50%;bottom:104px;transform:translateX(-50%) translateY(8px);
+  width:calc(100% - 36px);max-width:444px;
+  background:var(--hav);
+  color:var(--hvid);
+  border:2px solid var(--hvid);
+  border-radius:10px;
+  padding:12px 16px;
+  font-size:14px;font-weight:500;line-height:1.4;
+  z-index:60;
+  box-shadow:0 6px 20px rgba(31,78,95,.3);
+  opacity:0;pointer-events:none;
+  transition:opacity .18s ease, transform .18s ease;
+}
+.toast.vis{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.fejl{background:var(--koral)}
+.toast.ok{background:var(--groen)}
+
+/* Inline fejlbesked i en formular */
+.fejl{
+  display:block;
+  font-size:13px;font-weight:600;color:var(--koral-tekst); /* a11y: AA på sand-ark */
+  margin-top:6px;
+  font-style:italic;
+}
+.felt.har-fejl input,
+.felt.har-fejl select,
+.felt.har-fejl textarea{
+  border-color:var(--koral);
+  box-shadow:0 0 0 3px rgba(199,81,70,.12);
+}
+
+/* ---- Faner / mapper (øl-sessioner pr. mødedato) ---- */
+.fane-raekke{
+  display:flex;gap:8px;
+  overflow-x:auto;
+  padding:4px 2px 10px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.fane-raekke::-webkit-scrollbar{display:none}
+.fane-raekke .fane{
+  flex:0 0 auto;
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:13px;font-weight:700;letter-spacing:.04em;
+  color:var(--hav);
+  background:var(--hvid);
+  border:1.5px solid var(--linje);
+  border-radius:8px 8px 0 0;
+  padding:9px 15px;
+  cursor:pointer;white-space:nowrap;
+  box-shadow:0 2px 0 rgba(31,78,95,.1);
+  transition:background-color .12s ease, color .12s ease;
+}
+.fane-raekke .fane.aktiv{
+  background:var(--hav);color:var(--hvid);
+  border-color:var(--hav);
+  box-shadow:0 2px 0 var(--hav-lys);
+}
+
+/* En mappe = sektion for én mødedato (manila-folder med æseløre) */
+.mappe{
+  position:relative;
+  background:var(--hvid);
+  border:1px solid var(--linje);
+  border-radius:0 10px 10px 10px;
+  padding:16px 18px;
+  margin-top:-2px;
+  box-shadow:0 2px 8px rgba(31,78,95,.06);
+}
+.mappe.skaev-a{transform:rotate(.5deg)}
+.mappe-fane{
+  display:inline-block;
+  font-family:'Caveat',cursive;font-size:18px;color:var(--rav-moerk);
+  background:var(--sand);
+  border:1px solid var(--linje);border-bottom:none;
+  border-radius:8px 8px 0 0;
+  padding:4px 14px 2px;
+  transform:rotate(-1deg);
+  margin-bottom:8px;
+}
+.mappe-tom{
+  font-family:'Caveat',cursive;font-size:17px;color:var(--tekst-svag);
+  text-align:center;padding:12px 0;transform:rotate(-.5deg);
+}
+
+/* ---- Rolle-styret synlighed ----
+   Skjul minister-kun-UI når rollen ikke er bødekasseminister.
+   Sæt fx <body data-rolle="..."> fra session. */
+[data-rolle]:not([data-rolle="boedekasseminister"]) .kun-minister{display:none !important}
+
+/* ---- Login (Dørmanden) ---- */
+.login-wrap{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:30px 22px;
+  text-align:center;
+}
+.login-wrap .skilt{padding-top:0}
+.login-kort{
+  width:100%;
+  background:var(--hvid);
+  border:2px solid var(--hav);
+  border-radius:12px;
+  padding:24px 20px 26px;
+  margin-top:8px;
+  position:relative;
+  box-shadow:0 4px 0 rgba(31,78,95,.25), 0 10px 26px rgba(31,78,95,.1);
+}
+.login-kort .pin{z-index:4}
+.login-titel{
+  font-size:13px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--hav);margin-bottom:4px;
+}
+.login-under{
+  font-family:'Caveat',cursive;font-size:18px;color:var(--tekst-svag);
+  transform:rotate(-.8deg);margin-bottom:20px;display:block;
+}
+
+/* Navnevælger: 5 brik-knapper (genbruger .brik-look) */
+.navnevaelger{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:14px;
+  margin-bottom:22px;
+}
+.navnevaelger .navn-brik{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  width:64px;
+  background:none;border:none;cursor:pointer;padding:4px 0;
+}
+.navnevaelger .brik{
+  width:48px;height:48px;font-size:18px;
+  transition:transform .1s ease, box-shadow .1s ease;
+}
+.navnevaelger .navn-brik .navn-label{
+  font-size:11px;font-weight:700;letter-spacing:.08em;
+  color:var(--tekst-svag);
+  line-height:1.1;
+}
+.navnevaelger .navn-brik.valgt .brik{
+  transform:scale(1.08);
+  box-shadow:0 0 0 3px var(--rav), 0 2px 6px rgba(31,78,95,.25);
+}
+.navnevaelger .navn-brik.valgt .navn-label{color:var(--hav)}
+/* Joy-briken hænger lidt skævt — som hans seddel */
+.navnevaelger .navn-brik.joy{transform:rotate(5deg)}
+.navnevaelger .navn-brik.joy .brik{
+  background:radial-gradient(circle at 35% 30%, #d6826f, var(--koral));
+}
+
+.kodeord-felt{margin-bottom:18px;text-align:left}
+.kodeord-felt label{
+  display:block;
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--hav);margin-bottom:6px;
+}
+.kodeord-felt input{text-align:center;letter-spacing:.18em;font-weight:700}
+
+.login-fejl{
+  font-family:'Caveat',cursive;font-size:18px;color:var(--koral-tekst); /* a11y: AA */
+  transform:rotate(-1deg);
+  margin-top:14px;min-height:22px;
+}
+
+/* ---- Små hjælpe-utilities i B4-ånd ---- */
+.haandskrift{font-family:'Caveat',cursive;color:var(--hav)}
+.skjult{display:none !important}
+.midt{text-align:center}
+.handlinger{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.handlinger.hoejre{justify-content:flex-end}
+
+/* Saldo pr. medlem-række (Bødekassen, oversigt) */
+.saldo-raekke{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:9px 0;border-bottom:1px dashed var(--linje);font-size:14px;
+}
+.saldo-raekke:last-child{border-bottom:none}
+.saldo-raekke .saldo-belob{font-weight:700;color:var(--hav);white-space:nowrap}
+.saldo-raekke .saldo-belob.skyld{color:var(--koral-tekst)} /* a11y: AA på restance-beløb */
+
+/* Ønskeliste-punkt */
+.oenske{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:8px 0;border-bottom:1px dashed var(--linje);font-size:14px;
+}
+.oenske:last-child{border-bottom:none}
+.oenske::before{content:"🍺";flex-shrink:0}
+
+/* Katalog-række (redigerbart bødekatalog) */
+.katalog-raekke{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 0;border-bottom:1px dashed var(--linje);font-size:14px;
+}
+.katalog-raekke:last-child{border-bottom:none}
+.katalog-raekke .forseelse{flex:1;min-width:0}
+.katalog-raekke .takst{font-weight:700;color:var(--hav);white-space:nowrap}
