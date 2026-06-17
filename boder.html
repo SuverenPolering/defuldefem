@@ -216,7 +216,7 @@
 
     function navnFor(memberId) {
       for (var i = 0; i < membersCache.length; i++) {
-        if (membersCache[i].id === memberId) return membersCache[i].navn;
+        if (membersCache[i].id === memberId) return membersCache[i].titel;
       }
       return "Ukendt synder";
     }
@@ -240,7 +240,7 @@
         liste.forEach(function (r) {
           var klasse = r.beloeb > 0 ? "saldo-belob skyld" : "saldo-belob";
           html += '<div class="saldo-raekke">' +
-            "<span>" + esc(r.navn) + "</span>" +
+            "<span>" + esc(navnFor(r.memberId)) + "</span>" +
             '<span class="' + klasse + '">' + App.formatKr(r.beloeb) + "</span>" +
             "</div>";
         });
@@ -372,7 +372,7 @@
                 valg.type = "button";
                 valg.className = "tildel-valg";
                 valg.setAttribute("role", "menuitem");
-                valg.textContent = m.navn;
+                valg.textContent = m.titel;
                 valg.addEventListener("click", function (ev) {
                   ev.stopPropagation();
                   DB.addFine({
@@ -381,7 +381,7 @@
                     beloeb: post.takst,
                     dato: new Date().toISOString().slice(0, 10)
                   }).then(function () {
-                    App.toast("Bøde tildelt " + m.navn + ": " + post.forseelse + " (" + App.formatKr(post.takst) + ")");
+                    App.toast("Bøde tildelt " + m.titel + ": " + post.forseelse + " (" + App.formatKr(post.takst) + ")");
                     lukTildelMenu();
                     opdaterAlt();
                   }).catch(function (err) {
@@ -465,7 +465,7 @@
         var sel = document.getElementById("boede-medlem");
         var html = '<option value="" disabled selected>Vælg synder…</option>';
         members.forEach(function (m) {
-          html += '<option value="' + esc(m.id) + '">' + esc(m.navn) + " · " + esc(m.titel) + "</option>";
+          html += '<option value="' + esc(m.id) + '">' + esc(m.titel) + "</option>";
         });
         sel.innerHTML = html;
       });

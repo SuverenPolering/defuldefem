@@ -473,7 +473,7 @@
           antalStemmer: scorer.length,
           dato: sess.dato || null,
           havdeMedId: b.havdeMedId || null,
-          havdeMedNavn: med ? med.navn : null
+          havdeMedNavn: med ? med.titel : null
         };
       });
 

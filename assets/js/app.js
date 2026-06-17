@@ -178,7 +178,7 @@
 
     // (b) topbar + nav. Login: hverken topbar eller nav — dørmands-kortet
     //     skal stå rent med sin egen .skilt-branding.
-    if (side !== 'login') {
+    if (side !== 'login' && side !== 'velkommen') {
       injicerTopbar();
       injicerNav(side);
     }

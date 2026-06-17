@@ -86,10 +86,14 @@
       </div>
 
       <div id="gruppe-rejse" hidden>
-        <div class="felt" id="felt-rejse-datoer">
-          <label>Datoer</label>
-          <div id="rejse-datoer"></div>
-          <button type="button" class="knap-sekundaer knap-lille" id="tilfoej-dato">+ Tilføj dato</button>
+        <div class="felt">
+          <label for="inp-fra">Fra</label>
+          <input type="date" id="inp-fra" name="fra">
+          <span class="felt-note">Når køletasken pakkes.</span>
+        </div>
+        <div class="felt">
+          <label for="inp-til">Til</label>
+          <input type="date" id="inp-til" name="til">
           <span class="felt-note">En rejse varer mere end én dag. Den flyttes alligevel ikke.</span>
         </div>
         <div class="felt">
@@ -179,7 +183,7 @@
     function ryd(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 
     function navnFor(id) {
-      return memberMap[id] ? memberMap[id].navn : id;
+      return memberMap[id] ? memberMap[id].titel : id;
     }
 
     // Sortér deltageres svar i den kanoniske rækkefølge.
@@ -260,7 +264,9 @@
         if (m.type === 'rejse') {
           kort.appendChild(el('span', 'rejse-maerke', 'Rejse'));
           var datoer = (m.datoer && m.datoer.length) ? m.datoer : (m.dato ? [m.dato] : []);
-          var datoTekst = datoer.map(function (d) { return App.formatDato(d); }).join(' · ');
+          var datoTekst = datoer.length > 1
+            ? App.formatDato(datoer[0]) + ' – ' + App.formatDato(datoer[1])
+            : (datoer.length ? App.formatDato(datoer[0]) : '');
           kort.appendChild(el('div', 'moede-dato', datoTekst));
         } else {
           kort.appendChild(el('div', 'moede-dato', App.formatDato(m.dato)));
@@ -339,7 +345,6 @@
     var typeRejseKnap = document.getElementById('type-rejse');
     var gruppeMoede = document.getElementById('gruppe-moede');
     var gruppeRejse = document.getElementById('gruppe-rejse');
-    var rejseDatoer = document.getElementById('rejse-datoer');
     var valgtType = 'moede';
 
     function saetType(type) {
@@ -353,40 +358,12 @@
       gruppeRejse.hidden = erMoede;
     }
 
-    // Tilføj en datolinje (date-input + ×-fjern) til rejse-listen.
-    function tilfoejDatoRaekke() {
-      var raekke = el('div', 'dato-raekke');
-      var inp = document.createElement('input');
-      inp.type = 'date';
-      raekke.appendChild(inp);
-      var fjern = el('button', 'dato-fjern', '×');
-      fjern.type = 'button';
-      fjern.setAttribute('aria-label', 'Fjern dato');
-      fjern.addEventListener('click', function () {
-        // Behold mindst én række.
-        if (rejseDatoer.querySelectorAll('.dato-raekke').length > 1) {
-          rejseDatoer.removeChild(raekke);
-        } else {
-          inp.value = '';
-        }
-      });
-      raekke.appendChild(fjern);
-      rejseDatoer.appendChild(raekke);
-    }
-
-    function nulstilRejseDatoer() {
-      ryd(rejseDatoer);
-      tilfoejDatoRaekke();
-    }
-
     typeMoedeKnap.addEventListener('click', function () { saetType('moede'); });
     typeRejseKnap.addEventListener('click', function () { saetType('rejse'); });
-    document.getElementById('tilfoej-dato').addEventListener('click', tilfoejDatoRaekke);
 
     function aabnNy() {
       nyForm.reset();
       saetType('moede');
-      nulstilRejseDatoer();
       nyBaggrund.classList.add('aaben');
       nyArk.classList.add('aaben');
       nyArk.setAttribute('aria-hidden', 'false');
@@ -418,17 +395,18 @@
         feltDato.classList.remove('har-fejl');
         datoer = [dato];
       } else {
-        var inputs = rejseDatoer.querySelectorAll('input[type="date"]');
-        for (var i = 0; i < inputs.length; i++) {
-          if (inputs[i].value) datoer.push(inputs[i].value);
-        }
+        var fra = document.getElementById('inp-fra').value;
+        var til = document.getElementById('inp-til').value;
         sted = document.getElementById('inp-destination').value.trim();
-        if (!datoer.length) {
-          document.getElementById('felt-rejse-datoer').classList.add('har-fejl');
-          App.toast('En rejse uden datoer er bare snak over en øl.');
+        if (!fra || !til) {
+          App.toast('En rejse uden start og slut er bare snak over en øl.');
           return;
         }
-        document.getElementById('felt-rejse-datoer').classList.remove('har-fejl');
+        if (til < fra) {
+          App.toast('En rejse kan ikke slutte før den begynder.');
+          return;
+        }
+        datoer = [fra, til];
       }
 
       DB.addMeeting({ type: valgtType, datoer: datoer, sted: sted, tema: tema }).then(function () {

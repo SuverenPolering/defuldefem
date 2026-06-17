@@ -69,7 +69,7 @@
       type: 'moede',
       dato: '2026-08-15',
       datoer: ['2026-08-15'],
-      sted: 'Hos Kim',
+      sted: 'Hos Finansministeren',
       tema: 'Belgien tur/retur — uden at rejse os fra havemøblerne',
       arkiveret: false
     };
@@ -78,7 +78,7 @@
       type: 'moede',
       dato: '2026-03-13',
       datoer: ['2026-03-13'],
-      sted: 'Hos Henning',
+      sted: 'Hos Turistministeren',
       tema: 'Trappist-aften',
       arkiveret: true
     };
@@ -87,7 +87,7 @@
       type: 'moede',
       dato: '2025-11-28',
       datoer: ['2025-11-28'],
-      sted: 'Hos Kim',
+      sted: 'Hos Finansministeren',
       tema: 'Vinterstærke sager',
       arkiveret: true
     };
@@ -107,8 +107,8 @@
      * to Stupid = 8,8 · Beer Geek Breakfast = 8,6. Vi sår 5 heltalsstemmer
      * (én pr. medlem) hvis snit = den viste score. */
     W('sessions', [
-      { id: 'sess_marts', dato: '2026-03-13', sted: 'Hos Henning', deltagere: ['henning', 'jakob', 'kim', 'anders', 'steffen'], tema: 'Trappist-aften' },
-      { id: 'sess_nov',   dato: '2025-11-28', sted: 'Hos Kim',     deltagere: ['henning', 'jakob', 'kim', 'steffen'],            tema: 'Vinterstærke sager' }
+      { id: 'sess_marts', dato: '2026-03-13', sted: 'Hos Turistministeren', deltagere: ['henning', 'jakob', 'kim', 'anders', 'steffen'], tema: 'Trappist-aften' },
+      { id: 'sess_nov',   dato: '2025-11-28', sted: 'Hos Finansministeren',     deltagere: ['henning', 'jakob', 'kim', 'steffen'],            tema: 'Vinterstærke sager' }
     ]);
 
     W('beers', [

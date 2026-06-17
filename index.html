@@ -337,8 +337,7 @@
       var init = m.initial || (m.navn ? m.navn.charAt(0) : '?');
       return '<div class="medlem">' +
         '<div class="brik">' + esc(init) + '</div>' +
-        '<div><div class="medlem-navn">' + esc(m.navn) + '</div>' +
-        '<div class="medlem-titel">' + esc(m.titel) + '</div></div>' +
+        '<div><div class="medlem-navn">' + esc(m.titel) + '</div></div>' +
       '</div>';
     }
 
@@ -367,7 +366,7 @@
   /* ---------- opstart: hent alt fra DB parallelt ---------- */
   function navnOpslag(members) {
     var map = {};
-    members.forEach(function (m) { map[m.id] = m.navn; });
+    members.forEach(function (m) { map[m.id] = m.titel; });
     return map;
   }
 

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>De Fulde Fem — Velkommen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+
+<!-- Kun layout/indtoning til denne splash. INGEN nye fonte/farver — kun B4-tokens. -->
+<style>
+  /* Fuldskærms-velkomst: ophæv app.css' body-max/padding så alt kan
+     centreres lodret+vandret i fuld højde. */
+  body[data-side="velkommen"]{
+    max-width:none;
+    margin:0;
+    padding:0;
+    min-height:100vh;
+    min-height:100dvh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;          /* hele siden er en »gå ind«-knap */
+    overflow:hidden;
+  }
+  .velkomst{
+    position:relative;
+    width:100%;
+    max-width:480px;         /* samme rytme som resten af appen */
+    padding:40px 24px 48px;
+    text-align:center;
+  }
+  /* Blød stagger-indtoning af de enkelte lag. */
+  .velkomst .skilt,
+  .velkomst .hilsen-stor,
+  .velkomst .hilsen-fast,
+  .velkomst .hint{
+    opacity:0;
+    transform:translateY(10px);
+    animation:vk-ind .8s ease forwards;
+  }
+  .velkomst .skilt{animation-delay:.05s}
+  .velkomst .hilsen-stor{animation-delay:.55s}
+  .velkomst .hilsen-fast{animation-delay:.95s}
+  .velkomst .hint{animation-delay:1.5s}
+  @keyframes vk-ind{
+    to{opacity:1;transform:translateY(0)}
+  }
+
+  .hilsen-stor{
+    font-family:'Caveat',cursive;
+    font-weight:700;
+    font-size:42px;
+    line-height:1.1;
+    color:var(--hav);
+    margin-top:30px;
+    transform:rotate(-1.5deg);
+  }
+  .hilsen-fast{
+    font-family:'Caveat',cursive;
+    font-weight:500;
+    font-size:26px;
+    line-height:1.2;
+    color:var(--koral);
+    margin-top:10px;
+    transform:rotate(.8deg);
+  }
+  .hint{
+    margin-top:34px;
+    font-size:13px;
+    font-style:italic;
+    color:var(--tekst-svag);
+    letter-spacing:.02em;
+  }
+
+  /* Respekter brugere der har slået bevægelse fra. */
+  @media (prefers-reduced-motion: reduce){
+    .velkomst .skilt,
+    .velkomst .hilsen-stor,
+    .velkomst .hilsen-fast,
+    .velkomst .hint{
+      animation:none;
+      opacity:1;
+      transform:none;
+    }
+  }
+</style>
+</head>
+<body data-side="velkommen">
+
+<!-- app.js udelader topbar/nav på data-side="velkommen" og kører login-guard. -->
+
+<main class="velkomst" id="velkomst-flade">
+
+  <!-- Skiltet over døren (B4) — med et par drysende nåle. -->
+  <section class="skilt">
+    <span class="pin" style="top:18px;left:14%;transform:rotate(-9deg)"></span>
+    <span class="pin hav" style="top:26px;right:12%;transform:rotate(7deg)"></span>
+    <div class="skilt-braet">
+      <h1>De Fulde Fem</h1>
+      <span class="fem">Fynsk Forening for Specialøl</span>
+    </div>
+    <div class="vimpler">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span>
+    </div>
+    <p class="skilt-under">Døren er lukket bag dig. Sådan skal det være.</p>
+  </section>
+
+  <!-- Stor håndskrevet hilsen — sættes af scriptet. -->
+  <div class="hilsen-stor" id="velkomst-hilsen">Velkommen indenfor</div>
+
+  <!-- Fast linje, altid den samme. -->
+  <div class="hilsen-fast">Pis' fedt at være samlet igen</div>
+
+  <!-- Svag hint-tekst. -->
+  <p class="hint">(tryk for at gå ind)</p>
+
+</main>
+
+<!-- Fundament: præcis inkluderingsrækkefølge -->
+<script src="assets/js/config.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/seed.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/app.js"></script>
+
+<!-- Side-script: byg hilsen, hold 5 sek, så ind på forsiden -->
+<script>
+(function () {
+  'use strict';
+
+  // Uden gyldig session: ingen velkomst — tilbage til Dørmanden.
+  var sess = Auth.current();
+  if (!sess) {
+    location.replace('login.html');
+    return;
+  }
+
+  var hilsenEl = document.getElementById('velkomst-hilsen');
+
+  // Find medlemmet bag sessionen og byg hilsen efter VELKOMST-HILSEN-reglen:
+  //   rolle 'joy'  -> »Velkommen indenfor Joy«
+  //   ellers       -> »Velkommen indenfor hr. « + titel (utrimmet).
+  DB.getMembers().then(function (members) {
+    var m = null;
+    for (var i = 0; i < (members || []).length; i++) {
+      if (members[i].id === sess.memberId) { m = members[i]; break; }
+    }
+
+    var tekst;
+    if (m && m.rolle === 'joy') {
+      tekst = 'Velkommen indenfor Joy';
+    } else if (m) {
+      tekst = 'Velkommen indenfor hr. ' + m.titel;
+    } else {
+      // Faldback hvis medlemmet ikke kunne findes — stadig en pæn hilsen.
+      tekst = 'Velkommen indenfor';
+    }
+    hilsenEl.textContent = tekst;
+  }).catch(function () {
+    // DB driller — behold den neutrale hilsen fra markup.
+  });
+
+  // Gå ind på forsiden.
+  var gaaetInd = false;
+  function gaaInd() {
+    if (gaaetInd) return;
+    gaaetInd = true;
+    location.replace('index.html');
+  }
+
+  // Auto-åbning efter 5 sekunder.
+  setTimeout(gaaInd, 5000);
+
+  // Klik/tryk hvor som helst — spring ventetiden over.
+  document.addEventListener('click', gaaInd);
+})();
+</script>
+
+</body>
+</html>

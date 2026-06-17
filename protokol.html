@@ -246,7 +246,7 @@
         if (b.type) metaDele.push(b.type);
         var pp = visPct(b.pct);
         if (pp) metaDele.push(pp);
-        if (b.havdeMedNavn) metaDele.push(fornavn(b.havdeMedNavn) + ' havde den med');
+        if (b.havdeMedNavn) metaDele.push(b.havdeMedNavn + ' havde den med');
         if (b.dato) metaDele.push(window.App.formatDato(b.dato).replace(/^[^ ]+ /, ''));
         meta.textContent = metaDele.join(' · ');
         info.appendChild(navn);
@@ -348,7 +348,7 @@
     if (s.deltagere && s.deltagere.length) {
       var navne = s.deltagere.map(function (id) {
         var m = memMap[id];
-        return m ? fornavn(m.navn) : id;
+        return m ? m.titel : id;
       });
       detaljer.push(navne.join(', '));
     }
@@ -707,7 +707,7 @@
     liste.forEach(function (m) {
       var o = document.createElement('option');
       o.value = m.id;
-      o.textContent = m.navn;
+      o.textContent = m.titel;
       sel.appendChild(o);
     });
   }
@@ -725,7 +725,7 @@
       cb.checked = true;
       cb.style.cssText = 'width:20px;height:20px;flex:0 0 auto;';
       lab.appendChild(cb);
-      lab.appendChild(document.createTextNode(m.navn));
+      lab.appendChild(document.createTextNode(m.titel));
       wrap.appendChild(lab);
     });
   }
