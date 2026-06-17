@@ -596,6 +596,8 @@ input[type="number"]{font-weight:700}
    Skjul minister-kun-UI når rollen ikke er bødekasseminister.
    Sæt fx <body data-rolle="..."> fra session. */
 [data-rolle]:not([data-rolle="boedekasseminister"]) .kun-minister{display:none !important}
+/* Skjul sekretær-kun-UI når rollen ikke er foreningssekretær. */
+[data-rolle]:not([data-rolle="foreningssekretaer"]) .kun-sekretaer{display:none !important}
 
 /* ---- Login (Dørmanden) ---- */
 .login-wrap{
@@ -702,3 +704,76 @@ input[type="number"]{font-weight:700}
 .katalog-raekke:last-child{border-bottom:none}
 .katalog-raekke .forseelse{flex:1;min-width:0}
 .katalog-raekke .takst{font-weight:700;color:var(--hav);white-space:nowrap}
+
+/* ---- »Tildel til«-menu (bødekataloget) ----
+   Lille popover under en knap. Hvid flade som .kort, samme bløde skygge.
+   Skjules som default via .skjult eller hidden-attribut i markup. */
+.tildel-wrap{position:relative;display:inline-block}
+.tildel-menu{
+  position:absolute;
+  top:calc(100% + 6px);left:0;
+  min-width:200px;
+  background:var(--hvid);
+  border:1px solid var(--linje);
+  border-radius:10px;
+  box-shadow:0 2px 8px rgba(31,78,95,.06);
+  z-index:30;
+  overflow:hidden;
+  padding:2px 0;
+}
+.tildel-menu[hidden]{display:none}
+.tildel-valg{
+  display:block;width:100%;
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:14px;color:var(--tekst);
+  text-align:left;
+  background:none;border:none;
+  border-bottom:1px dashed var(--linje);
+  padding:10px 12px;
+  cursor:pointer;
+  transition:background-color .12s ease;
+}
+.tildel-valg:last-child{border-bottom:none}
+.tildel-valg:hover{background:var(--himmel)}
+
+/* ---- Kalender: type-vælger (segmenteret knaprække) ----
+   Knapperne i markup genbruger .knap (valgt) / .knap-sekundaer (ikke valgt). */
+.type-vaelger{
+  display:flex;gap:8px;
+  margin-bottom:16px;
+}
+.type-vaelger .knap,
+.type-vaelger .knap-sekundaer{flex:1}
+
+/* Datolinje til rejse-datolisten: date-input + lille fjern-knap */
+.dato-raekke{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dato-raekke input{flex:1}
+.dato-fjern{
+  flex-shrink:0;
+  width:34px;height:34px;border-radius:6px;
+  background:var(--hvid);
+  border:1.5px solid var(--koral);
+  color:var(--koral);
+  font-size:16px;line-height:1;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:0 2px 0 rgba(199,81,70,.3);
+  transition:transform .08s ease, box-shadow .08s ease, background-color .12s ease;
+  -webkit-appearance:none;appearance:none;
+}
+.dato-fjern:hover{background:rgba(199,81,70,.07)}
+.dato-fjern:active{transform:translateY(2px);box-shadow:0 0 0 rgba(199,81,70,.3)}
+
+/* Lille mærke à la .maerke/.doemt, men i rav/hav til rejser */
+.rejse-maerke{
+  font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  padding:4px 9px;border-radius:5px;white-space:nowrap;
+  background:rgba(210,149,47,.12);
+  color:var(--rav-moerk);
+  border:1px solid rgba(210,149,47,.4);
+}
+
+/* ---- RSVP: preset-svar (kolonne af knapper) ----
+   Knapperne styles via .knap / .knap-sekundaer i markup. */
+.svar-valg{display:flex;flex-direction:column;gap:8px}
+.svar-valg .knap-sekundaer{justify-content:flex-start;text-align:left}

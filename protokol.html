@@ -40,7 +40,7 @@
 </footer>
 
 <!-- Flydende + : ny session -->
-<button class="tilfoej-knap" id="ny-session-knap" type="button" aria-label="Ny aften">
+<button class="tilfoej-knap kun-sekretaer" id="ny-session-knap" type="button" aria-label="Ny aften">
   <span>+</span>
 </button>
 
@@ -138,6 +138,9 @@
 <script>
 (function () {
   'use strict';
+
+  var sess = (window.Auth && Auth.current) ? Auth.current() : null;
+  var erSekretaer = !!(sess && sess.rolle === 'foreningssekretaer');
 
   var top3El   = document.getElementById('top3');
   var fanerEl  = document.getElementById('faner');
@@ -369,16 +372,18 @@
       mappe.appendChild(liste);
     }
 
-    // Tilføj øl-knap
-    var handlinger = document.createElement('div');
-    handlinger.className = 'handlinger';
-    var tilfoej = document.createElement('button');
-    tilfoej.type = 'button';
-    tilfoej.className = 'knap-lille';
-    tilfoej.textContent = '+ Øl';
-    tilfoej.addEventListener('click', function () { aabnOelArk(s); });
-    handlinger.appendChild(tilfoej);
-    mappe.appendChild(handlinger);
+    // Tilføj øl-knap — kun Foreningssekretæren må føre øl til protokols.
+    if (erSekretaer) {
+      var handlinger = document.createElement('div');
+      handlinger.className = 'handlinger';
+      var tilfoej = document.createElement('button');
+      tilfoej.type = 'button';
+      tilfoej.className = 'knap-lille';
+      tilfoej.textContent = '+ Øl';
+      tilfoej.addEventListener('click', function () { aabnOelArk(s); });
+      handlinger.appendChild(tilfoej);
+      mappe.appendChild(handlinger);
+    }
 
     return mappe;
   }
@@ -547,6 +552,7 @@
   /* ---------- + : ny session ---------- */
 
   document.getElementById('ny-session-knap').addEventListener('click', function () {
+    if (!erSekretaer) return;
     document.getElementById('form-session').reset();
     skjulFejl('fejl-s-dato');
     Array.prototype.forEach.call(

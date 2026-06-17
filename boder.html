@@ -312,7 +312,8 @@
             '<span class="forseelse">' + esc(k.forseelse) + "</span>" +
             '<span class="takst">' + App.formatKr(k.takst) +
               (erMinister
-                ? ' <button type="button" class="knap-lille" data-rediger-katalog="' + esc(k.id) + '">Ret</button>' +
+                ? ' <button type="button" class="knap-lille" data-tildel="' + esc(k.id) + '" aria-haspopup="true" aria-expanded="false">Tildel til ▾</button>' +
+                  ' <button type="button" class="knap-lille" data-rediger-katalog="' + esc(k.id) + '">Ret</button>' +
                   ' <button type="button" class="knap-lille fare" data-slet-katalog="' + esc(k.id) + '">Slet</button>'
                 : "") +
             "</span>" +
@@ -341,9 +342,90 @@
               });
             });
           }
+          var tildel = el.querySelectorAll("[data-tildel]");
+          for (var t = 0; t < tildel.length; t++) {
+            tildel[t].addEventListener("click", function (e) {
+              e.stopPropagation();
+              var knap = this;
+              var katId = knap.getAttribute("data-tildel");
+              var alleredeAaben = (aabenTildelKnap === knap);
+              lukTildelMenu();
+              if (alleredeAaben) return;
+
+              var post = null;
+              for (var p = 0; p < katalogCache.length; p++) {
+                if (katalogCache[p].id === katId) { post = katalogCache[p]; break; }
+              }
+              if (!post) return;
+
+              var wrap = document.createElement("span");
+              wrap.className = "tildel-wrap";
+              knap.parentNode.insertBefore(wrap, knap);
+              wrap.appendChild(knap);
+
+              var menu = document.createElement("div");
+              menu.className = "tildel-menu";
+              menu.setAttribute("role", "menu");
+
+              membersCache.forEach(function (m) {
+                var valg = document.createElement("button");
+                valg.type = "button";
+                valg.className = "tildel-valg";
+                valg.setAttribute("role", "menuitem");
+                valg.textContent = m.navn;
+                valg.addEventListener("click", function (ev) {
+                  ev.stopPropagation();
+                  DB.addFine({
+                    memberId: m.id,
+                    grund: post.forseelse,
+                    beloeb: post.takst,
+                    dato: new Date().toISOString().slice(0, 10)
+                  }).then(function () {
+                    App.toast("Bøde tildelt " + m.navn + ": " + post.forseelse + " (" + App.formatKr(post.takst) + ")");
+                    lukTildelMenu();
+                    opdaterAlt();
+                  }).catch(function (err) {
+                    App.toast("Bødekassen driller. Bøden blev ikke tildelt — prøv igen.");
+                    if (window.console && console.error) console.error(err);
+                  });
+                });
+                menu.appendChild(valg);
+              });
+
+              wrap.appendChild(menu);
+              knap.setAttribute("aria-expanded", "true");
+              aabenTildelKnap = knap;
+              aabenTildelMenu = menu;
+            });
+          }
         }
       });
     }
+
+    var aabenTildelKnap = null;
+    var aabenTildelMenu = null;
+
+    function lukTildelMenu() {
+      if (aabenTildelMenu && aabenTildelMenu.parentNode) {
+        aabenTildelMenu.parentNode.removeChild(aabenTildelMenu);
+      }
+      if (aabenTildelKnap) {
+        aabenTildelKnap.setAttribute("aria-expanded", "false");
+      }
+      aabenTildelKnap = null;
+      aabenTildelMenu = null;
+    }
+
+    document.addEventListener("click", function () { lukTildelMenu(); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" || e.keyCode === 27) {
+        if (aabenTildelKnap) {
+          var fokus = aabenTildelKnap;
+          lukTildelMenu();
+          if (fokus.focus) fokus.focus();
+        }
+      }
+    });
 
     function renderOensker() {
       return DB.getWishlist().then(function (liste) {
@@ -356,7 +438,11 @@
         }
         var html = "";
         liste.forEach(function (w) {
-          html += '<div class="oenske">' + esc(w.tekst) + "</div>";
+          html += '<div class="oenske">' + esc(w.tekst) +
+            (w.memberId
+              ? '<span class="hvem">Foreslået af ' + esc(navnFor(w.memberId)) + "</span>"
+              : "") +
+            "</div>";
         });
         el.innerHTML = html;
       });
@@ -527,7 +613,7 @@
         return;
       }
       rydFejl("oenske-tekst", "fejl-oenske-tekst");
-      DB.addWish({ tekst: tekst }).then(function () {
+      DB.addWish({ tekst: tekst, memberId: (sess ? sess.memberId : null) }).then(function () {
         lukAlleArk();
         App.toast("Ønsket hænger på tavlen.");
         renderOensker();

@@ -42,15 +42,18 @@ create table if not exists fine_catalog (
 
 -- Ønskeliste — hvad kassen skal bruges på.
 create table if not exists wishlist (
-  id       uuid primary key default gen_random_uuid(),
-  tekst    text not null,
-  oprettet timestamptz not null default now()
+  id        uuid primary key default gen_random_uuid(),
+  tekst     text not null,
+  member_id text references members(id) on delete set null, -- FK: hvem ønskede det (nullable)
+  oprettet  timestamptz not null default now()
 );
 
 -- Møder / ture.
 create table if not exists meetings (
   id         uuid primary key default gen_random_uuid(),
+  type       text not null default 'moede',  -- 'moede' | 'rejse'
   dato       date not null,
+  datoer     jsonb,                           -- liste af ISO-datoer (fx flerdages rejse)
   sted       text not null default '',
   tema       text not null default '',
   arkiveret  boolean not null default false,

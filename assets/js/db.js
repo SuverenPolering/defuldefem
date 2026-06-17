@@ -228,6 +228,7 @@
       var ny = {
         id: _id('wish'),
         tekst: w.tekst,
+        memberId: w.memberId || null,
         oprettet: new Date().toISOString()
       };
       liste.push(ny);
@@ -251,6 +252,8 @@
       return moeder.map(function (m) {
         var kopi = {
           id: m.id, dato: m.dato, sted: m.sted, tema: m.tema,
+          type: m.type || 'moede',
+          datoer: m.datoer || (m.dato ? [m.dato] : []),
           arkiveret: !!m.arkiveret
         };
         kopi.svar = rsvps.filter(function (r) { return r.meetingId === m.id; });
@@ -265,9 +268,13 @@
     }
     return _async(function () {
       var moeder = _read('meetings', []);
+      var datoer = (m.datoer && m.datoer.length) ? m.datoer.slice() : (m.dato ? [m.dato] : []);
+      datoer.sort(); // stigende ISO
       var ny = {
         id: _id('meet'),
-        dato: m.dato,
+        type: m.type || 'moede',
+        dato: datoer[0] || m.dato || '', // tidligste dato, til sortering/kompatibilitet
+        datoer: datoer,
         sted: m.sted || '',
         tema: m.tema || '',
         arkiveret: !!m.arkiveret
@@ -319,7 +326,17 @@
       var moeder = _read('meetings', []);
       var arkiv = moeder.filter(function (m) { return m.arkiveret; });
       arkiv.sort(function (a, b) { return (b.dato || '').localeCompare(a.dato || ''); });
-      return arkiv;
+      return arkiv.map(function (m) {
+        return {
+          id: m.id,
+          type: m.type || 'moede',
+          dato: m.dato,
+          datoer: m.datoer || (m.dato ? [m.dato] : []),
+          sted: m.sted,
+          tema: m.tema,
+          arkiveret: !!m.arkiveret
+        };
+      });
     });
   }
 

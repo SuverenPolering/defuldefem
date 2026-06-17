@@ -29,7 +29,7 @@
       { id: 'henning', navn: 'Henning Trab',     titel: 'Turistminister',         initial: 'H', rolle: 'minister' },
       { id: 'jakob',   navn: 'Jakob Jakobsen',   titel: 'Bødekasseminister',      initial: 'J', rolle: 'boedekasseminister' },
       { id: 'kim',     navn: 'Kim Hanen',        titel: 'Finansminister',         initial: 'K', rolle: 'minister' },
-      { id: 'anders',  navn: 'Anders Trab',      titel: 'Foreningssekretær',      initial: 'A', rolle: 'minister' },
+      { id: 'anders',  navn: 'Anders Trab',      titel: 'Foreningssekretær',      initial: 'A', rolle: 'foreningssekretaer' },
       { id: 'steffen', navn: 'Steffen Due Lund', titel: 'Joy — nyder bare turen', initial: 'S', rolle: 'joy' }
     ];
     W('members', members);
@@ -58,29 +58,35 @@
 
     /* ---------- ØNSKELISTE ---------- */
     W('wishlist', [
-      { id: 'wish_seed_1', tekst: 'En ordentlig ølkøler til havemøblerne',          oprettet: '2026-01-10T12:00:00.000Z' },
-      { id: 'wish_seed_2', tekst: 'Ny knappenål til Joys seddel (den hænger i én)', oprettet: '2026-02-02T12:00:00.000Z' },
-      { id: 'wish_seed_3', tekst: 'Fælles tur til et bryggeri — på Fyn, selvfølgelig', oprettet: '2026-03-14T12:00:00.000Z' }
+      { id: 'wish_seed_1', tekst: 'En ordentlig ølkøler til havemøblerne',          memberId: 'henning', oprettet: '2026-01-10T12:00:00.000Z' },
+      { id: 'wish_seed_2', tekst: 'Ny knappenål til Joys seddel (den hænger i én)', memberId: 'steffen', oprettet: '2026-02-02T12:00:00.000Z' },
+      { id: 'wish_seed_3', tekst: 'Fælles tur til et bryggeri — på Fyn, selvfølgelig', memberId: 'kim', oprettet: '2026-03-14T12:00:00.000Z' }
     ]);
 
     /* ---------- KALENDER: næste møde + arkiv ---------- */
     var moedeNaeste = {
       id: 'meet_seed_naeste',
+      type: 'moede',
       dato: '2026-08-15',
+      datoer: ['2026-08-15'],
       sted: 'Hos Kim',
       tema: 'Belgien tur/retur — uden at rejse os fra havemøblerne',
       arkiveret: false
     };
     var moedeArkiv = {
       id: 'meet_seed_marts',
+      type: 'moede',
       dato: '2026-03-13',
+      datoer: ['2026-03-13'],
       sted: 'Hos Henning',
       tema: 'Trappist-aften',
       arkiveret: true
     };
     var moedeArkiv2 = {
       id: 'meet_seed_nov',
+      type: 'moede',
       dato: '2025-11-28',
+      datoer: ['2025-11-28'],
       sted: 'Hos Kim',
       tema: 'Vinterstærke sager',
       arkiveret: true
@@ -89,10 +95,10 @@
 
     /* RSVP til næste møde (jf. B4). svar: 'ja' | 'nej' | 'maaske' */
     W('rsvps', [
-      { id: 'rsvp_1', meetingId: 'meet_seed_naeste', memberId: 'henning', svar: 'ja',  tekst: 'Kommer' },
-      { id: 'rsvp_2', meetingId: 'meet_seed_naeste', memberId: 'jakob',   svar: 'ja',  tekst: 'Kommer' },
-      { id: 'rsvp_3', meetingId: 'meet_seed_naeste', memberId: 'kim',     svar: 'ja',  tekst: 'Kommer (er vært)' },
-      { id: 'rsvp_4', meetingId: 'meet_seed_naeste', memberId: 'anders',  svar: 'nej', tekst: 'Må ikke for konen — anker dommen' },
+      { id: 'rsvp_1', meetingId: 'meet_seed_naeste', memberId: 'henning', svar: 'ja',  tekst: 'Tilsidesætter alt for DFF' },
+      { id: 'rsvp_2', meetingId: 'meet_seed_naeste', memberId: 'jakob',   svar: 'ja',  tekst: 'Kommer selvfølgelig' },
+      { id: 'rsvp_3', meetingId: 'meet_seed_naeste', memberId: 'kim',     svar: 'ja',  tekst: 'Har allerede pakket køletasken' },
+      { id: 'rsvp_4', meetingId: 'meet_seed_naeste', memberId: 'anders',  svar: 'nej', tekst: 'Må ikke for konen' },
       { id: 'rsvp_5', meetingId: 'meet_seed_naeste', memberId: 'steffen', svar: 'nej', tekst: 'Har hundesnor på den aften' }
     ]);
 
@@ -153,6 +159,38 @@
     return true;
   };
 
+  /* ---------- MIGRERING ----------
+   * seed() kører kun ved tomt univers. Allerede-seedet localStorage skal
+   * stadig have afstemt rolle+titel mod den kanoniske liste (f.eks. Anders'
+   * nye rolle 'foreningssekretaer'). migrer() kører ved HVERT load og
+   * skriver KUN tilbage hvis noget faktisk ændredes. */
+  var KANONISK = {
+    henning: { titel: 'Turistminister',         rolle: 'minister' },
+    jakob:   { titel: 'Bødekasseminister',      rolle: 'boedekasseminister' },
+    kim:     { titel: 'Finansminister',         rolle: 'minister' },
+    anders:  { titel: 'Foreningssekretær',      rolle: 'foreningssekretaer' },
+    steffen: { titel: 'Joy — nyder bare turen', rolle: 'joy' }
+  };
+
+  function migrer() {
+    var members = window.DB._read('members', []);
+    if (!members || !members.length) return false; // intet at migrere.
+
+    var aendret = false;
+    for (var i = 0; i < members.length; i++) {
+      var m = members[i];
+      var kan = KANONISK[m.id];
+      if (!kan) continue; // ukendt id — rør ikke.
+      if (m.rolle !== kan.rolle) { m.rolle = kan.rolle; aendret = true; }
+      if (m.titel !== kan.titel) { m.titel = kan.titel; aendret = true; }
+    }
+
+    if (aendret) window.DB._write('members', members);
+    return aendret;
+  }
+
   // Sår ved load (efter db.js er kørt). Idempotent.
   window.seed();
+  // Afstem allerede-seedet data mod kanonisk liste. Idempotent.
+  migrer();
 })();

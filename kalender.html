@@ -60,16 +60,45 @@
     <div class="ark-titel">Foreslå en dato</div>
     <span class="ark-under">Den bliver vedtaget. Og så flyttes den ikke.</span>
     <form id="ny-dato-form">
-      <div class="felt" id="felt-dato">
-        <label for="inp-dato">Dato</label>
-        <input type="date" id="inp-dato" name="dato" required>
-        <span class="felt-note">Vælg en lørdag. Det plejer at gå bedst.</span>
+      <div class="type-vaelger" role="radiogroup" aria-label="Hvad slår du op?">
+        <button type="button" class="knap" id="type-moede" data-type="moede" role="radio" aria-checked="true">Øl møde</button>
+        <button type="button" class="knap-sekundaer" id="type-rejse" data-type="rejse" role="radio" aria-checked="false">Øl rejse</button>
       </div>
-      <div class="felt">
-        <label for="inp-sted">Hvor</label>
-        <input type="text" id="inp-sted" name="sted" placeholder="Hos hvem? (fx Hos Kim)">
-        <span class="felt-note">Ingen jysk adresse, tak.</span>
+
+      <div id="gruppe-moede">
+        <div class="felt" id="felt-dato">
+          <label for="inp-dato">Dato</label>
+          <input type="date" id="inp-dato" name="dato">
+          <span class="felt-note">Vælg en lørdag. Det plejer at gå bedst.</span>
+        </div>
+        <div class="felt">
+          <label for="inp-sted">Hvor</label>
+          <select id="inp-sted" name="sted">
+            <option value="">— Vælg —</option>
+            <option value="Hos Turistministeren">Hos Turistministeren</option>
+            <option value="Hos Bødekasseministeren">Hos Bødekasseministeren</option>
+            <option value="Hos Finansministeren">Hos Finansministeren</option>
+            <option value="Hos Foreningssekretæren">Hos Foreningssekretæren</option>
+            <option value="Hos Joy">Hos Joy</option>
+          </select>
+          <span class="felt-note">Ingen jysk adresse, tak.</span>
+        </div>
       </div>
+
+      <div id="gruppe-rejse" hidden>
+        <div class="felt" id="felt-rejse-datoer">
+          <label>Datoer</label>
+          <div id="rejse-datoer"></div>
+          <button type="button" class="knap-sekundaer knap-lille" id="tilfoej-dato">+ Tilføj dato</button>
+          <span class="felt-note">En rejse varer mere end én dag. Den flyttes alligevel ikke.</span>
+        </div>
+        <div class="felt">
+          <label for="inp-destination">Hvor</label>
+          <input type="text" id="inp-destination" name="destination" placeholder="Hvor går turen hen?">
+          <span class="felt-note">Stadig på Fyn, formoder vi.</span>
+        </div>
+      </div>
+
       <div class="felt">
         <label for="inp-tema">Tema</label>
         <input type="text" id="inp-tema" name="tema" placeholder="Hvad skal vi drikke os igennem?">
@@ -89,18 +118,26 @@
     <span class="ark-under" id="svar-ark-under">Kommer du, eller har du en undskyldning?</span>
     <form id="svar-form">
       <input type="hidden" id="svar-meeting-id">
-      <div class="felt">
-        <span class="felt-label" id="svar-spoergsmaal">Kommer du?</span>
-        <div class="handlinger" style="margin-top:2px" role="radiogroup" aria-labelledby="svar-spoergsmaal">
-          <button type="button" class="knap-sekundaer" data-svar="ja" role="radio" aria-checked="false">Jeg kommer</button>
-          <button type="button" class="knap-sekundaer" data-svar="nej" role="radio" aria-checked="false">Kan ikke</button>
+      <div class="felt" role="radiogroup" aria-label="Dit svar">
+        <span class="felt-label">Jeg kommer</span>
+        <div class="svar-valg" id="svar-ja-valg">
+          <button type="button" class="knap-sekundaer" data-svar="ja" role="radio" aria-checked="false">Kommer selvfølgelig</button>
+          <button type="button" class="knap-sekundaer" data-svar="ja" role="radio" aria-checked="false">Tilsidesætter alt for DFF</button>
+          <button type="button" class="knap-sekundaer" data-svar="ja" role="radio" aria-checked="false">Har allerede pakket køletasken</button>
+          <button type="button" class="knap-sekundaer" data-svar="ja" role="radio" aria-checked="false">Møder ædru op — i det mindste til at begynde med</button>
+          <button type="button" class="knap-sekundaer" data-svar="ja" role="radio" aria-checked="false">Intet kan holde mig væk — heller ikke konen</button>
+        </div>
+        <span class="felt-label" style="margin-top:14px">Kan ikke</span>
+        <div class="svar-valg" id="svar-nej-valg">
+          <button type="button" class="knap-sekundaer" data-svar="nej" role="radio" aria-checked="false">Hænger på korset hele dagen</button>
+          <button type="button" class="knap-sekundaer" data-svar="nej" role="radio" aria-checked="false">Skal massere konen</button>
+          <button type="button" class="knap-sekundaer" data-svar="nej" role="radio" aria-checked="false">Har hundesnor på den aften</button>
+          <button type="button" class="knap-sekundaer" data-svar="nej" role="radio" aria-checked="false">Må ikke for konen</button>
+          <button type="button" class="knap-sekundaer" data-svar="nej" role="radio" aria-checked="false">Skal vande græsplænen den aften</button>
+          <button type="button" class="knap-sekundaer" data-svar="nej" role="radio" aria-checked="false">Har lovet at tælle frimærker</button>
+          <button type="button" class="knap-sekundaer" data-svar="nej" role="radio" aria-checked="false">Er på Fyn i ånden, men ikke i kroppen</button>
         </div>
         <span class="felt-note" id="svar-valgt-note"></span>
-      </div>
-      <div class="felt">
-        <label for="inp-svar-tekst">Bemærkning</label>
-        <input type="text" id="inp-svar-tekst" name="tekst" placeholder="fx »Har hundesnor på den aften«">
-        <span class="felt-note">Undskyldningen noteres. Den anerkendes sjældent.</span>
       </div>
       <div class="handlinger hoejre">
         <button type="submit" class="knap knap-bred">Indlevér svaret</button>
@@ -220,7 +257,14 @@
         kort.appendChild(pin('pin', 'top:-6px;left:12px'));
         kort.appendChild(pin('pin hav', 'top:-6px;right:12px'));
 
-        kort.appendChild(el('div', 'moede-dato', App.formatDato(m.dato)));
+        if (m.type === 'rejse') {
+          kort.appendChild(el('span', 'rejse-maerke', 'Rejse'));
+          var datoer = (m.datoer && m.datoer.length) ? m.datoer : (m.dato ? [m.dato] : []);
+          var datoTekst = datoer.map(function (d) { return App.formatDato(d); }).join(' · ');
+          kort.appendChild(el('div', 'moede-dato', datoTekst));
+        } else {
+          kort.appendChild(el('div', 'moede-dato', App.formatDato(m.dato)));
+        }
 
         var detalje = [];
         if (m.sted) detalje.push(m.sted);
@@ -291,7 +335,58 @@
     var nyArk = document.getElementById('ny-dato-ark');
     var nyForm = document.getElementById('ny-dato-form');
 
+    var typeMoedeKnap = document.getElementById('type-moede');
+    var typeRejseKnap = document.getElementById('type-rejse');
+    var gruppeMoede = document.getElementById('gruppe-moede');
+    var gruppeRejse = document.getElementById('gruppe-rejse');
+    var rejseDatoer = document.getElementById('rejse-datoer');
+    var valgtType = 'moede';
+
+    function saetType(type) {
+      valgtType = type;
+      var erMoede = type === 'moede';
+      typeMoedeKnap.className = erMoede ? 'knap' : 'knap-sekundaer';
+      typeRejseKnap.className = erMoede ? 'knap-sekundaer' : 'knap';
+      typeMoedeKnap.setAttribute('aria-checked', erMoede ? 'true' : 'false');
+      typeRejseKnap.setAttribute('aria-checked', erMoede ? 'false' : 'true');
+      gruppeMoede.hidden = !erMoede;
+      gruppeRejse.hidden = erMoede;
+    }
+
+    // Tilføj en datolinje (date-input + ×-fjern) til rejse-listen.
+    function tilfoejDatoRaekke() {
+      var raekke = el('div', 'dato-raekke');
+      var inp = document.createElement('input');
+      inp.type = 'date';
+      raekke.appendChild(inp);
+      var fjern = el('button', 'dato-fjern', '×');
+      fjern.type = 'button';
+      fjern.setAttribute('aria-label', 'Fjern dato');
+      fjern.addEventListener('click', function () {
+        // Behold mindst én række.
+        if (rejseDatoer.querySelectorAll('.dato-raekke').length > 1) {
+          rejseDatoer.removeChild(raekke);
+        } else {
+          inp.value = '';
+        }
+      });
+      raekke.appendChild(fjern);
+      rejseDatoer.appendChild(raekke);
+    }
+
+    function nulstilRejseDatoer() {
+      ryd(rejseDatoer);
+      tilfoejDatoRaekke();
+    }
+
+    typeMoedeKnap.addEventListener('click', function () { saetType('moede'); });
+    typeRejseKnap.addEventListener('click', function () { saetType('rejse'); });
+    document.getElementById('tilfoej-dato').addEventListener('click', tilfoejDatoRaekke);
+
     function aabnNy() {
+      nyForm.reset();
+      saetType('moede');
+      nulstilRejseDatoer();
       nyBaggrund.classList.add('aaben');
       nyArk.classList.add('aaben');
       nyArk.setAttribute('aria-hidden', 'false');
@@ -307,22 +402,41 @@
 
     nyForm.addEventListener('submit', function (e) {
       e.preventDefault();
-      var dato = document.getElementById('inp-dato').value;
-      var sted = document.getElementById('inp-sted').value.trim();
       var tema = document.getElementById('inp-tema').value.trim();
-      var feltDato = document.getElementById('felt-dato');
+      var datoer = [];
+      var sted = '';
 
-      if (!dato) {
-        feltDato.classList.add('har-fejl');
-        App.toast('En dato uden dato er bare en god intention.');
-        return;
+      if (valgtType === 'moede') {
+        var feltDato = document.getElementById('felt-dato');
+        var dato = document.getElementById('inp-dato').value;
+        sted = document.getElementById('inp-sted').value;
+        if (!dato) {
+          feltDato.classList.add('har-fejl');
+          App.toast('En dato uden dato er bare en god intention.');
+          return;
+        }
+        feltDato.classList.remove('har-fejl');
+        datoer = [dato];
+      } else {
+        var inputs = rejseDatoer.querySelectorAll('input[type="date"]');
+        for (var i = 0; i < inputs.length; i++) {
+          if (inputs[i].value) datoer.push(inputs[i].value);
+        }
+        sted = document.getElementById('inp-destination').value.trim();
+        if (!datoer.length) {
+          document.getElementById('felt-rejse-datoer').classList.add('har-fejl');
+          App.toast('En rejse uden datoer er bare snak over en øl.');
+          return;
+        }
+        document.getElementById('felt-rejse-datoer').classList.remove('har-fejl');
       }
-      feltDato.classList.remove('har-fejl');
 
-      DB.addMeeting({ dato: dato, sted: sted, tema: tema }).then(function () {
+      DB.addMeeting({ type: valgtType, datoer: datoer, sted: sted, tema: tema }).then(function () {
         nyForm.reset();
         lukNy();
-        App.toast('Dato slået op. Den er hermed vedtaget.');
+        App.toast(valgtType === 'rejse'
+          ? 'Rejsen er slået op. Køletasken pakker sig ikke selv.'
+          : 'Dato slået op. Den er hermed vedtaget.');
         return genindlaes();
       }).catch(function (e) {
         App.toast('Datoen ville ikke skrives ned. Prøv igen — den flytter sig ikke selv.');
@@ -336,18 +450,33 @@
     var svarForm = document.getElementById('svar-form');
     var valgtSvar = null;
 
-    function saetValgt(svar) {
-      valgtSvar = svar;
-      var note = document.getElementById('svar-valgt-note');
-      if (svar === 'ja') note.textContent = 'Noteret: du kommer. Godt.';
-      else if (svar === 'nej') note.textContent = 'Noteret: du kommer ikke. Skuffende.';
-      else note.textContent = '';
+    // Markér netop den valgte preset-knap (single-select over ALLE 12 knapper).
+    function markerKnap(valgtKnap) {
       var knapper = svarForm.querySelectorAll('[data-svar]');
       for (var i = 0; i < knapper.length; i++) {
-        var aktiv = knapper[i].getAttribute('data-svar') === svar;
+        var aktiv = knapper[i] === valgtKnap;
         knapper[i].className = aktiv ? 'knap' : 'knap-sekundaer';
         knapper[i].setAttribute('aria-checked', aktiv ? 'true' : 'false');
       }
+    }
+
+    function ryddValg() {
+      valgtSvar = null;
+      document.getElementById('svar-valgt-note').textContent = '';
+      var knapper = svarForm.querySelectorAll('[data-svar]');
+      for (var i = 0; i < knapper.length; i++) {
+        knapper[i].className = 'knap-sekundaer';
+        knapper[i].setAttribute('aria-checked', 'false');
+      }
+    }
+
+    function vaelgKnap(knap) {
+      valgtSvar = { svar: knap.getAttribute('data-svar'), tekst: knap.textContent };
+      var note = document.getElementById('svar-valgt-note');
+      note.textContent = valgtSvar.svar === 'ja'
+        ? 'Noteret: du kommer. Godt.'
+        : 'Noteret: du kommer ikke. Skuffende.';
+      markerKnap(knap);
     }
 
     function aabnSvar(meetingId) {
@@ -356,24 +485,23 @@
         return;
       }
       document.getElementById('svar-meeting-id').value = meetingId;
-      valgtSvar = null;
-      document.getElementById('svar-valgt-note').textContent = '';
-      var knapper = svarForm.querySelectorAll('[data-svar]');
-      for (var i = 0; i < knapper.length; i++) {
-        knapper[i].className = 'knap-sekundaer';
-        knapper[i].setAttribute('aria-checked', 'false');
-      }
+      ryddValg();
 
       DB.getMeetings().then(function (moeder) {
         var m = moeder.filter(function (x) { return x.id === meetingId; })[0];
         var mit = m ? (m.svar || []).filter(function (s) { return s.memberId === minId; })[0] : null;
         var under = document.getElementById('svar-ark-under');
         if (m) under.textContent = App.formatDato(m.dato);
-        if (mit) {
-          document.getElementById('inp-svar-tekst').value = mit.tekst || '';
-          if (mit.svar === 'ja' || mit.svar === 'nej') saetValgt(mit.svar);
-        } else {
-          document.getElementById('inp-svar-tekst').value = '';
+        if (mit && mit.tekst) {
+          // Forvælg den preset-knap hvis nuværende svar matcher en preset.
+          var knapper = svarForm.querySelectorAll('[data-svar]');
+          for (var i = 0; i < knapper.length; i++) {
+            if (knapper[i].getAttribute('data-svar') === mit.svar &&
+                knapper[i].textContent === mit.tekst) {
+              vaelgKnap(knapper[i]);
+              break;
+            }
+          }
         }
       }).catch(function (e) {
         // Arket er allerede åbnet nedenfor; her fejler kun forhåndsudfyldningen.
@@ -396,23 +524,22 @@
     var svarValgKnapper = svarForm.querySelectorAll('[data-svar]');
     for (var sv = 0; sv < svarValgKnapper.length; sv++) {
       svarValgKnapper[sv].addEventListener('click', function () {
-        saetValgt(this.getAttribute('data-svar'));
+        vaelgKnap(this);
       });
     }
 
     svarForm.addEventListener('submit', function (e) {
       e.preventDefault();
       var meetingId = document.getElementById('svar-meeting-id').value;
-      var tekst = document.getElementById('inp-svar-tekst').value.trim();
 
       if (!valgtSvar) {
         App.toast('Ja eller nej. Tavshed tæller som en bøde.');
         return;
       }
 
-      DB.setRSVP(meetingId, minId, { svar: valgtSvar, tekst: tekst }).then(function () {
+      DB.setRSVP(meetingId, minId, { svar: valgtSvar.svar, tekst: valgtSvar.tekst }).then(function () {
         lukSvar();
-        App.toast(valgtSvar === 'ja'
+        App.toast(valgtSvar.svar === 'ja'
           ? 'Du er noteret. Vi regner med dig.'
           : 'Undskyldningen er noteret. Ikke anerkendt.');
         return genindlaes();
