@@ -19,6 +19,57 @@
     return !m || !m.length;
   }
 
+  /* ---------- BØDEKATALOG (officielt, kategoriseret) ----------
+   * Bump KATALOG_VERSION når kataloget opdateres officielt — migrer() skriver
+   * så det nye katalog ud til alle (også allerede-seedet localStorage). */
+  var KATALOG_VERSION = 2;
+  var KATALOG = [
+    /* 1. Snak, telefon og bordopførsel */
+    { id: 'cat_01', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Ikke-danske ord', takst: 2 },
+    { id: 'cat_02', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Mobil på bordet', takst: 2 },
+    { id: 'cat_03', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Min. 2 siger »den har vi hørt«', takst: 2 },
+    { id: 'cat_04', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Starte seriøs politisk diskussion', takst: 2 },
+    { id: 'cat_05', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Søge teknologihjælp for at understøtte en påstand', takst: 2 },
+    { id: 'cat_06', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Forkert temperatur-brok', takst: 2 },
+    { id: 'cat_07', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Dårlig joke der får stilhed', takst: 5 },
+    { id: 'cat_08', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Far jokes', takst: 5 },
+    { id: 'cat_09', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Erklære sig enig med HT', takst: 4 },
+    { id: 'cat_10', kategori: 'Snak, telefon og bordopførsel', forseelse: 'Bøde til HT for at lokke til enighed', takst: 5 },
+    /* 2. Øl – spild og uheld */
+    { id: 'cat_11', kategori: 'Øl – spild og uheld', forseelse: 'Spilde lidt øl', takst: 2 },
+    { id: 'cat_12', kategori: 'Øl – spild og uheld', forseelse: 'Spilde mere end lidt øl', takst: 5 },
+    { id: 'cat_13', kategori: 'Øl – spild og uheld', forseelse: 'Vælte øl', takst: 10 },
+    { id: 'cat_14', kategori: 'Øl – spild og uheld', forseelse: 'Drikke øl før alle er klar', takst: 5 },
+    { id: 'cat_15', kategori: 'Øl – spild og uheld', forseelse: 'Medbringe den samme øl (bøde til begge)', takst: 5 },
+    { id: 'cat_16', kategori: 'Øl – spild og uheld', forseelse: 'Hælde øl ud (medmindre flertallet gør det)', takst: 15 },
+    /* 3. Øl – forkert eller dårlig øl */
+    { id: 'cat_17', kategori: 'Øl – forkert eller dårlig øl', forseelse: 'Ikke overholde øltema (pr. øl)', takst: 5 },
+    { id: 'cat_18', kategori: 'Øl – forkert eller dårlig øl', forseelse: 'Mødets dårligst karakterscorende øl', takst: 15 },
+    { id: 'cat_19', kategori: 'Øl – forkert eller dårlig øl', forseelse: 'Mødets næst-dårligst karakterscorende øl', takst: 10 },
+    { id: 'cat_20', kategori: 'Øl – forkert eller dårlig øl', forseelse: 'Mødets tredje-dårligst karakterscorende øl', takst: 5 },
+    /* 4. Glemt udstyr */
+    { id: 'cat_21', kategori: 'Glemt udstyr', forseelse: 'Glemme ølbræt', takst: 10 },
+    { id: 'cat_22', kategori: 'Glemt udstyr', forseelse: 'Glemme ølglas (pr. glas)', takst: 5 },
+    { id: 'cat_23', kategori: 'Glemt udstyr', forseelse: 'Glemme øl (pr. øl)', takst: 5 },
+    /* 5. Fremmøde og mødedisciplin */
+    { id: 'cat_24', kategori: 'Fremmøde og mødedisciplin', forseelse: 'Komme for sent (+ 2 kr pr. min efter 3 min)', takst: 5 },
+    { id: 'cat_25', kategori: 'Fremmøde og mødedisciplin', forseelse: 'Melde sent afbud til aftalt møde', takst: 100 },
+    { id: 'cat_26', kategori: 'Fremmøde og mødedisciplin', forseelse: 'Gå glip af øllets dag', takst: 50 },
+    { id: 'cat_27', kategori: 'Fremmøde og mødedisciplin', forseelse: 'Kaste op til et møde', takst: 10 },
+    /* 6. Ritualer: challenge og sang */
+    { id: 'cat_28', kategori: 'Ritualer: challenge og sang', forseelse: 'Ikke bestå sin challenge', takst: 10 },
+    { id: 'cat_29', kategori: 'Ritualer: challenge og sang', forseelse: 'Ikke hørt min. én af de tre tenorer (bøde til alle)', takst: 50 },
+    /* 7. Tøj */
+    { id: 'cat_30', kategori: 'Tøj', forseelse: 'Iført kjole / slips / hawaiiskjorte / sejlersko / tegnebog / hårbånd / turtleneck', takst: 5 },
+    { id: 'cat_31', kategori: 'Tøj', forseelse: 'Iført dobbelt denim', takst: 10 },
+    { id: 'cat_32', kategori: 'Tøj', forseelse: 'Ikke iført bælte / sokker', takst: 5 },
+    /* 8. Skade, gæster og status */
+    { id: 'cat_33', kategori: 'Skade, gæster og status', forseelse: 'Ødelægge glas', takst: 20 },
+    { id: 'cat_34', kategori: 'Skade, gæster og status', forseelse: 'Entré for gæster', takst: 20 },
+    { id: 'cat_35', kategori: 'Skade, gæster og status', forseelse: 'Mødets højeste skyldner', takst: 2 },
+    { id: 'cat_36', kategori: 'Skade, gæster og status', forseelse: 'Mødets mindste skyldner', takst: 5 }
+  ];
+
   window.seed = function seed() {
     if (_erTomt() === false) return false; // allerede sået — gør intet.
 
@@ -47,15 +98,9 @@
     /* ---------- KASSEN: penge i kassen (eksempeldata) ---------- */
     W('kasse_saldo', 1350);
 
-    /* ---------- BØDEKATALOG (faste takster, eksempler) ---------- */
-    W('catalog', [
-      { id: 'cat_seed_1', forseelse: 'Et engelsk ord (pr. stk.)',                  takst: 10 },
-      { id: 'cat_seed_2', forseelse: 'For sent (pr. påbegyndt 15 min.)',           takst: 25 },
-      { id: 'cat_seed_3', forseelse: 'Glemte selv at stille stolen op',            takst: 20 },
-      { id: 'cat_seed_4', forseelse: 'Foreslog at flytte datoen',                  takst: 100 },
-      { id: 'cat_seed_5', forseelse: 'Tællede efter Bødekasseministeren',          takst: 50 },
-      { id: 'cat_seed_6', forseelse: 'Antydede at noget jysk var bedre',           takst: 75 }
-    ]);
+    /* ---------- BØDEKATALOG (officielt, kategoriseret) ---------- */
+    W('catalog', KATALOG);
+    W('catalog_version', KATALOG_VERSION);
 
     /* ---------- ØNSKELISTE ---------- */
     W('wishlist', [
@@ -191,6 +236,15 @@
     }
 
     if (aendret) window.DB._write('members', members);
+
+    // Opdatér bødekataloget hvis en ny officiel version er udgivet
+    // (skriver det nye katalog ud til allerede-seedet localStorage).
+    if (window.DB._read('catalog_version', 0) !== KATALOG_VERSION) {
+      window.DB._write('catalog', KATALOG);
+      window.DB._write('catalog_version', KATALOG_VERSION);
+      aendret = true;
+    }
+
     return aendret;
   }
 

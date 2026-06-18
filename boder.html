@@ -148,6 +148,12 @@
     <form id="form-katalog">
       <input type="hidden" id="katalog-id">
       <label class="felt">
+        <span class="felt-label">Kategori</span>
+        <input type="text" id="katalog-kategori" list="katalog-kategorier" placeholder="F.eks. Tøj" maxlength="60" autocomplete="off">
+        <datalist id="katalog-kategorier"></datalist>
+        <span class="felt-note">Vælg en eksisterende eller skriv en ny.</span>
+      </label>
+      <label class="felt">
         <span class="felt-label">Forseelse</span>
         <input type="text" id="katalog-forseelse" placeholder="F.eks. Et engelsk ord (pr. stk.)" maxlength="120" required>
         <span class="felt-note skjult" id="fejl-katalog-forseelse" role="alert">Forseelsen mangler navn.</span>
@@ -379,9 +385,15 @@
             '<p>Ingen takster endnu. Det er nærmest en forseelse i sig selv.</p></div>';
           return;
         }
-        var html = "";
+        // Gruppér pr. kategori (bevarer først-set rækkefølge).
+        var grupper = [], gidx = {};
         katalog.forEach(function (k) {
-          html += '<div class="katalog-raekke">' +
+          var kat = k.kategori || "Andet";
+          if (!(kat in gidx)) { gidx[kat] = grupper.length; grupper.push({ kat: kat, items: [] }); }
+          grupper[gidx[kat]].items.push(k);
+        });
+        function katalogRaekke(k) {
+          return '<div class="katalog-raekke">' +
             '<span class="forseelse">' + esc(k.forseelse) + "</span>" +
             '<span class="takst">' + App.formatKr(k.takst) +
               (erMinister
@@ -393,8 +405,24 @@
                 : "") +
             "</span>" +
           "</div>";
+        }
+        var html = "";
+        grupper.forEach(function (g) {
+          html += '<div class="katalog-kategori">' + esc(g.kat) + "</div>";
+          g.items.forEach(function (k) { html += katalogRaekke(k); });
         });
         el.innerHTML = html;
+
+        // Datalist til kategori-feltet i redigér-arket (eksisterende kategorier).
+        var dl = document.getElementById("katalog-kategorier");
+        if (dl) {
+          dl.innerHTML = "";
+          grupper.forEach(function (g) {
+            var o = document.createElement("option");
+            o.value = g.kat;
+            dl.appendChild(o);
+          });
+        }
 
         if (erMinister) {
           var ret = el.querySelectorAll("[data-rediger-katalog]");
@@ -567,9 +595,19 @@
       var sel = document.getElementById("boede-katalog");
       if (!sel) return;
       var html = '<option value="">— Fri kendelse (skriv selv) —</option>';
+      var grupper = [], gidx = {};
       katalogCache.forEach(function (k) {
-        html += '<option value="' + esc(k.id) + '" data-takst="' + esc(k.takst) + '">' +
-          esc(k.forseelse) + " (" + App.formatKr(k.takst) + ")</option>";
+        var kat = k.kategori || "Andet";
+        if (!(kat in gidx)) { gidx[kat] = grupper.length; grupper.push({ kat: kat, items: [] }); }
+        grupper[gidx[kat]].items.push(k);
+      });
+      grupper.forEach(function (g) {
+        html += '<optgroup label="' + esc(g.kat) + '">';
+        g.items.forEach(function (k) {
+          html += '<option value="' + esc(k.id) + '" data-takst="' + esc(k.takst) + '">' +
+            esc(k.forseelse) + " (" + App.formatKr(k.takst) + ")</option>";
+        });
+        html += "</optgroup>";
       });
       sel.innerHTML = html;
     }
@@ -679,6 +717,7 @@
         }
         if (post) {
           document.getElementById("katalog-id").value = post.id;
+          document.getElementById("katalog-kategori").value = post.kategori || "";
           document.getElementById("katalog-forseelse").value = post.forseelse;
           document.getElementById("katalog-takst").value = post.takst;
           titel.textContent = "Redigér takst";
@@ -701,7 +740,8 @@
         return;
       }
       rydFejl("katalog-forseelse", "fejl-katalog-forseelse");
-      var post = { forseelse: forseelse, takst: takst };
+      var kategori = document.getElementById("katalog-kategori").value.trim();
+      var post = { forseelse: forseelse, takst: takst, kategori: kategori };
       if (id) post.id = id;
       DB.upsertCatalogItem(post).then(function () {
         lukAlleArk();

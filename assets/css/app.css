@@ -716,6 +716,14 @@ input[type="number"]{font-weight:700}
 .oenske:last-child{border-bottom:none}
 .oenske::before{content:"🍺";flex-shrink:0}
 
+/* Katalog-kategori-overskrift */
+.katalog-kategori{
+  font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--hav);margin:16px 0 4px;padding-bottom:4px;
+  border-bottom:2px solid var(--linje);
+}
+.katalog-kategori:first-child{margin-top:0}
+
 /* Katalog-række (redigerbart bødekatalog) */
 .katalog-raekke{
   display:flex;align-items:center;justify-content:space-between;gap:10px;

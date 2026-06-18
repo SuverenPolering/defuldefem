@@ -233,6 +233,7 @@
             fundet = true;
             return {
               id: k.id,
+              kategori: post.kategori != null ? post.kategori : (k.kategori || ''),
               forseelse: post.forseelse != null ? post.forseelse : k.forseelse,
               takst: post.takst != null ? (Number(post.takst) || 0) : k.takst
             };
@@ -240,12 +241,12 @@
           return k;
         });
         if (!fundet) {
-          katalog.push({ id: post.id, forseelse: post.forseelse, takst: Number(post.takst) || 0 });
+          katalog.push({ id: post.id, kategori: post.kategori || '', forseelse: post.forseelse, takst: Number(post.takst) || 0 });
         }
         _write('catalog', katalog);
         return katalog.filter(function (k) { return k.id === post.id; })[0];
       }
-      var ny = { id: _id('cat'), forseelse: post.forseelse, takst: Number(post.takst) || 0 };
+      var ny = { id: _id('cat'), kategori: post.kategori || '', forseelse: post.forseelse, takst: Number(post.takst) || 0 };
       katalog.push(ny);
       _write('catalog', katalog);
       return ny;
