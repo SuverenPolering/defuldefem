@@ -290,6 +290,39 @@
     });
   }
 
+  function updateWish(id, felter) {
+    if (_supabase()) {
+      // TODO(supabase): from('wishlist').update(...).eq('id', id)
+    }
+    return _async(function () {
+      var liste = _read('wishlist', []);
+      var opdateret = null;
+      for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id === id) {
+          liste[i].tekst = (felter && felter.tekst != null) ? String(felter.tekst) : liste[i].tekst;
+          opdateret = liste[i];
+          break;
+        }
+      }
+      _write('wishlist', liste);
+      return opdateret;
+    });
+  }
+
+  function removeWish(id) {
+    if (_supabase()) {
+      // TODO(supabase): from('wishlist').delete().eq('id', id)
+    }
+    return _async(function () {
+      var liste = _read('wishlist', []);
+      var ny = liste.filter(function (w) {
+        return w.id !== id;
+      });
+      _write('wishlist', ny);
+      return true;
+    });
+  }
+
   /* =========================================================
    * KALENDER: MØDER + RSVP + ARKIV
    * ======================================================= */
@@ -697,6 +730,8 @@
 
     getWishlist: getWishlist,
     addWish: addWish,
+    updateWish: updateWish,
+    removeWish: removeWish,
 
     getMeetings: getMeetings,
     addMeeting: addMeeting,

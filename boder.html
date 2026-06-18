@@ -73,10 +73,13 @@
       <h2>Bødekataloget</h2>
       <span class="nips">de faste takster</span>
     </div>
-    <div class="kort skaev-b">
+    <div class="kort skaev-b" id="katalog-kort">
       <span class="pin hav" style="top:-6px;left:28px"></span>
-      <div id="katalog-liste"></div>
       <div class="handlinger hoejre kun-minister">
+        <button type="button" class="knap-lille kun-minister" id="katalog-rediger-toggle">Redigér</button>
+      </div>
+      <div id="katalog-liste"></div>
+      <div class="handlinger hoejre kun-minister katalog-rediger-felt blok">
         <button type="button" class="knap-lille" id="aabn-katalog">+ Ny takst</button>
       </div>
     </div>
@@ -189,6 +192,22 @@
     </form>
   </div>
 
+  <div class="ark" id="ark-tildel" aria-hidden="true">
+    <button type="button" class="luk-knap" data-luk aria-label="Luk">×</button>
+    <div class="ark-titel">Tildel bøde</div>
+    <span class="ark-under" id="tildel-under"></span>
+    <div class="antal-stepper">
+      <button type="button" class="antal-knap" id="antal-minus" aria-label="Færre">−</button>
+      <input type="number" id="tildel-antal" min="1" value="1" inputmode="numeric" class="antal-input">
+      <button type="button" class="antal-knap" id="antal-plus" aria-label="Flere">+</button>
+    </div>
+    <div class="tildel-total" id="tildel-total"></div>
+    <label class="felt">
+      <span class="felt-label">Hvem skal have den?</span>
+      <div class="tildel-valg-liste" id="tildel-medlemmer"></div>
+    </label>
+  </div>
+
   <script src="assets/js/config.js"></script>
   <script src="assets/js/db.js"></script>
   <script src="assets/js/seed.js"></script>
@@ -201,6 +220,7 @@
     var sess = (window.Auth && Auth.current) ? Auth.current() : null;
     var erMinister = !!(sess && sess.rolle === "boedekasseminister");
     var erFinans = !!(sess && sess.rolle === "finansminister");
+    var erSekretaer = !!(sess && sess.rolle === "foreningssekretaer");
 
     var membersCache = [];
     var katalogCache = [];
@@ -365,9 +385,11 @@
             '<span class="forseelse">' + esc(k.forseelse) + "</span>" +
             '<span class="takst">' + App.formatKr(k.takst) +
               (erMinister
-                ? ' <button type="button" class="knap-lille" data-tildel="' + esc(k.id) + '" aria-haspopup="true" aria-expanded="false">Tildel til ▾</button>' +
-                  ' <button type="button" class="knap-lille" data-rediger-katalog="' + esc(k.id) + '">Ret</button>' +
-                  ' <button type="button" class="knap-lille fare" data-slet-katalog="' + esc(k.id) + '">Slet</button>'
+                ? ' <button type="button" class="knap-lille" data-tildel="' + esc(k.id) + '">Tildel til</button>' +
+                  '<span class="katalog-rediger-felt">' +
+                    ' <button type="button" class="knap-lille" data-rediger-katalog="' + esc(k.id) + '">Ret</button>' +
+                    ' <button type="button" class="knap-lille fare" data-slet-katalog="' + esc(k.id) + '">Slet</button>' +
+                  "</span>"
                 : "") +
             "</span>" +
           "</div>";
@@ -397,87 +419,91 @@
           }
           var tildel = el.querySelectorAll("[data-tildel]");
           for (var t = 0; t < tildel.length; t++) {
-            tildel[t].addEventListener("click", function (e) {
-              e.stopPropagation();
-              var knap = this;
-              var katId = knap.getAttribute("data-tildel");
-              var alleredeAaben = (aabenTildelKnap === knap);
-              lukTildelMenu();
-              if (alleredeAaben) return;
-
-              var post = null;
-              for (var p = 0; p < katalogCache.length; p++) {
-                if (katalogCache[p].id === katId) { post = katalogCache[p]; break; }
-              }
-              if (!post) return;
-
-              var wrap = document.createElement("span");
-              wrap.className = "tildel-wrap";
-              knap.parentNode.insertBefore(wrap, knap);
-              wrap.appendChild(knap);
-
-              var menu = document.createElement("div");
-              menu.className = "tildel-menu";
-              menu.setAttribute("role", "menu");
-
-              membersCache.forEach(function (m) {
-                var valg = document.createElement("button");
-                valg.type = "button";
-                valg.className = "tildel-valg";
-                valg.setAttribute("role", "menuitem");
-                valg.textContent = m.titel;
-                valg.addEventListener("click", function (ev) {
-                  ev.stopPropagation();
-                  DB.addFine({
-                    memberId: m.id,
-                    grund: post.forseelse,
-                    beloeb: post.takst,
-                    dato: new Date().toISOString().slice(0, 10)
-                  }).then(function () {
-                    App.toast("Bøde tildelt " + m.titel + ": " + post.forseelse + " (" + App.formatKr(post.takst) + ")");
-                    lukTildelMenu();
-                    opdaterAlt();
-                  }).catch(function (err) {
-                    App.toast("Bødekassen driller. Bøden blev ikke tildelt — prøv igen.");
-                    if (window.console && console.error) console.error(err);
-                  });
-                });
-                menu.appendChild(valg);
-              });
-
-              wrap.appendChild(menu);
-              knap.setAttribute("aria-expanded", "true");
-              aabenTildelKnap = knap;
-              aabenTildelMenu = menu;
+            tildel[t].addEventListener("click", function () {
+              aabnTildel(this.getAttribute("data-tildel"));
             });
           }
         }
       });
     }
 
-    var aabenTildelKnap = null;
-    var aabenTildelMenu = null;
+    var tildelPost = null;
 
-    function lukTildelMenu() {
-      if (aabenTildelMenu && aabenTildelMenu.parentNode) {
-        aabenTildelMenu.parentNode.removeChild(aabenTildelMenu);
-      }
-      if (aabenTildelKnap) {
-        aabenTildelKnap.setAttribute("aria-expanded", "false");
-      }
-      aabenTildelKnap = null;
-      aabenTildelMenu = null;
+    function tildelAntal() {
+      var inp = document.getElementById("tildel-antal");
+      var n = Math.floor(Number(inp.value));
+      if (!isFinite(n) || n < 1) n = 1;
+      return n;
     }
 
-    document.addEventListener("click", function () { lukTildelMenu(); });
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" || e.keyCode === 27) {
-        if (aabenTildelKnap) {
-          var fokus = aabenTildelKnap;
-          lukTildelMenu();
-          if (fokus.focus) fokus.focus();
-        }
+    function opdaterTildelTotal() {
+      if (!tildelPost) return;
+      var n = tildelAntal();
+      document.getElementById("tildel-total").textContent =
+        "I alt: " + App.formatKr(tildelPost.takst * n) + " (" + n + " stk.)";
+    }
+
+    function saetTildelAntal(n) {
+      if (!isFinite(n) || n < 1) n = 1;
+      document.getElementById("tildel-antal").value = n;
+      opdaterTildelTotal();
+    }
+
+    function aabnTildel(catId) {
+      var post = null;
+      for (var p = 0; p < katalogCache.length; p++) {
+        if (katalogCache[p].id === catId) { post = katalogCache[p]; break; }
       }
+      if (!post) return;
+      tildelPost = { id: post.id, forseelse: post.forseelse, takst: post.takst };
+
+      document.getElementById("tildel-antal").value = 1;
+      document.getElementById("tildel-under").textContent =
+        post.forseelse + " — " + App.formatKr(post.takst) + " /stk";
+
+      var liste = document.getElementById("tildel-medlemmer");
+      liste.innerHTML = "";
+      membersCache.forEach(function (m) {
+        var knap = document.createElement("button");
+        knap.type = "button";
+        knap.className = "knap-sekundaer";
+        knap.textContent = m.titel;
+        knap.setAttribute("data-medlem", m.id);
+        knap.addEventListener("click", function () {
+          var n = tildelAntal();
+          DB.addFine({
+            memberId: m.id,
+            grund: tildelPost.forseelse + (n > 1 ? (" ×" + n) : ""),
+            beloeb: tildelPost.takst * n,
+            dato: new Date().toISOString().slice(0, 10)
+          }).then(function () {
+            App.toast("Tildelt " + m.titel + ": " + tildelPost.forseelse +
+              (n > 1 ? (" ×" + n) : "") + " (" + App.formatKr(tildelPost.takst * n) + ")");
+            App.ark.close();
+            opdaterAlt();
+          }).catch(function (err) {
+            App.toast("Bødekassen driller. Bøden blev ikke tildelt — prøv igen.");
+            if (window.console && console.error) console.error(err);
+          });
+        });
+        liste.appendChild(knap);
+      });
+
+      opdaterTildelTotal();
+      App.ark.open(document.getElementById("ark-tildel"));
+    }
+
+    document.getElementById("antal-minus").addEventListener("click", function () {
+      saetTildelAntal(tildelAntal() - 1);
+    });
+    document.getElementById("antal-plus").addEventListener("click", function () {
+      saetTildelAntal(tildelAntal() + 1);
+    });
+    document.getElementById("tildel-antal").addEventListener("input", function () {
+      opdaterTildelTotal();
+    });
+    document.getElementById("tildel-antal").addEventListener("change", function () {
+      saetTildelAntal(tildelAntal());
     });
 
     function renderOensker() {
@@ -491,13 +517,49 @@
         }
         var html = "";
         liste.forEach(function (w) {
-          html += '<div class="oenske">' + esc(w.tekst) +
-            (w.memberId
-              ? '<span class="hvem">Foreslået af ' + esc(navnFor(w.memberId)) + "</span>"
+          html += '<div class="oenske">' +
+            '<span class="oenske-krop">' + esc(w.tekst) +
+              (w.memberId
+                ? '<span class="hvem">Foreslået af ' + esc(navnFor(w.memberId)) + "</span>"
+                : "") +
+            "</span>" +
+            (erSekretaer
+              ? '<span class="oenske-handling">' +
+                  '<button type="button" class="knap-lille" data-ret-oenske="' + esc(w.id) + '">Ret</button>' +
+                  '<button type="button" class="knap-lille fare" data-slet-oenske="' + esc(w.id) + '">Slet</button>' +
+                "</span>"
               : "") +
             "</div>";
         });
         el.innerHTML = html;
+
+        if (erSekretaer) {
+          var ret = el.querySelectorAll("[data-ret-oenske]");
+          for (var i = 0; i < ret.length; i++) {
+            ret[i].addEventListener("click", function () {
+              var id = this.getAttribute("data-ret-oenske");
+              var post = null;
+              for (var p = 0; p < liste.length; p++) {
+                if (liste[p].id === id) { post = liste[p]; break; }
+              }
+              aabnOenskeArk(post);
+            });
+          }
+          var slet = el.querySelectorAll("[data-slet-oenske]");
+          for (var j = 0; j < slet.length; j++) {
+            slet[j].addEventListener("click", function () {
+              var id = this.getAttribute("data-slet-oenske");
+              if (!window.confirm("Fjerne ønsket fra tavlen?")) return;
+              DB.removeWish(id).then(function () {
+                App.toast("Ønsket er taget ned.");
+                renderOensker();
+              }).catch(function (e) {
+                App.toast("Bødekassen driller. Ønsket blev ikke fjernet — prøv igen.");
+                if (window.console && console.error) console.error(e);
+              });
+            });
+          }
+        }
       });
     }
 
@@ -683,9 +745,21 @@
       });
     });
 
-    function aabnOenskeArk() {
-      document.getElementById("form-oenske").reset();
+    var oenskeEditId = null;
+
+    function aabnOenskeArk(post) {
+      var form = document.getElementById("form-oenske");
+      form.reset();
       rydFejl("oenske-tekst", "fejl-oenske-tekst");
+      var titel = document.querySelector("#ark-oenske .ark-titel");
+      if (post && post.id) {
+        oenskeEditId = post.id;
+        document.getElementById("oenske-tekst").value = post.tekst;
+        if (titel) titel.textContent = "Ret ønske";
+      } else {
+        oenskeEditId = null;
+        if (titel) titel.textContent = "Tilføj ønske";
+      }
       App.ark.open(document.getElementById("ark-oenske"));
     }
 
@@ -698,9 +772,14 @@
         return;
       }
       rydFejl("oenske-tekst", "fejl-oenske-tekst");
-      DB.addWish({ tekst: tekst, memberId: (sess ? sess.memberId : null) }).then(function () {
+      var gemmer = oenskeEditId
+        ? DB.updateWish(oenskeEditId, { tekst: tekst })
+        : DB.addWish({ tekst: tekst, memberId: (sess ? sess.memberId : null) });
+      var redigerede = !!oenskeEditId;
+      gemmer.then(function () {
+        oenskeEditId = null;
         lukAlleArk();
-        App.toast("Ønsket hænger på tavlen.");
+        App.toast(redigerede ? "Ønsket er rettet." : "Ønsket hænger på tavlen.");
         renderOensker();
       }).catch(function (e) {
         App.toast("Bødekassen driller. Ønsket kom ikke op — prøv igen.");
@@ -713,9 +792,17 @@
     var bAabnKatalog = document.getElementById("aabn-katalog");
     if (bAabnKatalog) bAabnKatalog.addEventListener("click", function () { aabnKatalogArk(null); });
     var bAabnOenske = document.getElementById("aabn-oenske");
-    if (bAabnOenske) bAabnOenske.addEventListener("click", aabnOenskeArk);
+    if (bAabnOenske) bAabnOenske.addEventListener("click", function () { aabnOenskeArk(null); });
     var bAabnKasse = document.getElementById("aabn-kasse");
     if (bAabnKasse) bAabnKasse.addEventListener("click", aabnKasseArk);
+
+    var bKatalogToggle = document.getElementById("katalog-rediger-toggle");
+    if (bKatalogToggle) bKatalogToggle.addEventListener("click", function () {
+      var kort = document.getElementById("katalog-kort");
+      if (!kort) return;
+      var aktiv = kort.classList.toggle("redigerer");
+      this.textContent = aktiv ? "Færdig" : "Redigér";
+    });
 
     function opdaterAlt() {
       return Promise.all([renderSaldo(), renderSaldoPrMedlem(), renderBoeder()]);

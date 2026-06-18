@@ -808,3 +808,58 @@ input[type="number"]{font-weight:700}
   font-size:15px;
   color:var(--tekst);
 }
+
+/* ---- Antal-stepper (Tildel-arket: tildel samme bøde N gange) ----
+   Rund hav-knap med hård offset-skygge à la .knap; centreret +/- om et tal-felt.
+   Total-linjen i Caveat/koral som de øvrige håndskrevne accenter. */
+.antal-stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0}
+.antal-knap{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:var(--hav);
+  border:2px solid var(--hav);
+  color:var(--hvid);
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:22px;line-height:1;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:0 4px 0 var(--hav-lys), 0 8px 16px rgba(31,78,95,.14);
+  transition:transform .08s ease, box-shadow .08s ease, background-color .12s ease;
+  -webkit-appearance:none;appearance:none;
+}
+.antal-knap:hover{background:#235665}
+.antal-knap:active{
+  transform:translateY(2px);
+  box-shadow:0 2px 0 var(--hav-lys), 0 4px 10px rgba(31,78,95,.14);
+}
+.antal-input{
+  width:78px;text-align:center;
+  font-size:24px;font-weight:700;
+  padding:8px;
+  border:1.5px solid var(--linje);
+  border-radius:10px;
+  background:var(--hvid);
+  color:var(--hav);
+}
+.tildel-total{
+  font-family:'Caveat',cursive;font-size:20px;color:var(--koral);
+  text-align:center;margin-top:4px;
+}
+
+/* ---- Tildel-medlemsliste (Tildel-arket: vælg hvem bøden tildeles) ----
+   Kolonne af venstrestillede sekundær-knapper. */
+.tildel-valg-liste{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.tildel-valg-liste .knap-sekundaer{justify-content:flex-start;text-align:left}
+
+/* ---- Katalog edit-mode ----
+   »Ret«/»Slet«/»+ Ny takst« skjules indtil kortet får .redigerer
+   (sat når Bødekasseministeren trykker »Redigér« i kortets hjørne). */
+.katalog-rediger-felt{display:none}
+.kort.redigerer .katalog-rediger-felt{display:inline-flex}
+.kort.redigerer .katalog-rediger-felt.blok{display:flex}
+
+/* ---- Ønske-række med handlinger ----
+   Behold 🍺-prik + dashed skillelinje fra .oenske ovenfor; tilføj kun det
+   layout der skal til for at parre tekst med Ret/Slet-knapper (sekretær). */
+.oenske{justify-content:space-between}
+.oenske .oenske-krop{min-width:0}
+.oenske-handling{display:flex;gap:6px;flex-shrink:0}
