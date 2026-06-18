@@ -105,12 +105,14 @@
 
     function tegnBrikker(members) {
       toemNoder(vaelger);
-      members.forEach(function (m) {
+      members.forEach(function (m, idx) {
         var knapEl = document.createElement('button');
         knapEl.type = 'button';
         knapEl.className = 'navn-brik' + (m.rolle === 'joy' ? ' joy' : '');
         knapEl.setAttribute('role', 'radio');
         knapEl.setAttribute('aria-checked', 'false');
+        // Roving tabindex: kun den første brik er i tab-rækken indtil et valg.
+        knapEl.tabIndex = idx === 0 ? 0 : -1;
         knapEl.setAttribute('data-id', m.id);
         knapEl.title = m.navn + ' — ' + m.titel;
 
@@ -130,6 +132,10 @@
           vaelg(m.id);
         });
 
+        knapEl.addEventListener('keydown', function (e) {
+          piletast(e, knapEl);
+        });
+
         vaelger.appendChild(knapEl);
       });
     }
@@ -141,8 +147,30 @@
         var er = alle[i].getAttribute('data-id') === id;
         alle[i].classList.toggle('valgt', er);
         alle[i].setAttribute('aria-checked', er ? 'true' : 'false');
+        // Roving tabindex følger valget: kun den valgte er i tab-rækken.
+        alle[i].tabIndex = er ? 0 : -1;
       }
       ryddFejl();
+    }
+
+    // Piletast-navigation i radiogruppen: flyt valg + fokus til nabobrik.
+    function piletast(e, brik) {
+      var k = e.key;
+      var frem = k === 'ArrowDown' || k === 'ArrowRight';
+      var tilbage = k === 'ArrowUp' || k === 'ArrowLeft';
+      if (!frem && !tilbage) return;
+      e.preventDefault();
+      var alle = vaelger.querySelectorAll('.navn-brik');
+      if (!alle.length) return;
+      var n = -1;
+      for (var i = 0; i < alle.length; i++) {
+        if (alle[i] === brik) { n = i; break; }
+      }
+      if (n === -1) return;
+      var ny = frem ? (n + 1) % alle.length : (n - 1 + alle.length) % alle.length;
+      var maal = alle[ny];
+      vaelg(maal.getAttribute('data-id'));
+      maal.focus();
     }
 
     // Hent medlemmer fra DB og tegn navnevælgeren.

@@ -183,6 +183,95 @@
     }
     function ryd(node) { while (node.firstChild) node.removeChild(node.firstChild); }
 
+    /* ---------- ark-fokus: inert baggrund + fokusfælde (jf. protokol.html) ---------- */
+    var aabentArk = null;     // det aktuelt åbne ark (eller null)
+    var udloeserEl = null;    // elementet der åbnede arket — fokus føres tilbage hertil
+    var FOKUS_VAELGER =
+      'a[href], button:not([disabled]), input:not([disabled]), ' +
+      'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    // Skjul resten af siden for tastatur + skærmlæsere, mens et ark er åbent.
+    function saetBaggrundInert(ark, inert) {
+      Array.prototype.forEach.call(document.body.children, function (n) {
+        if (n === ark) return;
+        // Lad arkene og deres baggrunde styre deres egen aria-hidden.
+        if (n.classList && (n.classList.contains('ark') || n.classList.contains('ark-baggrund'))) return;
+        if (inert) {
+          n.setAttribute('aria-hidden', 'true');
+          n.setAttribute('inert', '');
+        } else {
+          n.removeAttribute('aria-hidden');
+          n.removeAttribute('inert');
+        }
+      });
+    }
+
+    function fokusbareI(ark) {
+      return Array.prototype.filter.call(
+        ark.querySelectorAll(FOKUS_VAELGER),
+        function (n) { return n.offsetParent !== null || n === document.activeElement; }
+      );
+    }
+
+    // Fælles åbn: gem udløser, gør baggrund inert, flyt fokus til første felt.
+    function aabnArk(ark, bg, foersteFelt) {
+      udloeserEl = (document.activeElement instanceof HTMLElement) ? document.activeElement : null;
+      if (bg) bg.classList.add('aaben');
+      ark.classList.add('aaben');
+      ark.setAttribute('aria-hidden', 'false');
+      aabentArk = ark;
+      saetBaggrundInert(ark, true);
+      var maal = foersteFelt;
+      if (!maal || maal.offsetParent === null) {
+        var fokusbare = fokusbareI(ark);
+        maal = fokusbare.length ? fokusbare[0] : null;
+      }
+      setTimeout(function () {
+        if (maal && typeof maal.focus === 'function') maal.focus();
+      }, 0);
+    }
+
+    // Fælles luk: fjern inert, returnér fokus til udløseren.
+    function lukArk(ark, bg) {
+      if (bg) bg.classList.remove('aaben');
+      if (ark) {
+        ark.classList.remove('aaben');
+        ark.setAttribute('aria-hidden', 'true');
+        saetBaggrundInert(ark, false);
+      }
+      if (aabentArk === ark) aabentArk = null;
+      if (udloeserEl && typeof udloeserEl.focus === 'function') udloeserEl.focus();
+      udloeserEl = null;
+    }
+
+    // Escape lukker; Tab/Shift+Tab cykler inden for det åbne ark.
+    document.addEventListener('keydown', function (e) {
+      if (!aabentArk) return;
+      if (e.key === 'Escape') {
+        lukNy();
+        lukSvar();
+        return;
+      }
+      if (e.key === 'Tab') {
+        var fokusbare = fokusbareI(aabentArk);
+        if (!fokusbare.length) { e.preventDefault(); return; }
+        var foerste = fokusbare[0];
+        var sidste = fokusbare[fokusbare.length - 1];
+        var aktiv = document.activeElement;
+        if (e.shiftKey) {
+          if (aktiv === foerste || !aabentArk.contains(aktiv)) {
+            e.preventDefault();
+            sidste.focus();
+          }
+        } else {
+          if (aktiv === sidste || !aabentArk.contains(aktiv)) {
+            e.preventDefault();
+            foerste.focus();
+          }
+        }
+      }
+    });
+
     function navnFor(id) {
       return memberMap[id] ? memberMap[id].titel : id;
     }
@@ -378,6 +467,9 @@
       typeRejseKnap.className = erMoede ? 'knap-sekundaer' : 'knap';
       typeMoedeKnap.setAttribute('aria-checked', erMoede ? 'true' : 'false');
       typeRejseKnap.setAttribute('aria-checked', erMoede ? 'false' : 'true');
+      // Roving tabindex: kun den valgte radio er i tab-rækken.
+      typeMoedeKnap.tabIndex = erMoede ? 0 : -1;
+      typeRejseKnap.tabIndex = erMoede ? -1 : 0;
       gruppeMoede.hidden = !erMoede;
       gruppeRejse.hidden = erMoede;
     }
@@ -385,14 +477,31 @@
     typeMoedeKnap.addEventListener('click', function () { saetType('moede'); });
     typeRejseKnap.addEventListener('click', function () { saetType('rejse'); });
 
+    // Piletast-navigation i type-vælgeren (role=radio): flyt valg + fokus.
+    var typeKnapper = [typeMoedeKnap, typeRejseKnap];
+    typeKnapper.forEach(function (knap, idx) {
+      knap.addEventListener('keydown', function (e) {
+        var k = e.key;
+        var naeste = null;
+        if (k === 'ArrowRight' || k === 'ArrowDown') {
+          naeste = typeKnapper[(idx + 1) % typeKnapper.length];
+        } else if (k === 'ArrowLeft' || k === 'ArrowUp') {
+          naeste = typeKnapper[(idx - 1 + typeKnapper.length) % typeKnapper.length];
+        } else {
+          return;
+        }
+        e.preventDefault();
+        saetType(naeste.getAttribute('data-type'));
+        naeste.focus();
+      });
+    });
+
     function aabnNy() {
       if (!erTurist) return;
       editId = null;
       nyForm.reset();
       saetType('moede');
-      nyBaggrund.classList.add('aaben');
-      nyArk.classList.add('aaben');
-      nyArk.setAttribute('aria-hidden', 'false');
+      aabnArk(nyArk, nyBaggrund, typeMoedeKnap);
     }
     function aabnRediger(m) {
       if (!erTurist) return;
@@ -409,14 +518,11 @@
         document.getElementById('inp-sted').value = m.sted || '';
       }
       document.getElementById('inp-tema').value = m.tema || '';
-      nyBaggrund.classList.add('aaben');
-      nyArk.classList.add('aaben');
-      nyArk.setAttribute('aria-hidden', 'false');
+      aabnArk(nyArk, nyBaggrund, typeMoedeKnap);
     }
     function lukNy() {
-      nyBaggrund.classList.remove('aaben');
-      nyArk.classList.remove('aaben');
-      nyArk.setAttribute('aria-hidden', 'true');
+      if (!nyArk.classList.contains('aaben')) return;
+      lukArk(nyArk, nyBaggrund);
     }
 
     document.getElementById('ny-dato-knap').addEventListener('click', aabnNy);
@@ -489,6 +595,8 @@
         var aktiv = knapper[i] === valgtKnap;
         knapper[i].className = aktiv ? 'knap' : 'knap-sekundaer';
         knapper[i].setAttribute('aria-checked', aktiv ? 'true' : 'false');
+        // Roving tabindex: kun den valgte er i tab-rækken.
+        knapper[i].tabIndex = aktiv ? 0 : -1;
       }
     }
 
@@ -499,6 +607,8 @@
       for (var i = 0; i < knapper.length; i++) {
         knapper[i].className = 'knap-sekundaer';
         knapper[i].setAttribute('aria-checked', 'false');
+        // Roving tabindex: uden valg er kun den første i tab-rækken.
+        knapper[i].tabIndex = i === 0 ? 0 : -1;
       }
     }
 
@@ -523,7 +633,16 @@
         var m = moeder.filter(function (x) { return x.id === meetingId; })[0];
         var mit = m ? (m.svar || []).filter(function (s) { return s.memberId === minId; })[0] : null;
         var under = document.getElementById('svar-ark-under');
-        if (m) under.textContent = App.formatDato(m.dato);
+        if (m) {
+          if (m.type === 'rejse') {
+            var datoer = (m.datoer && m.datoer.length) ? m.datoer : (m.dato ? [m.dato] : []);
+            under.textContent = datoer.length > 1
+              ? App.formatDato(datoer[0]) + ' – ' + App.formatDato(datoer[1])
+              : (datoer.length ? App.formatDato(datoer[0]) : App.formatDato(m.dato));
+          } else {
+            under.textContent = App.formatDato(m.dato);
+          }
+        }
         if (mit && mit.tekst) {
           // Forvælg den preset-knap hvis nuværende svar matcher en preset.
           var knapper = svarForm.querySelectorAll('[data-svar]');
@@ -540,15 +659,12 @@
         if (window.console && console.error) console.error(e);
       });
 
-      svarBaggrund.classList.add('aaben');
-      svarArk.classList.add('aaben');
-      svarArk.setAttribute('aria-hidden', 'false');
+      aabnArk(svarArk, svarBaggrund, svarForm.querySelector('[data-svar]'));
     }
 
     function lukSvar() {
-      svarBaggrund.classList.remove('aaben');
-      svarArk.classList.remove('aaben');
-      svarArk.setAttribute('aria-hidden', 'true');
+      if (!svarArk.classList.contains('aaben')) return;
+      lukArk(svarArk, svarBaggrund);
     }
 
     svarBaggrund.addEventListener('click', lukSvar);
@@ -557,6 +673,24 @@
     for (var sv = 0; sv < svarValgKnapper.length; sv++) {
       svarValgKnapper[sv].addEventListener('click', function () {
         vaelgKnap(this);
+      });
+      // Piletast-navigation i RSVP-radiogruppen: flyt valg + fokus.
+      svarValgKnapper[sv].addEventListener('keydown', function (e) {
+        var k = e.key;
+        var alle = svarForm.querySelectorAll('[data-svar]');
+        var idx = Array.prototype.indexOf.call(alle, this);
+        if (idx === -1) return;
+        var naeste = null;
+        if (k === 'ArrowRight' || k === 'ArrowDown') {
+          naeste = alle[(idx + 1) % alle.length];
+        } else if (k === 'ArrowLeft' || k === 'ArrowUp') {
+          naeste = alle[(idx - 1 + alle.length) % alle.length];
+        } else {
+          return;
+        }
+        e.preventDefault();
+        vaelgKnap(naeste);
+        naeste.focus();
       });
     }
 

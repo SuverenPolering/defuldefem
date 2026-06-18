@@ -85,12 +85,13 @@
   /* ---------- (1) Opslagstavlen / næste møde ---------- */
   function renderMoede(moeder, medlemNavn) {
     var vaert = $('moede-vaert');
-    // Første ikke-arkiverede møde = næste møde.
-    var naeste = null;
-    for (var i = 0; i < moeder.length; i++) {
-      if (!moeder[i].arkiveret) { naeste = moeder[i]; break; }
-    }
-    if (!naeste) naeste = moeder[0] || null;
+    // Næste møde = det tidligste ikke-arkiverede møde (datosorteret),
+    // jf. mønstret i kalender.html.
+    var kommende = moeder.filter(function (m) { return !m.arkiveret; });
+    kommende.sort(function (a, b) {
+      return String(a.dato || '').localeCompare(String(b.dato || ''));
+    });
+    var naeste = kommende[0] || moeder[0] || null;
 
     if (!naeste) {
       vaert.innerHTML =
@@ -234,9 +235,10 @@
       if (o.dato) metaDele.push(esc(App.formatDato(o.dato)));
 
       html +=
-        '<div class="oel' + (rang === 1 ? ' guld' : '') + '">' +
+        '<div class="oel' + (rang === 1 ? ' guld' : '') + '"' +
+            ' aria-label="Plads ' + rang + ': ' + esc(o.navn) + '">' +
           (pynt[i] || '') +
-          '<div class="roset r' + rang + '">' + rang + '</div>' +
+          '<div class="roset r' + rang + '" aria-hidden="true">' + rang + '</div>' +
           '<div class="oel-info">' +
             '<div class="oel-navn">' + esc(o.navn) + '</div>' +
             (metaDele.length ? '<div class="oel-meta">' + metaDele.join(' · ') + '</div>' : '') +

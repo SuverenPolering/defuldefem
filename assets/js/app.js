@@ -82,11 +82,15 @@
   function injicerNav(aktivSide) {
     if (document.querySelector('nav')) return; // findes allerede
     var nav = document.createElement('nav');
+    nav.setAttribute('aria-label', 'Forsamlingshusets navigation');
     for (var i = 0; i < FANER.length; i++) {
       var f = FANER[i];
       var a = document.createElement('a');
       a.href = f.href;
-      if (f.side === aktivSide) a.className = 'aktiv';
+      if (f.side === aktivSide) {
+        a.className = 'aktiv';
+        a.setAttribute('aria-current', 'page');
+      }
       var ikon = document.createElement('span');
       ikon.className = 'ikon';
       ikon.textContent = f.ikon;
@@ -100,24 +104,75 @@
   /* ---------- ark (bottom sheet) ---------- */
   // App.ark.open(el) / App.ark.close(). Forventer at side selv styrer indhold;
   // her sørger vi blot for synlighed + en mørk baggrund + luk-på-klik.
+  //
+  // Central fokusstyring (spejler protokol.html): mens et ark er åbent gøres
+  // resten af siden inert + aria-hidden for tastatur og skærmlæsere, fokus
+  // flyttes ind i arket, fanges der (Tab-fælde) og føres tilbage til
+  // udløseren ved luk. Escape lukker.
+  var _aabentArk = null;   // det aktuelt åbne ark-element
+  var _udloeserEl = null;  // elementet der åbnede arket — fokus føres hertil igen
+  var _ARK_FOKUS_VAELGER =
+    'a[href], button:not([disabled]), input:not([disabled]), ' +
+    'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  // Skjul resten af siden for tastatur + skærmlæsere, mens et ark er åbent.
+  // Spring selve arket, baggrunden og toasten over — samt andre .ark/.ark-baggrund.
+  function _saetBaggrundInert(ark, inert) {
+    var skygge = document.getElementById('app-ark-skygge');
+    var toastEl = document.getElementById('app-toast');
+    Array.prototype.forEach.call(document.body.children, function (el) {
+      if (el === ark || el === skygge || el === toastEl) return;
+      if (el.classList && (el.classList.contains('ark') || el.classList.contains('ark-baggrund'))) return;
+      if (inert) {
+        el.setAttribute('aria-hidden', 'true');
+        el.setAttribute('inert', '');
+      } else {
+        el.removeAttribute('aria-hidden');
+        el.removeAttribute('inert');
+      }
+    });
+  }
+
+  function _fokusbareI(ark) {
+    return Array.prototype.filter.call(
+      ark.querySelectorAll(_ARK_FOKUS_VAELGER),
+      function (el) { return el.offsetParent !== null || el === document.activeElement; }
+    );
+  }
+
   function arkOpen(el) {
     if (!el) return;
+    _udloeserEl = (document.activeElement instanceof HTMLElement) ? document.activeElement : null;
     var skygge = _arkSkygge();
     skygge.style.display = 'block';
     el.classList.add('aaben');
     el.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+    _aabentArk = el;
+    _saetBaggrundInert(el, true);
+    // Flyt fokus ind i arket (første interaktive element).
+    var fokusbare = _fokusbareI(el);
+    setTimeout(function () {
+      if (fokusbare.length) fokusbare[0].focus();
+    }, 0);
   }
 
   function arkClose(el) {
+    var maal = el || _aabentArk || document.querySelector('.ark.aaben');
     var skygge = document.getElementById('app-ark-skygge');
     if (skygge) skygge.style.display = 'none';
-    var maal = el || document.querySelector('.ark.aaben');
     if (maal) {
       maal.classList.remove('aaben');
       maal.setAttribute('aria-hidden', 'true');
+      _saetBaggrundInert(maal, false);
     }
     document.body.style.overflow = '';
+    _aabentArk = null;
+    // Returnér fokus til den udløsende knap.
+    if (_udloeserEl && typeof _udloeserEl.focus === 'function') {
+      _udloeserEl.focus();
+    }
+    _udloeserEl = null;
   }
 
   function _arkSkygge() {
@@ -133,6 +188,34 @@
     return s;
   }
 
+  // Escape lukker; Tab/Shift+Tab fanges inden i det åbne ark (fokusfælde).
+  document.addEventListener('keydown', function (e) {
+    if (!_aabentArk) return;
+    if (e.key === 'Escape') {
+      arkClose();
+      return;
+    }
+    if (e.key === 'Tab') {
+      var ark = _aabentArk;
+      var fokusbare = _fokusbareI(ark);
+      if (!fokusbare.length) { e.preventDefault(); return; }
+      var foerste = fokusbare[0];
+      var sidste = fokusbare[fokusbare.length - 1];
+      var aktiv = document.activeElement;
+      if (e.shiftKey) {
+        if (aktiv === foerste || !ark.contains(aktiv)) {
+          e.preventDefault();
+          sidste.focus();
+        }
+      } else {
+        if (aktiv === sidste || !ark.contains(aktiv)) {
+          e.preventDefault();
+          foerste.focus();
+        }
+      }
+    }
+  });
+
   /* ---------- toast ---------- */
   function toast(tekst) {
     var t = document.getElementById('app-toast');
@@ -146,7 +229,7 @@
       t.setAttribute('aria-live', 'polite');
       t.setAttribute('aria-atomic', 'true');
       t.style.cssText =
-        'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);' +
+        'position:fixed;left:50%;bottom:160px;transform:translateX(-50%);' +
         'z-index:50;max-width:88%;padding:11px 18px;border-radius:8px;' +
         'background:#27424d;color:#fefdf9;font-family:inherit;font-size:14px;' +
         'font-weight:600;box-shadow:0 6px 18px rgba(31,78,95,.3);' +

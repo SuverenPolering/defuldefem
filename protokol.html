@@ -115,13 +115,9 @@
   <form id="form-rating" novalidate>
     <input type="hidden" name="beerId" id="r-beer">
     <label class="felt">
-      <span class="felt-label">Hvem dømmer?</span>
-      <select name="memberId" id="r-medlem"></select>
-    </label>
-    <label class="felt">
       <span class="felt-label">Karakter (1–10)</span>
       <input type="number" name="score" id="r-score" min="1" max="10" step="1" inputmode="numeric" placeholder="1 til 10, heltal — ingen kommaer, ingen smør">
-      <span class="fejl skjult" id="fejl-r-score">Heltal mellem 1 og 10. Halve point er for de svage.</span>
+      <span class="fejl skjult" id="fejl-r-score" role="alert">Heltal mellem 1 og 10. Halve point er for de svage.</span>
     </label>
     <button class="knap knap-bred" type="submit">Før dommen til protokols</button>
   </form>
@@ -643,47 +639,34 @@
     document.getElementById('r-beer').value = b.id;
     document.getElementById('ark-rating-under').textContent =
       b.navn + (b.snit ? ' · står nu til ' + visScore(b.snit) : ' · endnu udømt');
-    fyldMedlemSelect(document.getElementById('r-medlem'), members, false);
-    // Forvælg den indloggede, hvis vi kender ham.
+    // Bedømmelsen gælder altid den indloggede — forudfyld dennes egen tidligere karakter.
     var sess = window.Auth && window.Auth.current ? window.Auth.current() : null;
-    if (sess && sess.memberId) {
-      document.getElementById('r-medlem').value = sess.memberId;
-      if (b.ratings) {
-        for (var i = 0; i < b.ratings.length; i++) {
-          if (b.ratings[i].memberId === sess.memberId) {
-            document.getElementById('r-score').value = b.ratings[i].score;
-            break;
-          }
+    if (sess && sess.memberId && b.ratings) {
+      for (var i = 0; i < b.ratings.length; i++) {
+        if (b.ratings[i].memberId === sess.memberId) {
+          document.getElementById('r-score').value = b.ratings[i].score;
+          break;
         }
       }
     }
     aabn('ark-rating');
   }
 
-  document.getElementById('r-medlem').addEventListener('change', function () {
-    // Vis valgte medlems tidligere karakter, hvis nogen. Slå op i det allerede
-    // hentede øl-objekt (fund 1) — intet nyt DB-kald.
-    var memberId = this.value;
-    var fundet = '';
-    if (aabentOel && aabentOel.ratings) {
-      aabentOel.ratings.forEach(function (r) {
-        if (r.memberId === memberId) fundet = r.score;
-      });
-    }
-    document.getElementById('r-score').value = fundet;
-  });
-
   document.getElementById('form-rating').addEventListener('submit', function (e) {
     e.preventDefault();
     var beerId = document.getElementById('r-beer').value;
-    var memberId = document.getElementById('r-medlem').value;
+    var sess = window.Auth && window.Auth.current ? window.Auth.current() : null;
+    if (!sess || !sess.memberId) {
+      window.App.toast('Du er ikke logget ind — ingen dom kan afsiges.');
+      return;
+    }
     var score = Number(document.getElementById('r-score').value);
-    if (!memberId || !(score >= 1 && score <= 10) || score % 1 !== 0) {
+    if (!(score >= 1 && score <= 10) || score % 1 !== 0) {
       visFejl('fejl-r-score', 'r-score');
       return;
     }
     skjulFejl('fejl-r-score');
-    window.DB.rateBeer(beerId, memberId, score).then(function () {
+    window.DB.rateBeer(beerId, sess.memberId, score).then(function () {
       luk('ark-rating');
       window.App.toast('Dommen står ved magt. Tæl aldrig efter.');
       return Promise.all([renderSessioner(), renderTop3()]);

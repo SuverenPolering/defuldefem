@@ -496,6 +496,7 @@
         knap.type = "button";
         knap.className = "knap-sekundaer";
         knap.textContent = m.titel;
+        knap.setAttribute("aria-label", "Tildel »" + post.forseelse + "« til " + m.titel);
         knap.setAttribute("data-medlem", m.id);
         knap.addEventListener("click", function () {
           var n = tildelAntal();

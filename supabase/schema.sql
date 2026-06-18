@@ -28,6 +28,7 @@ create table if not exists fines (
   member_id text not null references members(id) on delete cascade,
   grund     text not null,
   beloeb    integer not null default 0, -- kroner (heltal)
+  betalt    boolean not null default false,
   dato      date not null default current_date,
   oprettet  timestamptz not null default now()
 );
@@ -36,6 +37,7 @@ create index if not exists fines_member_idx on fines(member_id);
 -- Bødekatalog (faste forseelser + takster).
 create table if not exists fine_catalog (
   id        uuid primary key default gen_random_uuid(),
+  kategori  text,
   forseelse text not null,
   takst     integer not null default 0  -- kroner (heltal)
 );
@@ -87,8 +89,8 @@ create table if not exists beers (
   bryggeri    text not null default '',
   navn        text not null,
   type        text not null default '',
-  pct         numeric(4,1),              -- fx 10.2
-  havde_med   text references members(id) on delete set null, -- hvem havde den med
+  pct          numeric(4,1),             -- fx 10.2
+  havde_med_id text references members(id) on delete set null, -- hvem havde den med
   oprettet    timestamptz not null default now()
 );
 create index if not exists beers_session_idx on beers(session_id);
@@ -102,13 +104,16 @@ create table if not exists beer_ratings (
   unique (beer_id, member_id)
 );
 
--- Ordbogsnævnet — ord + domme.
-create table if not exists words (
-  id          uuid primary key default gen_random_uuid(),
-  ord         text not null,
-  status      text not null default 'afventer', -- 'doemt' | 'frikendt' | 'afventer'
-  begrundelse text not null default '',
-  oprettet    timestamptz not null default now()
+-- Kassens saldo — ét lagret tal (enkelt-række, id altid 1).
+create table if not exists kasse (
+  id    integer primary key default 1,
+  saldo integer not null default 0
+);
+
+-- Vedtægter — fri tekst pr. nøgle ('forening' | 'boedekasse').
+create table if not exists vedtaegter (
+  noegle text primary key,
+  tekst  text not null default ''
 );
 
 -- ============================================================
@@ -126,7 +131,8 @@ alter table rsvps        enable row level security;
 alter table beer_sessions enable row level security;
 alter table beers        enable row level security;
 alter table beer_ratings enable row level security;
-alter table words        enable row level security;
+alter table kasse        enable row level security;
+alter table vedtaegter   enable row level security;
 
 -- Hjælpe-makro findes ikke i ren SQL; vi skriver policies eksplicit pr. tabel.
 -- anon-rollen dækker den offentlige browser-klient i mockfasen.
@@ -140,4 +146,5 @@ create policy "mock anon all" on rsvps         for all to anon using (true) with
 create policy "mock anon all" on beer_sessions for all to anon using (true) with check (true);
 create policy "mock anon all" on beers         for all to anon using (true) with check (true);
 create policy "mock anon all" on beer_ratings  for all to anon using (true) with check (true);
-create policy "mock anon all" on words         for all to anon using (true) with check (true);
+create policy "mock anon all" on kasse         for all to anon using (true) with check (true);
+create policy "mock anon all" on vedtaegter    for all to anon using (true) with check (true);

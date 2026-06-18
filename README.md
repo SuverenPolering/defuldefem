@@ -11,11 +11,12 @@ Webuniverset for den fynske ølklub **De Fulde Fem**. Bygget efter
 | Side | Fil | Hvad |
 |------|-----|------|
 | Dørmanden | `login.html` | Login (mock): vælg minister + fælles klub-kodeord |
-| Forsiden | `index.html` | Hub: næste møde, saldo, øl-top-3, seneste domme, regeringen |
-| Bødekassen | `boder.html` | Saldo + skyld pr. mand, bødeprotokol, katalog, ønskeliste |
+| Velkomsten | `velkommen.html` | Splash efter login: personlig hilsen, går ind på forsiden |
+| Forsiden | `index.html` | Hub: næste møde, bødekasse-saldo, æresvæggen (øl-top-3), regeringen |
+| Bødekassen | `boder.html` | Saldo + skyld pr. mand, bødeprotokol, kategoriseret bødekatalog, ønskeliste |
 | Øl-protokollen | `protokol.html` | Æresvæg (top-3), mapper pr. mødedato, registrér øl + ratings |
 | Kalenderen | `kalender.html` | Liste over møder/ture, tilmelding, arkiv |
-| Ordbogsnævnet | `ordbogsnaevnet.html` | Domme (dømt/frikendt), indstil ord, regelsæt |
+| Vedtægter | `vedtaegter.html` | Foreningens vedtægter + bødekassens vedtægter |
 
 ## Teknik
 
@@ -30,16 +31,21 @@ assets/js/seed.js     eksempeldata (sås i localStorage hvis tomt)
 assets/js/auth.js     mock-login + session + roller
 assets/js/app.js       topbar + bund-nav, route-guard, render-helpers
 supabase/schema.sql    tabeller + RLS, klar til Supabase-fasen
-Gamle tanker/          arkiv: designfasens varianter (A–C, B1–B4)
 ```
 
 ## Login (mock-fasen)
 
 Vælg dit ministernavn og indtast det fælles klub-kodeord (sat i
 `assets/js/config.js` → `CONFIG.KLUB_KODEORD`). Sessionen huskes pr. fane.
+
+**Regeringen (roller):** Turistminister (Henning), Bødekasseminister (Jakob),
+Finansminister (Kim), Foreningssekretær (Anders) og Joy (Steffen). Visningsnavnet
+er ministerens titel.
+
 **Rettigheder:** kun Bødekasseministeren (Jakob) kan registrere bøder og redigere
-bødekataloget samt afsige domme; alle indloggede kan svare i kalenderen, registrere
-øl og indstille ord.
+det kategoriserede bødekatalog samt redigere bødekassens vedtægter; Foreningssekretæren
+redigerer foreningens vedtægter. Alle indloggede kan svare i kalenderen og registrere
+øl med ratings.
 
 > Alle beløb og bøder er **eksempeldata** indtil det rigtige bødekatalog leveres.
 

@@ -123,19 +123,6 @@
     });
   }
 
-  // Samlet saldo i kassen = sum af alle bøder.
-  function getBalance() {
-    if (_supabase()) {
-      // TODO(supabase): hent fines og summér (eller en view/rpc)
-    }
-    return _async(function () {
-      var fines = _read('fines', []);
-      var sum = 0;
-      for (var i = 0; i < fines.length; i++) sum += Number(fines[i].beloeb) || 0;
-      return sum;
-    });
-  }
-
   // Skyld pr. medlem: [{memberId, navn, titel, beloeb}] = sum af UBETALTE bøder,
   // sorteret efter mest skyldige først.
   function getBalanceByMember() {
@@ -624,62 +611,6 @@
   }
 
   /* =========================================================
-   * ORDBOGSNÆVNET: ORD + DOMME
-   * ======================================================= */
-
-  function getWords() {
-    if (_supabase()) {
-      // TODO(supabase): from('words').select('*').order('oprettet', {ascending:false})
-    }
-    return _async(function () {
-      return _read('words', []);
-    });
-  }
-
-  function addWord(w) {
-    if (_supabase()) {
-      // TODO(supabase): from('words').insert(...)
-    }
-    return _async(function () {
-      var ord = _read('words', []);
-      var ny = {
-        id: _id('word'),
-        ord: w.ord,
-        status: 'afventer',
-        begrundelse: '',
-        oprettet: new Date().toISOString()
-      };
-      ord.push(ny);
-      _write('words', ord);
-      return ny;
-    });
-  }
-
-  // Afsig dom. status: 'doemt' | 'frikendt' | 'afventer'.
-  function ruleWord(wordId, dom) {
-    if (_supabase()) {
-      // TODO(supabase): from('words').update(...).eq('id', wordId)
-    }
-    return _async(function () {
-      var ord = _read('words', []);
-      ord = ord.map(function (o) {
-        if (o.id === wordId) {
-          return {
-            id: o.id,
-            ord: o.ord,
-            status: dom.status || o.status,
-            begrundelse: dom.begrundelse != null ? dom.begrundelse : o.begrundelse,
-            oprettet: o.oprettet
-          };
-        }
-        return o;
-      });
-      _write('words', ord);
-      return ord.filter(function (o) { return o.id === wordId; })[0];
-    });
-  }
-
-  /* =========================================================
    * VEDTÆGTER (key: 'forening' | 'boedekasse')
    * ======================================================= */
 
@@ -719,7 +650,6 @@
     getFines: getFines,
     addFine: addFine,
     removeFine: removeFine,
-    getBalance: getBalance,
     getBalanceByMember: getBalanceByMember,
     markerBetalt: markerBetalt,
     getKasseSaldo: getKasseSaldo,
@@ -746,10 +676,6 @@
     addBeer: addBeer,
     rateBeer: rateBeer,
     getBeerTop3: getBeerTop3,
-
-    getWords: getWords,
-    addWord: addWord,
-    ruleWord: ruleWord,
 
     getVedtaegter: getVedtaegter,
     setVedtaegter: setVedtaegter
