@@ -39,6 +39,9 @@
           <div class="kasse-note">Beløb er eksempeldata, indtil det rigtige bødekatalog leveres.</div>
         </div>
       </div>
+      <div class="handlinger hoejre kun-finans">
+        <button type="button" class="knap-lille" id="aabn-kasse">Regulér kassen</button>
+      </div>
     </div>
   </section>
 
@@ -168,6 +171,24 @@
     </form>
   </div>
 
+  <div class="ark" id="ark-kasse" aria-hidden="true">
+    <button type="button" class="luk-knap" data-luk aria-label="Luk">×</button>
+    <div class="ark-titel">Regulér kassen</div>
+    <span class="ark-under">Køb af øl trækker fra. Et fund i lommen lægger til. Skriv beløbet med fortegn.</span>
+    <form id="form-kasse">
+      <label class="felt">
+        <span class="felt-label">Beløb (kr — minus for udgift)</span>
+        <input type="number" id="kasse-delta" step="5" inputmode="numeric" placeholder="F.eks. -240 for en kasse øl" required>
+        <span class="felt-note skjult" id="fejl-kasse-delta" role="alert">Skriv et beløb (0 ændrer ingenting).</span>
+      </label>
+      <label class="felt">
+        <span class="felt-label">Note (valgfri)</span>
+        <input type="text" id="kasse-note" placeholder="F.eks. Indkøb til generalforsamlingen" maxlength="120">
+      </label>
+      <button type="submit" class="knap knap-bred">Bogfør reguleringen</button>
+    </form>
+  </div>
+
   <script src="assets/js/config.js"></script>
   <script src="assets/js/db.js"></script>
   <script src="assets/js/seed.js"></script>
@@ -179,6 +200,7 @@
 
     var sess = (window.Auth && Auth.current) ? Auth.current() : null;
     var erMinister = !!(sess && sess.rolle === "boedekasseminister");
+    var erFinans = !!(sess && sess.rolle === "finansminister");
 
     var membersCache = [];
     var katalogCache = [];
@@ -222,7 +244,7 @@
     }
 
     function renderSaldo() {
-      return DB.getBalance().then(function (sum) {
+      return DB.getKasseSaldo().then(function (sum) {
         document.getElementById("kasse-saldo").textContent = App.formatKr(sum);
       });
     }
@@ -239,12 +261,40 @@
         var html = "";
         liste.forEach(function (r) {
           var klasse = r.beloeb > 0 ? "saldo-belob skyld" : "saldo-belob";
+          var handling;
+          if (r.beloeb > 0) {
+            handling = erFinans
+              ? '<button type="button" class="knap-lille kun-finans" data-betal="' + esc(r.memberId) + '">Markér betalt</button>'
+              : "";
+          } else {
+            handling = '<span class="hvem">intet at betale</span>';
+          }
           html += '<div class="saldo-raekke">' +
             "<span>" + esc(navnFor(r.memberId)) + "</span>" +
-            '<span class="' + klasse + '">' + App.formatKr(r.beloeb) + "</span>" +
+            '<span class="skyld-handling">' +
+              '<span class="' + klasse + '">' + App.formatKr(r.beloeb) + "</span>" +
+              handling +
+            "</span>" +
             "</div>";
         });
         el.innerHTML = html;
+
+        if (erFinans) {
+          var betal = el.querySelectorAll("[data-betal]");
+          for (var i = 0; i < betal.length; i++) {
+            betal[i].addEventListener("click", function () {
+              var memberId = this.getAttribute("data-betal");
+              if (!window.confirm("Markér alle " + navnFor(memberId) + "s bøder som betalt? Pengene lægges i kassen.")) return;
+              DB.markerBetalt(memberId).then(function () {
+                App.toast("Gælden er udlignet. Pengene i kassen.");
+                opdaterAlt();
+              }).catch(function (e) {
+                App.toast("Bødekassen driller. Betalingen blev ikke bogført — prøv igen.");
+                if (window.console && console.error) console.error(e);
+              });
+            });
+          }
+        }
       });
     }
 
@@ -262,12 +312,15 @@
         });
         var html = "";
         sorteret.forEach(function (f) {
-          html += '<div class="boede">' +
+          var betalt = f.betalt === true;
+          html += '<div class="boede' + (betalt ? " betalt" : "") + '">' +
             '<div class="grund">' +
               "<em>" + esc(f.grund) + "</em>" +
               '<span class="hvem">' + esc(navnFor(f.memberId)) + " · " + esc(App.formatDato(f.dato)) + "</span>" +
             "</div>" +
-            '<div class="takst">' + App.formatKr(f.beloeb) +
+            '<div class="takst">' +
+              (betalt ? '<span class="betalt-maerke">Betalt</span> ' : "") +
+              App.formatKr(f.beloeb) +
               (erMinister
                 ? ' <button type="button" class="knap-lille fare" data-slet-boede="' + esc(f.id) + '">Slet</button>'
                 : "") +
@@ -598,6 +651,38 @@
       });
     });
 
+    function aabnKasseArk() {
+      document.getElementById("form-kasse").reset();
+      rydFejl("kasse-delta", "fejl-kasse-delta");
+      App.ark.open(document.getElementById("ark-kasse"));
+    }
+
+    document.getElementById("kasse-delta").addEventListener("input", function () {
+      if (this.value.trim() && Number(this.value) !== 0) rydFejl("kasse-delta", "fejl-kasse-delta");
+    });
+
+    document.getElementById("form-kasse").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var raa = document.getElementById("kasse-delta").value.trim();
+      var delta = Number(raa);
+      if (raa === "" || !isFinite(delta) || delta === 0) {
+        markerFejl("kasse-delta", "fejl-kasse-delta");
+        App.toast("Skriv et beløb (0 ændrer ingenting).");
+        return;
+      }
+      rydFejl("kasse-delta", "fejl-kasse-delta");
+      DB.aendreKasse(delta).then(function () {
+        lukAlleArk();
+        App.toast(delta > 0
+          ? "Kassen er vokset med " + App.formatKr(delta) + "."
+          : "Kassen er lettet med " + App.formatKr(Math.abs(delta)) + ".");
+        renderSaldo();
+      }).catch(function (e) {
+        App.toast("Bødekassen driller. Reguleringen blev ikke bogført — prøv igen.");
+        if (window.console && console.error) console.error(e);
+      });
+    });
+
     function aabnOenskeArk() {
       document.getElementById("form-oenske").reset();
       rydFejl("oenske-tekst", "fejl-oenske-tekst");
@@ -629,6 +714,8 @@
     if (bAabnKatalog) bAabnKatalog.addEventListener("click", function () { aabnKatalogArk(null); });
     var bAabnOenske = document.getElementById("aabn-oenske");
     if (bAabnOenske) bAabnOenske.addEventListener("click", aabnOenskeArk);
+    var bAabnKasse = document.getElementById("aabn-kasse");
+    if (bAabnKasse) bAabnKasse.addEventListener("click", aabnKasseArk);
 
     function opdaterAlt() {
       return Promise.all([renderSaldo(), renderSaldoPrMedlem(), renderBoeder()]);

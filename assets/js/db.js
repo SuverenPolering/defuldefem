@@ -102,6 +102,7 @@
         memberId: b.memberId,
         grund: b.grund,
         beloeb: Number(b.beloeb) || 0,
+        betalt: false,
         dato: b.dato || new Date().toISOString().slice(0, 10)
       };
       fines.push(ny);
@@ -135,10 +136,11 @@
     });
   }
 
-  // Saldo pr. medlem: [{memberId, navn, beloeb}], sorteret efter mest skyldige.
+  // Skyld pr. medlem: [{memberId, navn, titel, beloeb}] = sum af UBETALTE bøder,
+  // sorteret efter mest skyldige først.
   function getBalanceByMember() {
     if (_supabase()) {
-      // TODO(supabase): group by member_id (view/rpc)
+      // TODO(supabase): group by member_id, kun betalt=false (view/rpc)
     }
     return _async(function () {
       var members = _read('members', []);
@@ -146,14 +148,65 @@
       var pr = {};
       members.forEach(function (m) { pr[m.id] = 0; });
       fines.forEach(function (f) {
+        if (f.betalt === true) return; // kun ubetalte tæller som skyld
         if (!(f.memberId in pr)) pr[f.memberId] = 0;
         pr[f.memberId] += Number(f.beloeb) || 0;
       });
       var liste = members.map(function (m) {
-        return { memberId: m.id, navn: m.navn, beloeb: pr[m.id] || 0 };
+        return { memberId: m.id, navn: m.navn, titel: m.titel, beloeb: pr[m.id] || 0 };
       });
       liste.sort(function (a, b) { return b.beloeb - a.beloeb; });
       return liste;
+    });
+  }
+
+  // Penge i kassen (et lagret tal).
+  function getKasseSaldo() {
+    if (_supabase()) {
+      // TODO(supabase): hent kassens saldo (settings/view/rpc)
+    }
+    return _async(function () {
+      return Number(_read('kasse_saldo', 0)) || 0;
+    });
+  }
+
+  // Justér kassens saldo med delta (kan være negativt). Returnér ny saldo.
+  function aendreKasse(delta) {
+    if (_supabase()) {
+      // TODO(supabase): opdatér kassens saldo (settings/rpc)
+    }
+    return _async(function () {
+      var nyt = (Number(_read('kasse_saldo', 0)) || 0) + (Number(delta) || 0);
+      _write('kasse_saldo', nyt);
+      return nyt;
+    });
+  }
+
+  // Markér ALLE et medlems ubetalte bøder som betalt; læg summen til kassen.
+  // Bøderne bevares i protokollen (betalt:true). Returnér {antal, beloeb, nySaldo}.
+  function markerBetalt(memberId) {
+    if (_supabase()) {
+      // TODO(supabase): update fines set betalt=true where member_id=.. and betalt=false; opdatér kasse
+    }
+    return _async(function () {
+      var fines = _read('fines', []);
+      var antal = 0;
+      var beloeb = 0;
+      fines = fines.map(function (f) {
+        if (f.memberId === memberId && f.betalt !== true) {
+          antal += 1;
+          beloeb += Number(f.beloeb) || 0;
+          var kopi = {};
+          for (var k in f) { if (Object.prototype.hasOwnProperty.call(f, k)) kopi[k] = f[k]; }
+          kopi.betalt = true;
+          return kopi;
+        }
+        return f;
+      });
+      _write('fines', fines);
+      var nySaldo = (Number(_read('kasse_saldo', 0)) || 0) + beloeb;
+      _write('kasse_saldo', nySaldo);
+      return { antal: antal, beloeb: beloeb, nySaldo: nySaldo };
     });
   }
 
@@ -282,6 +335,57 @@
       moeder.push(ny);
       _write('meetings', moeder);
       return ny;
+    });
+  }
+
+  // Opdatér et møde. felter: {type?, dato?, datoer?, sted?, tema?, arkiveret?}.
+  // Datoer normaliseres som i addMeeting (sorteret; dato = datoer[0]).
+  function updateMeeting(id, felter) {
+    if (_supabase()) {
+      // TODO(supabase): from('meetings').update(...).eq('id', id)
+    }
+    return _async(function () {
+      var moeder = _read('meetings', []);
+      var opdateret = null;
+      moeder = moeder.map(function (m) {
+        if (m.id !== id) return m;
+        var f = felter || {};
+        var datoer;
+        if (f.datoer && f.datoer.length) {
+          datoer = f.datoer.slice();
+        } else if (f.dato) {
+          datoer = [f.dato];
+        } else {
+          datoer = (m.datoer && m.datoer.length) ? m.datoer.slice() : (m.dato ? [m.dato] : []);
+        }
+        datoer.sort(); // stigende ISO
+        opdateret = {
+          id: m.id,
+          type: f.type != null ? f.type : (m.type || 'moede'),
+          dato: datoer[0] || '',
+          datoer: datoer,
+          sted: f.sted != null ? f.sted : (m.sted || ''),
+          tema: f.tema != null ? f.tema : (m.tema || ''),
+          arkiveret: f.arkiveret != null ? !!f.arkiveret : !!m.arkiveret
+        };
+        return opdateret;
+      });
+      _write('meetings', moeder);
+      return opdateret;
+    });
+  }
+
+  // Fjern et møde OG dets rsvps. Returnér true.
+  function removeMeeting(id) {
+    if (_supabase()) {
+      // TODO(supabase): from('meetings').delete().eq('id', id) (rsvps via cascade)
+    }
+    return _async(function () {
+      var moeder = _read('meetings', []);
+      _write('meetings', moeder.filter(function (m) { return m.id !== id; }));
+      var rsvps = _read('rsvps', []);
+      _write('rsvps', rsvps.filter(function (r) { return r.meetingId !== id; }));
+      return true;
     });
   }
 
@@ -541,6 +645,33 @@
     });
   }
 
+  /* =========================================================
+   * VEDTÆGTER (key: 'forening' | 'boedekasse')
+   * ======================================================= */
+
+  function getVedtaegter(key) {
+    if (_supabase()) {
+      // TODO(supabase): from('vedtaegter').select('tekst').eq('key', key).single()
+    }
+    return _async(function () {
+      var alle = _read('vedtaegter', {});
+      return (alle && alle[key]) || '';
+    });
+  }
+
+  function setVedtaegter(key, tekst) {
+    if (_supabase()) {
+      // TODO(supabase): from('vedtaegter').upsert({key, tekst})
+    }
+    return _async(function () {
+      var alle = _read('vedtaegter', {});
+      if (!alle || typeof alle !== 'object') alle = {};
+      alle[key] = String(tekst);
+      _write('vedtaegter', alle);
+      return alle[key];
+    });
+  }
+
   /* ---------- eksportér ---------- */
 
   window.DB = {
@@ -556,6 +687,9 @@
     removeFine: removeFine,
     getBalance: getBalance,
     getBalanceByMember: getBalanceByMember,
+    markerBetalt: markerBetalt,
+    getKasseSaldo: getKasseSaldo,
+    aendreKasse: aendreKasse,
 
     getCatalog: getCatalog,
     upsertCatalogItem: upsertCatalogItem,
@@ -566,6 +700,8 @@
 
     getMeetings: getMeetings,
     addMeeting: addMeeting,
+    updateMeeting: updateMeeting,
+    removeMeeting: removeMeeting,
     setRSVP: setRSVP,
     getArchive: getArchive,
 
@@ -577,6 +713,9 @@
 
     getWords: getWords,
     addWord: addWord,
-    ruleWord: ruleWord
+    ruleWord: ruleWord,
+
+    getVedtaegter: getVedtaegter,
+    setVedtaegter: setVedtaegter
   };
 })();

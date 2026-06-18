@@ -26,25 +26,26 @@
 
     /* ---------- MEDLEMMER (kanonisk liste) ---------- */
     var members = [
-      { id: 'henning', navn: 'Henning Trab',     titel: 'Turistminister',         initial: 'H', rolle: 'minister' },
+      { id: 'henning', navn: 'Henning Trab',     titel: 'Turistminister',         initial: 'H', rolle: 'turistminister' },
       { id: 'jakob',   navn: 'Jakob Jakobsen',   titel: 'Bødekasseminister',      initial: 'J', rolle: 'boedekasseminister' },
-      { id: 'kim',     navn: 'Kim Hanen',        titel: 'Finansminister',         initial: 'K', rolle: 'minister' },
+      { id: 'kim',     navn: 'Kim Hanen',        titel: 'Finansminister',         initial: 'K', rolle: 'finansminister' },
       { id: 'anders',  navn: 'Anders Trab',      titel: 'Foreningssekretær',      initial: 'A', rolle: 'foreningssekretaer' },
       { id: 'steffen', navn: 'Steffen Due Lund', titel: 'Joy — nyder bare turen', initial: 'S', rolle: 'joy' }
     ];
     W('members', members);
 
-    /* ---------- BØDER (saldo ~1.420 kr) ----------
-     * 10 (nice/Henning) + 50 (for sent/Kim) + 10 (Måge/Steffen) = 70 fra de
-     * synlige poster. B4 viser saldo 1.420 kr (historik). Vi sår de tre
-     * synlige + en samlepost "tidligere bøder" så totalen rammer 1.420. */
+    /* ---------- BØDER (skyld pr. mand) ----------
+     * Hver bøde har 'betalt' (bool). Ubetalte bøder udgør skyld pr. mand.
+     * Pengene i kassen ligger separat i 'kasse_saldo' (se nedenfor). */
     var fines = [
-      { id: 'fine_seed_1', memberId: 'henning', grund: 'Sagde »nice« under hovedretten',          beloeb: 10,  dato: '2026-03-13' },
-      { id: 'fine_seed_2', memberId: 'kim',     grund: 'Kom 23 minutter for sent',                 beloeb: 50,  dato: '2026-03-13' },
-      { id: 'fine_seed_3', memberId: 'steffen', grund: 'Sagde Den Gyldne Måges udenlandske navn',  beloeb: 10,  dato: '2026-03-13' },
-      { id: 'fine_seed_0', memberId: 'jakob',   grund: 'Tidligere bøder (ført af Foreningssekretæren)', beloeb: 1350, dato: '2025-09-01' }
+      { id: 'fine_seed_1', memberId: 'henning', grund: 'Sagde »nice« under hovedretten',          beloeb: 10,  dato: '2026-03-13', betalt: false },
+      { id: 'fine_seed_2', memberId: 'kim',     grund: 'Kom 23 minutter for sent',                 beloeb: 50,  dato: '2026-03-13', betalt: false },
+      { id: 'fine_seed_3', memberId: 'steffen', grund: 'Sagde Den Gyldne Måges udenlandske navn',  beloeb: 10,  dato: '2026-03-13', betalt: false }
     ];
-    W('fines', fines); // 10+50+10+1350 = 1.420 kr
+    W('fines', fines);
+
+    /* ---------- KASSEN: penge i kassen (eksempeldata) ---------- */
+    W('kasse_saldo', 1350);
 
     /* ---------- BØDEKATALOG (faste takster, eksempler) ---------- */
     W('catalog', [
@@ -148,13 +149,17 @@
       { id: 'rate_b5', beerId: 'beer_bgb', memberId: 'steffen', score: 9 }
     ]);
 
-    /* ---------- ORDBOGSNÆVNET: domme (jf. B4) ---------- */
-    W('words', [
-      { id: 'word_weekend', ord: 'weekend',          status: 'frikendt', begrundelse: 'Står i Retskrivningsordbogen. Nævnet beklager.',      oprettet: '2026-03-13T18:00:00.000Z' },
-      { id: 'word_nice',    ord: 'nice',             status: 'doemt',    begrundelse: 'Ikke dansk. Aldrig dansk. 10 kr.',                     oprettet: '2026-03-13T18:05:00.000Z' },
-      { id: 'word_maage',   ord: 'Den Gyldne Måge',  status: 'frikendt', begrundelse: 'Forbilledlig fordanskning. Til efterlevelse.',         oprettet: '2026-03-13T18:10:00.000Z' },
-      { id: 'word_sorry',   ord: 'sorry',            status: 'doemt',    begrundelse: 'Undskyld findes. Brug det.',                           oprettet: '2026-03-13T18:15:00.000Z' }
-    ]);
+    /* ---------- VEDTÆGTER (læsbare for alle; redigeres pr. rolle) ---------- */
+    W('vedtaegter', {
+      forening: '§1 De Fulde Fem mødes, drikker specialøl og holder fast i fynsk stædighed.\n' +
+                '§2 Nye medlemmer optages kun enstemmigt — og over mindst én øl.\n' +
+                '§3 Møder går på skift. Datoer vedtages og flyttes ikke.\n' +
+                '§4 Joy har ingen forpligtelser, men nyder turen.',
+      boedekasse: '§1 Bøder fastsættes af Bødekasseministeren efter kataloget.\n' +
+                  '§2 Engelske ord koster 10 kr. pr. stk. Ingen undtagelser.\n' +
+                  '§3 Bøder betales til Finansministeren, som fører kassen.\n' +
+                  '§4 Kassen bruges på øl. Naturligvis.'
+    });
 
     return true;
   };
@@ -165,9 +170,9 @@
    * nye rolle 'foreningssekretaer'). migrer() kører ved HVERT load og
    * skriver KUN tilbage hvis noget faktisk ændredes. */
   var KANONISK = {
-    henning: { titel: 'Turistminister',         rolle: 'minister' },
+    henning: { titel: 'Turistminister',         rolle: 'turistminister' },
     jakob:   { titel: 'Bødekasseminister',      rolle: 'boedekasseminister' },
-    kim:     { titel: 'Finansminister',         rolle: 'minister' },
+    kim:     { titel: 'Finansminister',         rolle: 'finansminister' },
     anders:  { titel: 'Foreningssekretær',      rolle: 'foreningssekretaer' },
     steffen: { titel: 'Joy — nyder bare turen', rolle: 'joy' }
   };

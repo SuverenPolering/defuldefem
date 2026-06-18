@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>De Fulde Fem — Vedtægter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Yellowtail&family=Barlow+Semi+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body data-side="vedtaegter">
+
+  <section class="skilt">
+    <div class="skilt-braet">
+      <h1>Vedtægter</h1>
+      <span class="fem">skrevet ned så ingen glemmer</span>
+    </div>
+    <div class="vimpler"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <p class="skilt-under">Det vi blev enige om — og som ikke laver sig selv om.</p>
+  </section>
+
+  <!-- FORENINGENS VEDTÆGTER -->
+  <section class="sektion vedtaegt-sektion">
+    <div class="sektion-titel">
+      <h2>Foreningen</h2>
+      <span class="nips">det vi blev enige om</span>
+    </div>
+    <div class="kort skaev-a" style="margin-top:2px">
+      <span class="pin" style="top:-6px;left:14px"></span>
+      <span class="pin hav" style="top:-6px;right:14px"></span>
+      <span class="aeseloere"></span>
+      <div id="forening-tekst"></div>
+      <div class="handlinger kun-sekretaer">
+        <button type="button" class="knap-lille" id="rediger-forening">Redigér</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BØDEKASSENS VEDTÆGTER -->
+  <section class="sektion vedtaegt-sektion">
+    <div class="sektion-titel">
+      <h2>Bødekassen</h2>
+      <span class="nips">og hvad det koster</span>
+    </div>
+    <div class="kort skaev-b">
+      <span class="kapsel" style="top:-8px;left:16px"></span>
+      <span class="ring" style="bottom:8px;right:10px"></span>
+      <div id="boedekasse-tekst"></div>
+      <div class="handlinger kun-minister">
+        <button type="button" class="knap-lille" id="rediger-boedekasse">Redigér</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span class="haandskrift">De Fulde Fem</span>
+    Stiftet på Fyn. Bliver på Fyn. Punktum.<br>
+    Vedtægterne flyttes ikke. Det gør de ikke her.
+  </footer>
+
+  <!-- ARK: redigér en vedtægt -->
+  <div class="ark-baggrund" id="rediger-baggrund"></div>
+  <div class="ark" id="rediger-ark" aria-hidden="true" role="dialog" aria-label="Redigér vedtægt">
+    <button class="luk-knap" type="button" data-luk aria-label="Luk">&times;</button>
+    <div class="ark-titel" id="rediger-titel">Redigér vedtægt</div>
+    <span class="ark-under">Skriv det ned, så ingen kan påstå noget andet senere.</span>
+    <form id="rediger-form">
+      <div class="felt">
+        <label for="rediger-tekst">Teksten</label>
+        <textarea id="rediger-tekst" name="tekst" rows="10" placeholder="Skriv vedtægterne her …"></textarea>
+        <span class="felt-note">Linjeskift bevares, præcis som du skriver dem.</span>
+      </div>
+      <div class="handlinger hoejre">
+        <button type="button" class="knap-sekundaer" data-luk>Fortryd</button>
+        <button type="submit" class="knap">Gem</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Datalag + stel -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/db.js"></script>
+  <script src="assets/js/seed.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/app.js"></script>
+
+  <!-- Side-script: Vedtægterne. Al rendering sker via sikre DOM-noder
+       (createElement + textContent) — ingen innerHTML, ingen XSS-flade. -->
+  <script>
+  (function () {
+    'use strict';
+
+    /* ---------- små DOM-hjælpere (sikre: textContent, ikke HTML) ---------- */
+    function el(tag, klasse, tekst) {
+      var n = document.createElement(tag);
+      if (klasse) n.className = klasse;
+      if (tekst != null) n.textContent = tekst;
+      return n;
+    }
+    function ryd(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+
+    function tomBlok(ikon, titel, brodtekst) {
+      var t = el('div', 'tom');
+      t.appendChild(el('span', 'tom-ikon', ikon));
+      t.appendChild(el('div', 'tom-titel', titel));
+      t.appendChild(el('p', null, brodtekst));
+      return t;
+    }
+
+    /* Render én vedtægt-tekst i sit kort. Tom tekst -> tom-tilstand.
+       white-space:pre-wrap (fra .vedtaegt-tekst) bevarer linjeskift; teksten
+       sættes via textContent, så HTML i protokollen ikke fortolkes. */
+    function renderTekst(maalId, tekst) {
+      var maal = document.getElementById(maalId);
+      if (!maal) return;
+      ryd(maal);
+      if (tekst && String(tekst).trim()) {
+        maal.appendChild(el('div', 'vedtaegt-tekst', tekst));
+      } else {
+        maal.appendChild(tomBlok(
+          '📜',
+          'Endnu ikke skrevet ned …',
+          'Vedtægterne mangler. Den der må, skriver dem ned — så de holder.'
+        ));
+      }
+    }
+
+    /* ---------- ark: redigér ---------- */
+    var redigerBaggrund = document.getElementById('rediger-baggrund');
+    var redigerArk = document.getElementById('rediger-ark');
+    var redigerForm = document.getElementById('rediger-form');
+    var redigerTekst = document.getElementById('rediger-tekst');
+    var redigerTitel = document.getElementById('rediger-titel');
+    var aktivKey = null;
+
+    var TITLER = {
+      forening: 'Redigér foreningens vedtægter',
+      boedekasse: 'Redigér bødekassens vedtægter'
+    };
+
+    function aabnRediger(key) {
+      aktivKey = key;
+      redigerTitel.textContent = TITLER[key] || 'Redigér vedtægt';
+      DB.getVedtaegter(key).then(function (tekst) {
+        redigerTekst.value = tekst || '';
+      }).catch(function (e) {
+        redigerTekst.value = '';
+        if (window.console && console.error) console.error(e);
+      });
+      redigerBaggrund.classList.add('aaben');
+      redigerArk.classList.add('aaben');
+      redigerArk.setAttribute('aria-hidden', 'false');
+      // lille fokus-hjælp efter arkets glide-animation
+      setTimeout(function () { redigerTekst.focus(); }, 240);
+    }
+
+    function lukRediger() {
+      redigerBaggrund.classList.remove('aaben');
+      redigerArk.classList.remove('aaben');
+      redigerArk.setAttribute('aria-hidden', 'true');
+      aktivKey = null;
+    }
+
+    redigerBaggrund.addEventListener('click', lukRediger);
+
+    var lukKnapper = document.querySelectorAll('[data-luk]');
+    for (var l = 0; l < lukKnapper.length; l++) {
+      lukKnapper[l].addEventListener('click', lukRediger);
+    }
+
+    document.getElementById('rediger-forening').addEventListener('click', function () {
+      aabnRediger('forening');
+    });
+    document.getElementById('rediger-boedekasse').addEventListener('click', function () {
+      aabnRediger('boedekasse');
+    });
+
+    redigerForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!aktivKey) { lukRediger(); return; }
+      var key = aktivKey;
+      var tekst = redigerTekst.value;
+      DB.setVedtaegter(key, tekst).then(function () {
+        lukRediger();
+        App.toast(key === 'boedekasse'
+          ? 'Bødekassens vedtægter er skrevet ned. Og de holder.'
+          : 'Foreningens vedtægter er skrevet ned. Og de holder.');
+        var maalId = key === 'boedekasse' ? 'boedekasse-tekst' : 'forening-tekst';
+        renderTekst(maalId, tekst);
+      }).catch(function (e) {
+        App.toast('Vedtægten ville ikke skrives ned. Prøv igen — den flytter sig ikke selv.');
+        if (window.console && console.error) console.error(e);
+      });
+    });
+
+    /* ---------- opstart ---------- */
+    Promise.all([DB.getVedtaegter('forening'), DB.getVedtaegter('boedekasse')]).then(function (res) {
+      renderTekst('forening-tekst', res[0]);
+      renderTekst('boedekasse-tekst', res[1]);
+    }).catch(function (e) {
+      App.toast('Noget gik galt i Forsamlingshuset. Prøv at åbne døren igen.');
+      if (window.console && console.error) console.error(e);
+      renderTekst('forening-tekst', '');
+      renderTekst('boedekasse-tekst', '');
+    });
+  })();
+  </script>
+</body>
+</html>

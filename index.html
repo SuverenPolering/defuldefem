@@ -39,11 +39,6 @@
 </section>
 
 <section class="sektion">
-  <div class="sektion-titel"><h2>Forbudte ord</h2><span class="nips">Ordbogsnævnet har talt</span></div>
-  <div id="ord-vaert"></div>
-</section>
-
-<section class="sektion">
   <div class="sektion-titel"><h2>Regeringen</h2><span class="nips">valgt uden modkandidater</span></div>
   <div id="regering-vaert"></div>
 </section>
@@ -192,7 +187,7 @@
           '<div class="kasse-ikon">🪙</div>' +
           '<div>' +
             '<div class="kasse-saldo">' + esc(App.formatKr(saldo)) + '</div>' +
-            '<div class="kasse-note">Tælles af Bødekasseministeren. Tæl aldrig efter.</div>' +
+            '<div class="kasse-note">Pengene i kassen. Føres af Finansministeren.</div>' +
           '</div>' +
         '</div>' +
         listeHtml +
@@ -257,66 +252,7 @@
     vaert.innerHTML = html;
   }
 
-  /* ---------- (4) Forbudte ord — seneste domme ---------- */
-  function renderOrd(words) {
-    var vaert = $('ord-vaert');
-
-    // Seneste først (på 'oprettet'). Vis op til 4 — som B4.
-    var sorteret = words.slice().sort(function (a, b) {
-      return String(b.oprettet || '').localeCompare(String(a.oprettet || ''));
-    });
-    var vis = sorteret.slice(0, 4);
-
-    if (!vis.length) {
-      vaert.innerHTML =
-        '<div class="kort skaev-b">' +
-          '<span class="pin" style="top:-6px;left:14px"></span>' +
-          '<div class="tom">' +
-            '<span class="tom-ikon">🗣️</span>' +
-            '<div class="tom-titel">Nævnet sover</div>' +
-            '<p>Ingen ord er indstillet endnu. Hold tungen lige i munden.</p>' +
-          '</div>' +
-        '</div>';
-      return;
-    }
-
-    var domme = '';
-    for (var i = 0; i < vis.length; i++) {
-      var o = vis[i];
-      var maerke, maerkeTekst;
-      // Neutral inline-stil til 'afventer' (ingen egen B4-klasse) — matcher
-      // ordbogsnaevnet.html: grå tekst + grå kant, IKKE den grønne frikendt-stil.
-      var maerkeStil = '';
-      if (o.status === 'doemt') { maerke = 'doemt'; maerkeTekst = 'Dømt'; }
-      else if (o.status === 'frikendt') { maerke = 'frikendt'; maerkeTekst = 'Frikendt'; }
-      else {
-        // 'afventer' vises neutralt (grå), så det ikke forveksles med frikendt.
-        maerke = ''; maerkeTekst = 'Afventer';
-        maerkeStil = ' style="color:var(--tekst-svag);border:1px solid var(--linje)"';
-      }
-      domme +=
-        '<div class="dom">' +
-          '<div><span class="ord">»' + esc(o.ord) + '«</span>' +
-          (o.begrundelse ? '<span class="begrundelse">' + esc(o.begrundelse) + '</span>' : '') +
-          '</div>' +
-          '<span class="' + (maerke ? 'maerke ' + maerke : 'maerke') + '"' + maerkeStil + '>' + esc(maerkeTekst) + '</span>' +
-        '</div>';
-    }
-
-    vaert.innerHTML =
-      '<div class="kort skaev-b">' +
-        '<span class="pin" style="top:-6px;left:14px"></span>' +
-        '<span class="kapsel" style="top:-9px;right:20px"></span>' +
-        '<span class="pin hav" style="bottom:-6px;left:30px"></span>' +
-        '<span class="aeseloere"></span>' +
-        domme +
-        '<div class="handlinger hoejre">' +
-          '<a class="knap-lille" href="ordbogsnaevnet.html">Hele nævnet →</a>' +
-        '</div>' +
-      '</div>';
-  }
-
-  /* ---------- (5) Regeringen — alle 5 ministre ---------- */
+  /* ---------- (4) Regeringen — alle 5 ministre ---------- */
   function renderRegering(members) {
     var vaert = $('regering-vaert');
     if (!members.length) {
@@ -373,24 +309,21 @@
   Promise.all([
     DB.getMembers(),
     DB.getMeetings(),
-    DB.getBalance(),
+    DB.getKasseSaldo(),
     DB.getFines(),
-    DB.getBeerTop3(),
-    DB.getWords()
+    DB.getBeerTop3()
   ]).then(function (res) {
     var members = res[0] || [];
     var moeder = res[1] || [];
     var saldo = res[2] || 0;
     var fines = res[3] || [];
     var top3 = res[4] || [];
-    var words = res[5] || [];
 
     var medlemNavn = navnOpslag(members);
 
     renderMoede(moeder, medlemNavn);
     renderKasse(saldo, fines, medlemNavn);
     renderAeresvaeg(top3);
-    renderOrd(words);
     renderRegering(members);
   }).catch(function (e) {
     App.toast('Noget gik galt i Forsamlingshuset. Prøv at åbne døren igen.');

@@ -61,7 +61,7 @@
     { side: 'boder',    href: 'boder.html',          ikon: '🪙', navn: 'Bøder' },
     { side: 'ollet',    href: 'protokol.html',       ikon: '🍺', navn: 'Øllet' },
     { side: 'kalender', href: 'kalender.html',       ikon: '📅', navn: 'Kalender' },
-    { side: 'ord',      href: 'ordbogsnaevnet.html', ikon: '🗣️', navn: 'Ord' }
+    { side: 'vedtaegter', href: 'vedtaegter.html', ikon: '📜', navn: 'Vedtægter' }
   ];
 
   function injicerTopbar() {

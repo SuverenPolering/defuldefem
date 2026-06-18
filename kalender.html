@@ -49,7 +49,7 @@
   </footer>
 
   <!-- Flydende »+«: foreslå ny dato -->
-  <button class="tilfoej-knap" id="ny-dato-knap" aria-label="Foreslå ny dato">
+  <button class="tilfoej-knap kun-turist" id="ny-dato-knap" aria-label="Foreslå ny dato">
     <span>+</span>
   </button>
 
@@ -164,6 +164,7 @@
 
     var sess = (window.Auth && Auth.current) ? Auth.current() : null;
     var minId = sess ? sess.memberId : null;
+    var erTurist = sess && sess.rolle === 'turistminister';
 
     var memberMap = {};
     var memberRaekkefoelge = ['henning', 'jakob', 'kim', 'anders', 'steffen'];
@@ -301,6 +302,28 @@
         knap.setAttribute('data-meeting', m.id);
         knap.addEventListener('click', function () { aabnSvar(m.id); });
         handlinger.appendChild(knap);
+
+        if (erTurist) {
+          var redigerKnap = el('button', 'knap-lille', 'Redigér');
+          redigerKnap.type = 'button';
+          redigerKnap.addEventListener('click', function () { aabnRediger(m); });
+          handlinger.appendChild(redigerKnap);
+
+          var sletKnap = el('button', 'knap-lille fare', 'Slet');
+          sletKnap.type = 'button';
+          sletKnap.addEventListener('click', function () {
+            if (!window.confirm('Slet denne dato for altid? Den flyttes ikke — den forsvinder helt.')) return;
+            DB.removeMeeting(m.id).then(function () {
+              App.toast('Datoen er slettet. Det var åbenbart alligevel ikke vedtaget.');
+              return genindlaes();
+            }).catch(function (err) {
+              App.toast('Datoen ville ikke slettes. Prøv igen.');
+              if (window.console && console.error) console.error(err);
+            });
+          });
+          handlinger.appendChild(sletKnap);
+        }
+
         kort.appendChild(handlinger);
 
         maal.appendChild(kort);
@@ -346,6 +369,7 @@
     var gruppeMoede = document.getElementById('gruppe-moede');
     var gruppeRejse = document.getElementById('gruppe-rejse');
     var valgtType = 'moede';
+    var editId = null;
 
     function saetType(type) {
       valgtType = type;
@@ -362,8 +386,29 @@
     typeRejseKnap.addEventListener('click', function () { saetType('rejse'); });
 
     function aabnNy() {
+      if (!erTurist) return;
+      editId = null;
       nyForm.reset();
       saetType('moede');
+      nyBaggrund.classList.add('aaben');
+      nyArk.classList.add('aaben');
+      nyArk.setAttribute('aria-hidden', 'false');
+    }
+    function aabnRediger(m) {
+      if (!erTurist) return;
+      editId = m.id;
+      nyForm.reset();
+      saetType(m.type === 'rejse' ? 'rejse' : 'moede');
+      if (m.type === 'rejse') {
+        var datoer = (m.datoer && m.datoer.length) ? m.datoer : (m.dato ? [m.dato] : []);
+        document.getElementById('inp-fra').value = datoer[0] || '';
+        document.getElementById('inp-til').value = datoer[1] || '';
+        document.getElementById('inp-destination').value = m.sted || '';
+      } else {
+        document.getElementById('inp-dato').value = m.dato || '';
+        document.getElementById('inp-sted').value = m.sted || '';
+      }
+      document.getElementById('inp-tema').value = m.tema || '';
       nyBaggrund.classList.add('aaben');
       nyArk.classList.add('aaben');
       nyArk.setAttribute('aria-hidden', 'false');
@@ -409,12 +454,21 @@
         datoer = [fra, til];
       }
 
-      DB.addMeeting({ type: valgtType, datoer: datoer, sted: sted, tema: tema }).then(function () {
+      var felter = { type: valgtType, datoer: datoer, sted: sted, tema: tema };
+      var erRedigering = editId != null;
+      var gem = erRedigering
+        ? DB.updateMeeting(editId, felter)
+        : DB.addMeeting(felter);
+
+      gem.then(function () {
+        editId = null;
         nyForm.reset();
         lukNy();
-        App.toast(valgtType === 'rejse'
-          ? 'Rejsen er slået op. Køletasken pakker sig ikke selv.'
-          : 'Dato slået op. Den er hermed vedtaget.');
+        App.toast(erRedigering
+          ? 'Datoen er rettet. Den flyttes stadig ikke.'
+          : (valgtType === 'rejse'
+            ? 'Rejsen er slået op. Køletasken pakker sig ikke selv.'
+            : 'Dato slået op. Den er hermed vedtaget.'));
         return genindlaes();
       }).catch(function (e) {
         App.toast('Datoen ville ikke skrives ned. Prøv igen — den flytter sig ikke selv.');
