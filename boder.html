@@ -65,6 +65,9 @@
       <span class="pin" style="top:-6px;right:34px"></span>
       <span class="aeseloere"></span>
       <div id="boede-liste"></div>
+      <div class="handlinger hoejre kun-minister">
+        <button type="button" class="knap-lille fare kun-minister" id="nulstil-protokol">Nulstil</button>
+      </div>
     </div>
   </section>
 
@@ -149,9 +152,11 @@
       <input type="hidden" id="katalog-id">
       <label class="felt">
         <span class="felt-label">Kategori</span>
-        <input type="text" id="katalog-kategori" list="katalog-kategorier" placeholder="F.eks. Tøj" maxlength="60" autocomplete="off">
-        <datalist id="katalog-kategorier"></datalist>
-        <span class="felt-note">Vælg en eksisterende eller skriv en ny.</span>
+        <select id="katalog-kategori">
+          <option value="__ny__">+ Ny kategori …</option>
+        </select>
+        <input type="text" id="katalog-kategori-ny" class="skjult" placeholder="F.eks. Tøj" maxlength="60" autocomplete="off">
+        <span class="felt-note">Vælg en eksisterende eller opret en ny.</span>
       </label>
       <label class="felt">
         <span class="felt-label">Forseelse</span>
@@ -339,16 +344,21 @@
         var html = "";
         sorteret.forEach(function (f) {
           var betalt = f.betalt === true;
+          var antal = (f.antal != null ? Number(f.antal) : 1);
+          var enhed = Number(f.enhed) || 0;
           html += '<div class="boede' + (betalt ? " betalt" : "") + '">' +
             '<div class="grund">' +
-              "<em>" + esc(f.grund) + "</em>" +
+              "<em>" + esc(f.grund) + (antal > 1 ? (" ×" + antal) : "") + "</em>" +
               '<span class="hvem">' + esc(navnFor(f.memberId)) + " · " + esc(App.formatDato(f.dato)) + "</span>" +
             "</div>" +
             '<div class="takst">' +
               (betalt ? '<span class="betalt-maerke">Betalt</span> ' : "") +
-              App.formatKr(f.beloeb) +
+              App.formatKr(enhed * antal) +
               (erMinister
-                ? ' <button type="button" class="knap-lille fare" data-slet-boede="' + esc(f.id) + '">Slet</button>'
+                ? (antal > 1
+                    ? ' <button type="button" class="knap-lille" aria-label="Fjern én" data-dec-boede="' + esc(f.id) + '">−</button>'
+                    : "") +
+                  ' <button type="button" class="knap-lille fare" data-slet-boede="' + esc(f.id) + '">Slet</button>'
                 : "") +
             "</div>" +
           "</div>";
@@ -370,6 +380,19 @@
               });
             });
           }
+          var dec = el.querySelectorAll("[data-dec-boede]");
+          for (var d = 0; d < dec.length; d++) {
+            dec[d].addEventListener("click", function () {
+              var id = this.getAttribute("data-dec-boede");
+              DB.decrementFine(id).then(function () {
+                App.toast("Én trukket fra. Resten står stadig.");
+                opdaterAlt();
+              }).catch(function (e) {
+                App.toast("Bødekassen driller. Antallet blev ikke ændret — prøv igen.");
+                if (window.console && console.error) console.error(e);
+              });
+            });
+          }
         }
       });
     }
@@ -378,6 +401,7 @@
       return DB.getCatalog().then(function (katalog) {
         katalogCache = katalog;
         fyldKatalogVaelger();
+        fyldKategoriSelect();
         var el = document.getElementById("katalog-liste");
         if (!katalog.length) {
           el.innerHTML = '<div class="tom"><span class="tom-ikon">📖</span>' +
@@ -397,7 +421,7 @@
             '<span class="forseelse">' + esc(k.forseelse) + "</span>" +
             '<span class="takst">' + App.formatKr(k.takst) +
               (erMinister
-                ? ' <button type="button" class="knap-lille" data-tildel="' + esc(k.id) + '">Tildel til</button>' +
+                ? '<span class="tildel-felt"> <button type="button" class="knap-lille" data-tildel="' + esc(k.id) + '">Tildel til</button></span>' +
                   '<span class="katalog-rediger-felt">' +
                     ' <button type="button" class="knap-lille" data-rediger-katalog="' + esc(k.id) + '">Ret</button>' +
                     ' <button type="button" class="knap-lille fare" data-slet-katalog="' + esc(k.id) + '">Slet</button>' +
@@ -408,19 +432,30 @@
         }
         var html = "";
         grupper.forEach(function (g) {
-          html += '<div class="katalog-kategori">' + esc(g.kat) + "</div>";
-          g.items.forEach(function (k) { html += katalogRaekke(k); });
+          var raekker = "";
+          g.items.forEach(function (k) { raekker += katalogRaekke(k); });
+          html += '<button type="button" class="accordion-head" aria-expanded="false">' +
+              esc(g.kat) + ' <span class="chevron">▸</span>' +
+            "</button>" +
+            '<div class="accordion-panel">' + raekker + "</div>";
         });
         el.innerHTML = html;
 
-        // Datalist til kategori-feltet i redigér-arket (eksisterende kategorier).
-        var dl = document.getElementById("katalog-kategorier");
-        if (dl) {
-          dl.innerHTML = "";
-          grupper.forEach(function (g) {
-            var o = document.createElement("option");
-            o.value = g.kat;
-            dl.appendChild(o);
+        // Accordion: kun ét panel åbent ad gangen.
+        var heads = el.querySelectorAll(".accordion-head");
+        for (var h = 0; h < heads.length; h++) {
+          heads[h].addEventListener("click", function () {
+            var aaben = this.getAttribute("aria-expanded") === "true";
+            for (var x = 0; x < heads.length; x++) {
+              heads[x].setAttribute("aria-expanded", "false");
+              var p = heads[x].nextElementSibling;
+              if (p) p.classList.remove("aaben");
+            }
+            if (!aaben) {
+              this.setAttribute("aria-expanded", "true");
+              var panel = this.nextElementSibling;
+              if (panel) panel.classList.add("aaben");
+            }
           });
         }
 
@@ -502,9 +537,9 @@
           var n = tildelAntal();
           DB.addFine({
             memberId: m.id,
-            grund: tildelPost.forseelse + (n > 1 ? (" ×" + n) : ""),
-            beloeb: tildelPost.takst * n,
-            dato: new Date().toISOString().slice(0, 10)
+            grund: tildelPost.forseelse,
+            enhed: tildelPost.takst,
+            antal: n
           }).then(function () {
             App.toast("Tildelt " + m.titel + ": " + tildelPost.forseelse +
               (n > 1 ? (" ×" + n) : "") + " (" + App.formatKr(tildelPost.takst * n) + ")");
@@ -613,6 +648,41 @@
       sel.innerHTML = html;
     }
 
+    function katalogKategorier() {
+      var set = {}, ud = [];
+      katalogCache.forEach(function (k) {
+        var kat = k.kategori || "Andet";
+        if (!(kat in set)) { set[kat] = true; ud.push(kat); }
+      });
+      return ud;
+    }
+
+    function fyldKategoriSelect() {
+      var sel = document.getElementById("katalog-kategori");
+      if (!sel) return;
+      var forrige = sel.value;
+      var html = "";
+      katalogKategorier().forEach(function (kat) {
+        html += '<option value="' + esc(kat) + '">' + esc(kat) + "</option>";
+      });
+      html += '<option value="__ny__">+ Ny kategori …</option>';
+      sel.innerHTML = html;
+      if (forrige) sel.value = forrige;
+    }
+
+    function toggleNyKategori() {
+      var sel = document.getElementById("katalog-kategori");
+      var ny = document.getElementById("katalog-kategori-ny");
+      if (!sel || !ny) return;
+      if (sel.value === "__ny__") ny.classList.remove("skjult");
+      else ny.classList.add("skjult");
+    }
+
+    (function () {
+      var sel = document.getElementById("katalog-kategori");
+      if (sel) sel.addEventListener("change", toggleNyKategori);
+    })();
+
     function fyldMedlemsVaelger() {
       return DB.getMembers().then(function (members) {
         membersCache = members;
@@ -710,6 +780,11 @@
       var form = document.getElementById("form-katalog");
       form.reset();
       rydFejl("katalog-forseelse", "fejl-katalog-forseelse");
+      fyldKategoriSelect();
+      var sel = document.getElementById("katalog-kategori");
+      var ny = document.getElementById("katalog-kategori-ny");
+      ny.value = "";
+      ny.classList.add("skjult");
       var titel = document.getElementById("katalog-ark-titel");
       if (id) {
         var post = null;
@@ -718,13 +793,24 @@
         }
         if (post) {
           document.getElementById("katalog-id").value = post.id;
-          document.getElementById("katalog-kategori").value = post.kategori || "";
+          var kat = post.kategori || "";
+          if (kat && katalogKategorier().indexOf(kat) !== -1) {
+            sel.value = kat;
+          } else if (kat) {
+            sel.value = "__ny__";
+            ny.value = kat;
+            ny.classList.remove("skjult");
+          } else {
+            sel.value = "__ny__";
+            ny.classList.remove("skjult");
+          }
           document.getElementById("katalog-forseelse").value = post.forseelse;
           document.getElementById("katalog-takst").value = post.takst;
           titel.textContent = "Redigér takst";
         }
       } else {
         document.getElementById("katalog-id").value = "";
+        toggleNyKategori();
         titel.textContent = "Ny takst";
       }
       App.ark.open(document.getElementById("ark-katalog"));
@@ -741,7 +827,10 @@
         return;
       }
       rydFejl("katalog-forseelse", "fejl-katalog-forseelse");
-      var kategori = document.getElementById("katalog-kategori").value.trim();
+      var katSel = document.getElementById("katalog-kategori");
+      var kategori = katSel.value === "__ny__"
+        ? document.getElementById("katalog-kategori-ny").value.trim()
+        : katSel.value;
       var post = { forseelse: forseelse, takst: takst, kategori: kategori };
       if (id) post.id = id;
       DB.upsertCatalogItem(post).then(function () {
@@ -836,6 +925,18 @@
     if (bAabnOenske) bAabnOenske.addEventListener("click", function () { aabnOenskeArk(null); });
     var bAabnKasse = document.getElementById("aabn-kasse");
     if (bAabnKasse) bAabnKasse.addEventListener("click", aabnKasseArk);
+
+    var bNulstil = document.getElementById("nulstil-protokol");
+    if (bNulstil) bNulstil.addEventListener("click", function () {
+      if (!window.confirm("Er du sikker? Hele bødeprotokollen slettes — skyld nulstilles. Pengene i kassen bevares.")) return;
+      DB.nulstilProtokol().then(function () {
+        App.toast("Protokollen er nulstillet. Pengene i kassen bevares.");
+        opdaterAlt();
+      }).catch(function (e) {
+        App.toast("Bødekassen driller. Protokollen blev ikke nulstillet — prøv igen.");
+        if (window.console && console.error) console.error(e);
+      });
+    });
 
     var bKatalogToggle = document.getElementById("katalog-rediger-toggle");
     if (bKatalogToggle) bKatalogToggle.addEventListener("click", function () {

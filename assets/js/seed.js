@@ -89,9 +89,9 @@
      * Hver bøde har 'betalt' (bool). Ubetalte bøder udgør skyld pr. mand.
      * Pengene i kassen ligger separat i 'kasse_saldo' (se nedenfor). */
     var fines = [
-      { id: 'fine_seed_1', memberId: 'henning', grund: 'Sagde »nice« under hovedretten',          beloeb: 10,  dato: '2026-03-13', betalt: false },
-      { id: 'fine_seed_2', memberId: 'kim',     grund: 'Kom 23 minutter for sent',                 beloeb: 50,  dato: '2026-03-13', betalt: false },
-      { id: 'fine_seed_3', memberId: 'steffen', grund: 'Sagde Den Gyldne Måges udenlandske navn',  beloeb: 10,  dato: '2026-03-13', betalt: false }
+      { id: 'fine_seed_1', memberId: 'henning', grund: 'Sagde »nice« under hovedretten',          enhed: 10, antal: 1, dato: '2026-03-13', betalt: false },
+      { id: 'fine_seed_2', memberId: 'kim',     grund: 'Kom 23 minutter for sent',                 enhed: 50, antal: 1, dato: '2026-03-13', betalt: false },
+      { id: 'fine_seed_3', memberId: 'steffen', grund: 'Sagde Den Gyldne Måges udenlandske navn',  enhed: 10, antal: 1, dato: '2026-03-13', betalt: false }
     ];
     W('fines', fines);
 
@@ -243,6 +243,30 @@
       window.DB._write('catalog', KATALOG);
       window.DB._write('catalog_version', KATALOG_VERSION);
       aendret = true;
+    }
+
+    // Migrer gamle boeder { grund, beloeb } til ny form { grund, enhed, antal }.
+    // Koerer kun for boeder der mangler 'enhed'. Skriver kun ved faktisk aendring.
+    var fines = window.DB._read('fines', []);
+    if (fines && fines.length) {
+      var finesAendret = false;
+      for (var j = 0; j < fines.length; j++) {
+        var f = fines[j];
+        if (f && f.enhed === undefined) {
+          var match = /\s×(\d+)\s*$/.exec(f.grund || '');
+          var antal = match ? Number(match[1]) : 1;
+          var enhed = Math.round((Number(f.beloeb) || 0) / antal);
+          f.grund = (f.grund || '').replace(/\s*×\d+\s*$/, '').trim();
+          f.enhed = enhed;
+          f.antal = antal;
+          delete f.beloeb;
+          finesAendret = true;
+        }
+      }
+      if (finesAendret) {
+        window.DB._write('fines', fines);
+        aendret = true;
+      }
     }
 
     return aendret;

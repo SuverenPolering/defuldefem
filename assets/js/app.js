@@ -71,10 +71,14 @@
     var navn = document.createElement('div');
     navn.className = 'topbar-navn';
     navn.textContent = 'De Fulde Fem';
+    var mig = document.createElement('div');
+    mig.className = 'topbar-mig';
+    mig.id = 'topbar-mig';
     var badge = document.createElement('div');
     badge.className = 'fynsk-badge';
     badge.textContent = '100 % fynsk';
     bar.appendChild(navn);
+    bar.appendChild(mig);
     bar.appendChild(badge);
     document.body.insertBefore(bar, document.body.firstChild);
   }
@@ -264,6 +268,17 @@
     if (side !== 'login' && side !== 'velkommen') {
       injicerTopbar();
       injicerNav(side);
+      // Center-zonen: vis den indloggedes titel.
+      if (sess && sess.memberId && window.DB && typeof window.DB.getMembers === 'function') {
+        window.DB.getMembers().then(function (members) {
+          var m = null;
+          for (var i = 0; i < members.length; i++) {
+            if (members[i].id === sess.memberId) { m = members[i]; break; }
+          }
+          var migEl = document.getElementById('topbar-mig');
+          if (migEl && m) migEl.textContent = m.titel;
+        });
+      }
     }
   }
 

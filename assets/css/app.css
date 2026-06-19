@@ -879,3 +879,95 @@ input[type="number"]{font-weight:700}
 .oenske{justify-content:space-between}
 .oenske .oenske-krop{min-width:0}
 .oenske-handling{display:flex;gap:6px;flex-shrink:0}
+
+/* ============================================================
+   UDVIDELSE 2 — 3-zone topbar, accordion, deltager-chips,
+   katalog redigér⇄tildel, ønske-byline, Regeringen-adgang.
+   Samme B4-palet/æstetik. Kun nye klasser; eksisterende rør jeg ikke.
+   ============================================================ */
+
+/* ---- 1) 3-zone topbar (midter-zone: »mig«-navn) ----
+   .topbar er allerede flex space-between; denne midter-zone fylder,
+   centrerer og trunkerer det lange visningsnavn på smalle skærme. */
+.topbar-mig{
+  flex:1;min-width:0;
+  text-align:center;
+  font-family:'Caveat',cursive;font-size:16px;color:var(--hav-lys);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:0 8px;
+}
+
+/* ---- 2) Accordion (katalog OG Regeringen) ----
+   Semantisk <button> som hoved; chevron roterer via aria-expanded.
+   Panelet animerer max-height (slås fra ved reduced-motion). */
+.accordion-head{
+  width:100%;
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:44px;
+  background:transparent;
+  border:none;border-bottom:1px dashed var(--linje);
+  color:var(--hav);
+  text-align:left;
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:15px;font-weight:700;letter-spacing:.04em;
+  padding:10px 4px;
+  cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+}
+.accordion-head .chevron{
+  flex-shrink:0;
+  color:var(--hav-lys);
+  transition:transform .2s ease;
+}
+.accordion-head[aria-expanded="true"] .chevron{transform:rotate(90deg)}
+.accordion-panel{
+  overflow:hidden;
+  max-height:0;
+  transition:max-height .25s ease;
+}
+.accordion-panel.aaben{max-height:none}
+@media (prefers-reduced-motion:reduce){
+  .accordion-head .chevron{transition:none}
+  .accordion-panel{transition:none}
+}
+
+/* ---- 3) Deltager-chips (vælg hvem der deltager) ----
+   B4 pille/kort-knapper; valgt = malet havblå med hård offset-skygge. */
+.deltager-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.deltager-chip{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:40px;
+  background:var(--hvid);
+  border:1px solid var(--linje);
+  border-radius:999px;
+  padding:8px 14px;
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-weight:600;
+  color:var(--tekst);
+  cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+  transition:background-color .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.deltager-chip.valgt{
+  background:var(--hav);
+  color:var(--hvid);
+  border-color:var(--hav);
+  box-shadow:0 3px 0 var(--hav-lys);
+}
+
+/* ---- 4) Katalog redigér⇄tildel ----
+   .katalog-rediger-felt defineres allerede ovenfor (skjult som default).
+   Her tilføjes KUN tildel-feltet og om-bytningen i redigér-tilstand. */
+.tildel-felt{display:inline-flex}
+.kort.redigerer .tildel-felt{display:none}
+/* (.kort.redigerer .katalog-rediger-felt{display:inline-flex} findes allerede
+   ovenfor — ikke dupliceret her.) */
+
+/* ---- 5) Ønske-byline luft (kun i ønske-kontekst) ---- */
+.oenske .hvem{display:block;margin-top:4px}
+
+/* ---- 6) Regeringen: adgangstekst i accordion-panelet ---- */
+.medlem-adgang{
+  font-size:13px;color:var(--tekst);line-height:1.5;
+  padding:8px 4px 4px;
+}

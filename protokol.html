@@ -552,8 +552,11 @@
     document.getElementById('form-session').reset();
     skjulFejl('fejl-s-dato');
     Array.prototype.forEach.call(
-      document.querySelectorAll('#s-deltagere input[type=checkbox]'),
-      function (cb) { cb.checked = true; }
+      document.querySelectorAll('#s-deltagere .deltager-chip'),
+      function (chip) {
+        chip.classList.add('valgt');
+        chip.setAttribute('aria-pressed', 'true');
+      }
     );
     aabn('ark-session');
   });
@@ -568,8 +571,12 @@
     skjulFejl('fejl-s-dato');
     var deltagere = [];
     Array.prototype.forEach.call(
-      document.querySelectorAll('#s-deltagere input[type=checkbox]:checked'),
-      function (cb) { deltagere.push(cb.value); }
+      document.querySelectorAll('#s-deltagere .deltager-chip'),
+      function (chip) {
+        if (chip.getAttribute('aria-pressed') === 'true') {
+          deltagere.push(chip.getAttribute('data-medlem'));
+        }
+      }
     );
     window.DB.addSession({
       dato: dato,
@@ -698,19 +705,22 @@
   function byggDeltagerTjek() {
     var wrap = document.getElementById('s-deltagere');
     wrap.innerHTML = '';
+    var chips = document.createElement('div');
+    chips.className = 'deltager-chips';
     members.forEach(function (m) {
-      var lab = document.createElement('label');
-      lab.style.cssText =
-        'display:flex;align-items:center;gap:9px;padding:6px 0;font-size:15px;font-weight:600;';
-      var cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.value = m.id;
-      cb.checked = true;
-      cb.style.cssText = 'width:20px;height:20px;flex:0 0 auto;';
-      lab.appendChild(cb);
-      lab.appendChild(document.createTextNode(m.titel));
-      wrap.appendChild(lab);
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'deltager-chip valgt';
+      chip.setAttribute('aria-pressed', 'true');
+      chip.setAttribute('data-medlem', m.id);
+      chip.textContent = m.titel;
+      chip.addEventListener('click', function () {
+        var valgt = chip.classList.toggle('valgt');
+        chip.setAttribute('aria-pressed', valgt ? 'true' : 'false');
+      });
+      chips.appendChild(chip);
     });
+    wrap.appendChild(chips);
   }
 
   function visFejl(fejlId, feltId) {

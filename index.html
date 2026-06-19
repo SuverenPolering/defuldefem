@@ -165,12 +165,14 @@
       for (var i = 0; i < seneste.length; i++) {
         var f = seneste[i];
         var navn = medlemNavn[f.memberId] || f.memberId;
+        var beloeb = (Number(f.enhed) || 0) * (Number(f.antal) || 0);
+        var grundTekst = f.grund + (f.antal > 1 ? ' ×' + f.antal : '');
         listeHtml +=
           '<div class="boede">' +
-            '<div class="grund">' + esc(f.grund) +
+            '<div class="grund">' + esc(grundTekst) +
               '<span class="hvem">' + esc(navn) + ' · ' + esc(App.formatDato(f.dato)) + '</span>' +
             '</div>' +
-            '<div class="takst">' + esc(App.formatKr(f.beloeb)) + '</div>' +
+            '<div class="takst">' + esc(App.formatKr(beloeb)) + '</div>' +
           '</div>';
       }
       listeHtml += '</div>';
@@ -271,11 +273,25 @@
     var regering = members.filter(function (m) { return m.rolle !== 'joy'; });
     var joy = members.filter(function (m) { return m.rolle === 'joy'; });
 
+    // Adgangstekst pr. rolle (vises i accordion-panelet under hvert medlem).
+    var adgang = {
+      turistminister: 'Opretter, redigerer og sletter møder & rejser i kalenderen.',
+      boedekasseminister: 'Registrerer, redigerer, sletter og tildeler bøder samt bødekataloget. Nulstiller bødeprotokollen. Redigerer bødekassens vedtægter.',
+      finansminister: 'Regulerer kassens saldo og markerer bøder betalt.',
+      foreningssekretaer: 'Opretter øl-aftener og tilføjer øl. Redigerer og sletter ønsker. Redigerer foreningens vedtægter.',
+      joy: 'Ingen forpligtelser — men bedømmer øl, svarer på møder og tilføjer ønsker som alle andre.'
+    };
+
     function medlemRaekke(m) {
       var init = m.initial || (m.navn ? m.navn.charAt(0) : '?');
-      return '<div class="medlem">' +
+      var tekst = adgang[m.rolle] || '';
+      return '<button type="button" class="medlem accordion-head" aria-expanded="false">' +
         '<div class="brik">' + esc(init) + '</div>' +
-        '<div><div class="medlem-navn">' + esc(m.titel) + '</div></div>' +
+        '<div class="medlem-navn">' + esc(m.titel) + '</div>' +
+        '<span class="chevron" aria-hidden="true">▸</span>' +
+      '</button>' +
+      '<div class="accordion-panel">' +
+        '<div class="medlem-adgang">' + esc(tekst) + '</div>' +
       '</div>';
     }
 
@@ -299,6 +315,17 @@
     }
 
     vaert.innerHTML = html;
+
+    // UAFHÆNGIGE accordion-toggles: et klik åbner/lukker KUN det ene medlem.
+    var hoveder = vaert.querySelectorAll('.accordion-head');
+    for (var t = 0; t < hoveder.length; t++) {
+      hoveder[t].addEventListener('click', function () {
+        var aaben = this.getAttribute('aria-expanded') === 'true';
+        this.setAttribute('aria-expanded', aaben ? 'false' : 'true');
+        var panel = this.nextElementSibling;
+        if (panel) panel.classList.toggle('aaben', !aaben);
+      });
+    }
   }
 
   /* ---------- opstart: hent alt fra DB parallelt ---------- */

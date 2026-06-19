@@ -65,6 +65,14 @@
     return sum / tal.length;
   }
 
+  // Beløb for en bøde = enhed * antal. Falder tilbage på (gammel) beloeb-form
+  // og antal=1, så gamle bøder uden enhed/antal stadig regnes korrekt.
+  function _fineBeloeb(f) {
+    var enhed = (f.enhed != null ? Number(f.enhed) : Number(f.beloeb)) || 0;
+    var antal = (f.antal != null ? Number(f.antal) : 1);
+    return enhed * antal;
+  }
+
   /* =========================================================
    * MEDLEMMER
    * ======================================================= */
@@ -97,17 +105,66 @@
     }
     return _async(function () {
       var fines = _read('fines', []);
+      var enhed = (b.enhed != null ? Number(b.enhed) : Number(b.beloeb)) || 0;
+      var antal = Math.max(1, Math.floor(Number(b.antal) || 1));
+      var dato = b.dato || new Date().toISOString().slice(0, 10);
+      // MERGE: læg oveni en eksisterende UBETALT bøde med samme memberId+grund+enhed.
+      for (var i = 0; i < fines.length; i++) {
+        var f = fines[i];
+        if (f.betalt !== true && f.memberId === b.memberId &&
+            f.grund === b.grund && Number(f.enhed) === enhed) {
+          f.antal = (f.antal != null ? Number(f.antal) : 1) + antal;
+          f.dato = dato;
+          _write('fines', fines);
+          return f;
+        }
+      }
       var ny = {
         id: _id('fine'),
         memberId: b.memberId,
         grund: b.grund,
-        beloeb: Number(b.beloeb) || 0,
+        enhed: enhed,
+        antal: antal,
         betalt: false,
-        dato: b.dato || new Date().toISOString().slice(0, 10)
+        dato: dato
       };
       fines.push(ny);
       _write('fines', fines);
       return ny;
+    });
+  }
+
+  // Sænk antallet på en bøde med 1. Fjern bøden helt når antal når 0. Returnér true.
+  function decrementFine(id) {
+    if (_supabase()) {
+      // TODO(supabase): update fines set antal=antal-1 (slet hvis <=0) where id=..
+    }
+    return _async(function () {
+      var fines = _read('fines', []);
+      var ud = [];
+      for (var i = 0; i < fines.length; i++) {
+        var f = fines[i];
+        if (f.id === id) {
+          var nyAntal = (f.antal != null ? Number(f.antal) : 1) - 1;
+          if (nyAntal <= 0) continue; // fjern bøden helt
+          f.antal = nyAntal;
+        }
+        ud.push(f);
+      }
+      _write('fines', ud);
+      return true;
+    });
+  }
+
+  // Tøm hele protokollen (alle bøder). Rører IKKE kassens saldo. Returnér antal slettede.
+  function nulstilProtokol() {
+    if (_supabase()) {
+      // TODO(supabase): delete from fines (kasse_saldo urørt)
+    }
+    return _async(function () {
+      var antal = _read('fines', []).length;
+      _write('fines', []);
+      return antal;
     });
   }
 
@@ -137,7 +194,7 @@
       fines.forEach(function (f) {
         if (f.betalt === true) return; // kun ubetalte tæller som skyld
         if (!(f.memberId in pr)) pr[f.memberId] = 0;
-        pr[f.memberId] += Number(f.beloeb) || 0;
+        pr[f.memberId] += _fineBeloeb(f);
       });
       var liste = members.map(function (m) {
         return { memberId: m.id, navn: m.navn, titel: m.titel, beloeb: pr[m.id] || 0 };
@@ -182,7 +239,7 @@
       fines = fines.map(function (f) {
         if (f.memberId === memberId && f.betalt !== true) {
           antal += 1;
-          beloeb += Number(f.beloeb) || 0;
+          beloeb += _fineBeloeb(f);
           var kopi = {};
           for (var k in f) { if (Object.prototype.hasOwnProperty.call(f, k)) kopi[k] = f[k]; }
           kopi.betalt = true;
@@ -649,6 +706,8 @@
 
     getFines: getFines,
     addFine: addFine,
+    decrementFine: decrementFine,
+    nulstilProtokol: nulstilProtokol,
     removeFine: removeFine,
     getBalanceByMember: getBalanceByMember,
     markerBetalt: markerBetalt,
