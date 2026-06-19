@@ -119,8 +119,8 @@
       <div class="krus-slider">
         <span class="krus-emoji" id="krus-emoji" aria-hidden="true">🍺</span>
         <input type="range" name="score" id="r-score" min="1" max="10" step="0.5" value="5" aria-label="Karakter fra 1 til 10, halve tilladt">
-        <output class="krus-vaerdi" id="krus-vaerdi" for="r-score">5</output>
       </div>
+      <output class="krus-vaerdi" id="krus-vaerdi" for="r-score">5</output>
       <span class="fejl skjult" id="fejl-r-score" role="alert">Karakter mellem 1 og 10 — halve point tilladt.</span>
     </label>
     <button class="knap knap-bred" type="submit">Før dommen til protokols</button>
@@ -406,6 +406,7 @@
     if (b.type) metaDele.push(b.type);
     var p = visPct(b.pct);
     if (p) metaDele.push(p);
+    if (b.havdeMedId && memMap[b.havdeMedId]) metaDele.push(memMap[b.havdeMedId].titel + ' havde den med');
     meta.textContent = metaDele.join(' · ');
     venstre.appendChild(meta);
 
@@ -650,8 +651,11 @@
     var slider = document.getElementById('r-score');
     var val = Number(slider.value);
     var frac = (val - 1) / 9;
-    slider.style.setProperty('--p', (frac * 100) + '%');
-    slider.style.setProperty('--p-num', frac);
+    // Sæt på .krus-slider-containeren, så BÅDE banen (input) og ølkruset (søskende-span)
+    // arver --p/--p-num. Sætter man dem kun på input, kan kruset ikke se dem (ingen sidelæns arv).
+    var wrap = slider.parentNode;
+    wrap.style.setProperty('--p', (frac * 100) + '%');
+    wrap.style.setProperty('--p-num', frac);
     document.getElementById('krus-vaerdi').textContent = visScore(val);
   }
 

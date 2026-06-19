@@ -57,7 +57,7 @@ body{
   padding-bottom:84px;
 }
 .topbar{
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;row-gap:2px;
+  display:flex;align-items:center;justify-content:space-between;
   padding:12px 18px;
   position:sticky;top:0;z-index:10;
   background:rgba(241,246,244,.95);
@@ -66,14 +66,14 @@ body{
 }
 .topbar-navn{
   font-family:'Yellowtail',cursive;font-size:24px;color:var(--hav);
-  order:1;
+  flex:0 0 auto;
 }
 .fynsk-badge{
   font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
   color:var(--koral);border:1.5px solid var(--koral);
   padding:3px 10px;border-radius:99px;
   transform:rotate(-2deg);
-  order:2;
+  flex:0 0 auto;
 }
 
 /* Skiltet over døren */
@@ -741,7 +741,7 @@ input[type="number"]{font-weight:700}
 }
 .katalog-raekke:last-child{border-bottom:none}
 .katalog-raekke .forseelse{flex:1;min-width:0}
-.katalog-raekke .takst{font-weight:700;color:var(--hav);white-space:nowrap}
+.katalog-raekke .takst{font-weight:700;color:var(--hav);white-space:nowrap;display:inline-flex;align-items:center;gap:12px}
 
 /* ---- »Tildel til«-menu (bødekataloget) ----
    Lille popover under en knap. Hvid flade som .kort, samme bløde skygge.
@@ -892,12 +892,11 @@ input[type="number"]{font-weight:700}
    .topbar er allerede flex space-between; denne midter-zone fylder,
    centrerer og trunkerer det lange visningsnavn på smalle skærme. */
 .topbar-mig{
-  order:3;flex:0 0 100%;width:100%;margin-top:2px;
+  flex:1 1 auto;min-width:0;
   text-align:center;
-  font-family:'Caveat',cursive;font-size:24px;color:var(--hav-lys);
-  /* Lange titler må ombryde i stedet for at blive afkortet — samme størrelse
-     som »De Fulde Fem« (.topbar-navn 24px). Ingen ellipsis/nowrap. */
-  white-space:normal;line-height:1.05;overflow:visible;
+  font-family:'Caveat',cursive;font-size:17px;color:var(--hav-lys);
+  /* Én linje på samme linje som logo + badge — trunkér hellere end at overlappe. */
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   padding:0 8px;
 }
 
@@ -983,33 +982,35 @@ input[type="number"]{font-weight:700}
    JS sætter --p (% til track/emoji-position) og --p-num (tal 0..1 til
    emoji-størrelse). Værdien vises i Caveat under slideren.
    ============================================================ */
-.krus-slider{position:relative;padding-top:54px;margin:8px 0}
+/* Ølkruset ER prikken: den native thumb gøres usynlig men gribbar (44px),
+   og ølkruset placeres præcist over thumb-positionen (med thumb-inset, så det
+   ikke bliver skævt) og vokser med karakteren. */
+.krus-slider{position:relative;height:78px;margin:10px 0 0}
 .krus-slider input[type=range]{
-  width:100%;-webkit-appearance:none;appearance:none;
-  height:10px;border-radius:99px;
+  position:absolute;top:50%;left:0;transform:translateY(-50%);
+  width:100%;-webkit-appearance:none;appearance:none;margin:0;
+  height:12px;border-radius:99px;
   background:linear-gradient(90deg,var(--rav) 0,var(--rav) var(--p,50%),var(--linje) var(--p,50%));
   cursor:pointer;
 }
 .krus-slider input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;
-  width:28px;height:28px;border-radius:50%;
-  background:var(--hav);border:3px solid var(--hvid);
-  box-shadow:0 2px 6px rgba(31,78,95,.4);
-  cursor:pointer;margin-top:-9px;
+  -webkit-appearance:none;width:44px;height:44px;border-radius:50%;
+  background:transparent;border:0;cursor:grab;
 }
 .krus-slider input[type=range]::-moz-range-thumb{
-  width:28px;height:28px;border:3px solid var(--hvid);border-radius:50%;
-  background:var(--hav);cursor:pointer;
+  width:44px;height:44px;border:0;border-radius:50%;background:transparent;cursor:grab;
 }
 .krus-emoji{
-  position:absolute;top:6px;left:var(--p,50%);
-  transform:translateX(-50%);
-  line-height:1;pointer-events:none;
-  font-size:calc(1.6rem + var(--p-num,0.5) * 2.6rem);
+  position:absolute;top:50%;
+  left:calc(var(--p-num,0.5) * (100% - 44px) + 22px);
+  transform:translate(-50%,-50%);
+  line-height:1;pointer-events:none;z-index:2;
+  font-size:calc(1rem + var(--p-num,0.5) * 2.8rem);
+  filter:drop-shadow(0 2px 3px rgba(31,78,95,.3));
   transition:font-size .12s ease, left .12s ease;
 }
 .krus-vaerdi{
-  display:block;text-align:center;margin-top:8px;
+  display:block;text-align:center;margin-top:4px;
   font-family:'Caveat',cursive;font-size:28px;font-weight:700;color:var(--hav);
 }
 @media (prefers-reduced-motion:reduce){

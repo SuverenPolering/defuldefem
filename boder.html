@@ -192,7 +192,7 @@
     <form id="form-kasse">
       <label class="felt">
         <span class="felt-label">Beløb (kr — minus for udgift)</span>
-        <input type="number" id="kasse-delta" step="0.5" inputmode="numeric" placeholder="F.eks. -240 for en kasse øl" required>
+        <input type="text" id="kasse-delta" inputmode="decimal" autocomplete="off" data-no-cap placeholder="F.eks. -240 for en kasse øl" required>
         <span class="felt-note skjult" id="fejl-kasse-delta" role="alert">Skriv et beløb (0 ændrer ingenting).</span>
       </label>
       <label class="felt">
@@ -849,14 +849,32 @@
       App.ark.open(document.getElementById("ark-kasse"));
     }
 
+    // Beløb-feltet kan skrives direkte (pilene er ikke eneste mulighed), men
+    // accepterer kun tal: ét ledende minus, cifre og ét decimaltegn (komma).
     document.getElementById("kasse-delta").addEventListener("input", function () {
-      if (this.value.trim() && Number(this.value) !== 0) rydFejl("kasse-delta", "fejl-kasse-delta");
+      var v = this.value;
+      var fundetDecimal = false;
+      var renset = v
+        .replace(/[^0-9.,\-]/g, "")            // kun cifre, tegn, minus
+        .replace(/(?!^)-/g, "")                 // minus kun forrest
+        .replace(/[.,]/g, function (m) {        // kun ét decimaltegn (komma)
+          if (fundetDecimal) return "";
+          fundetDecimal = true;
+          return ",";
+        });
+      if (renset !== v) {
+        var diff = v.length - renset.length;
+        var pos = Math.max(0, (this.selectionStart || renset.length) - diff);
+        this.value = renset;
+        try { this.setSelectionRange(pos, pos); } catch (e) {}
+      }
+      if (this.value.trim() && Number(this.value.replace(",", ".")) !== 0) rydFejl("kasse-delta", "fejl-kasse-delta");
     });
 
     document.getElementById("form-kasse").addEventListener("submit", function (e) {
       e.preventDefault();
       var raa = document.getElementById("kasse-delta").value.trim();
-      var delta = Number(raa);
+      var delta = Number(raa.replace(",", "."));
       if (raa === "" || !isFinite(delta) || delta === 0) {
         markerFejl("kasse-delta", "fejl-kasse-delta");
         App.toast("Skriv et beløb (0 ændrer ingenting).");
