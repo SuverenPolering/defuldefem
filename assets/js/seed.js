@@ -70,6 +70,15 @@
     { id: 'cat_36', kategori: 'Skade, gæster og status', forseelse: 'Mødets mindste skyldner', takst: 5 }
   ];
 
+  /* ---------- KASSEBOG (eksempel-log over manuelle reguleringer) ----------
+   * Log over MANUELLE ind/ud af kassen (Regulér kassen). Summen af beloeb
+   * matcher kasse_saldo = 1350. Markér-betalt logges IKKE. */
+  var KASSE_LOG = [
+    { id: 'kl_seed_1', dato: '2025-09-01T12:00:00.000Z', beloeb: 1500, note: 'Opstartsbeholdning' },
+    { id: 'kl_seed_2', dato: '2026-01-15T12:00:00.000Z', beloeb: 245,  note: 'Indbetalinger fra bødekassen' },
+    { id: 'kl_seed_3', dato: '2026-02-10T12:00:00.000Z', beloeb: -395, note: 'Ølbræt og glas til Fanø-turen' }
+  ];
+
   window.seed = function seed() {
     if (_erTomt() === false) return false; // allerede sået — gør intet.
 
@@ -97,6 +106,7 @@
 
     /* ---------- KASSEN: penge i kassen (eksempeldata) ---------- */
     W('kasse_saldo', 1350);
+    W('kasse_log', KASSE_LOG);
 
     /* ---------- BØDEKATALOG (officielt, kategoriseret) ---------- */
     W('catalog', KATALOG);
@@ -267,6 +277,13 @@
         window.DB._write('fines', fines);
         aendret = true;
       }
+    }
+
+    // Backfill kassebog: allerede-seedet localStorage mangler 'kasse_log'.
+    // Skriv eksempel-loggen ud én gang (kun hvis nøglen aldrig er sat).
+    if (window.DB._read('kasse_log', null) === null) {
+      window.DB._write('kasse_log', KASSE_LOG);
+      aendret = true;
     }
 
     return aendret;

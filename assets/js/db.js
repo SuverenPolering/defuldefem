@@ -217,15 +217,39 @@
     });
   }
 
-  // Justér kassens saldo med delta (kan være negativt). Returnér ny saldo.
-  function aendreKasse(delta) {
+  // Justér kassens saldo med delta (kan være negativt). Logfører ændringen i
+  // 'kasse_log' (manuelle reguleringer). note er valgfri (tom hvis udeladt).
+  // Returnér ny saldo (tal).
+  function aendreKasse(delta, note) {
     if (_supabase()) {
-      // TODO(supabase): opdatér kassens saldo (settings/rpc)
+      // TODO(supabase): opdatér kassens saldo (settings/rpc) + indsæt i kasse_log
     }
     return _async(function () {
-      var nyt = (Number(_read('kasse_saldo', 0)) || 0) + (Number(delta) || 0);
+      var beloeb = Number(delta) || 0;
+      var nyt = (Number(_read('kasse_saldo', 0)) || 0) + beloeb;
       _write('kasse_saldo', nyt);
+      var log = _read('kasse_log', []);
+      log.push({
+        id: _id('kasse'),
+        dato: new Date().toISOString(),
+        beloeb: beloeb,
+        note: (note == null ? '' : String(note)).trim()
+      });
+      _write('kasse_log', log);
       return nyt;
+    });
+  }
+
+  // Kassebog: manuelle reguleringer (Regulér kassen), nyeste først.
+  // Markér-betalt logges IKKE her.
+  function getKasseLog() {
+    if (_supabase()) {
+      // TODO(supabase): from('kasse_log').select('*').order('dato', {ascending:false})
+    }
+    return _async(function () {
+      var log = _read('kasse_log', []);
+      log.sort(function (a, b) { return (b.dato || '').localeCompare(a.dato || ''); });
+      return log;
     });
   }
 
@@ -253,6 +277,22 @@
       _write('fines', fines);
       var nySaldo = (Number(_read('kasse_saldo', 0)) || 0) + beloeb;
       _write('kasse_saldo', nySaldo);
+      // Bogfør indbetalingen i kassebogen (markér betalt logges også).
+      if (beloeb > 0) {
+        var medlemmer = _read('members', []);
+        var titel = memberId;
+        for (var mi = 0; mi < medlemmer.length; mi++) {
+          if (medlemmer[mi].id === memberId) { titel = medlemmer[mi].titel; break; }
+        }
+        var log = _read('kasse_log', []);
+        log.push({
+          id: _id('kasse'),
+          dato: new Date().toISOString(),
+          beloeb: beloeb,
+          note: 'Bøder betalt: ' + titel + (antal > 1 ? ' (' + antal + ' bøder)' : '')
+        });
+        _write('kasse_log', log);
+      }
       return { antal: antal, beloeb: beloeb, nySaldo: nySaldo };
     });
   }
@@ -716,6 +756,7 @@
     markerBetalt: markerBetalt,
     getKasseSaldo: getKasseSaldo,
     aendreKasse: aendreKasse,
+    getKasseLog: getKasseLog,
 
     getCatalog: getCatalog,
     upsertCatalogItem: upsertCatalogItem,

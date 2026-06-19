@@ -1016,3 +1016,18 @@ input[type="number"]{font-weight:700}
 @media (prefers-reduced-motion:reduce){
   .krus-emoji{transition:none}
 }
+
+/* ============================================================
+   UDVIDELSE 4 — Kassebogen (ledger over manuelle ind/ud)
+   Hovedbogs-rækker: dato (svag) til højre, note + fortegnsbeløb til
+   venstre. Plus i grøn, minus i koral-tekst (a11y). Stiplet skillelinje
+   à la .boede/.medlem. Kun nye klasser; eksisterende rør jeg ikke.
+   ============================================================ */
+.kasse-post{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px dashed var(--linje);font-size:14px}
+.kasse-post:last-child{border-bottom:none}
+.kasse-post .kasse-venstre{display:flex;gap:8px;min-width:0;align-items:baseline}
+.kasse-belob{font-weight:700;white-space:nowrap}
+.kasse-belob.plus{color:var(--groen)}
+.kasse-belob.minus{color:var(--koral-tekst)}
+.kasse-note{color:var(--tekst);overflow-wrap:anywhere}
+.kasse-dato{color:var(--tekst-svag);font-size:12px;white-space:nowrap;flex-shrink:0}

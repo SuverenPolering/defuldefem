@@ -47,6 +47,18 @@
 
   <section class="sektion">
     <div class="sektion-titel">
+      <h2>Kassebog</h2>
+      <span class="nips">ind og ud af kassen</span>
+    </div>
+    <div class="kort skaev-b">
+      <span class="kapsel" style="top:-8px;left:34px"></span>
+      <button type="button" class="accordion-head" id="kassebog-toggle" aria-expanded="false">Se posteringer <span class="chevron">▸</span></button>
+      <div class="accordion-panel" id="kassebog-panel"><div id="kassebog-liste"></div></div>
+    </div>
+  </section>
+
+  <section class="sektion">
+    <div class="sektion-titel">
       <h2>Skyld pr. mand</h2>
       <span class="nips">ingen slipper</span>
     </div>
@@ -196,8 +208,9 @@
         <span class="felt-note skjult" id="fejl-kasse-delta" role="alert">Skriv et beløb (0 ændrer ingenting).</span>
       </label>
       <label class="felt">
-        <span class="felt-label">Note (valgfri)</span>
-        <input type="text" id="kasse-note" placeholder="F.eks. Indkøb til generalforsamlingen" maxlength="120">
+        <span class="felt-label">Note (påkrævet)</span>
+        <input type="text" id="kasse-note" placeholder="F.eks. Indkøb til generalforsamlingen" maxlength="120" required>
+        <span class="felt-note skjult" id="fejl-kasse-note" role="alert">Skriv en note — den ryger i kassebogen.</span>
       </label>
       <button type="submit" class="knap knap-bred">Bogfør reguleringen</button>
     </form>
@@ -279,6 +292,42 @@
         document.getElementById("kasse-saldo").textContent = App.formatKr(sum);
       });
     }
+
+    function renderKassebog() {
+      return DB.getKasseLog().then(function (liste) {
+        var el = document.getElementById("kassebog-liste");
+        if (!el) return;
+        if (!liste.length) {
+          el.innerHTML = '<div class="tom tom-besked">Endnu ingen posteringer i kassebogen.</div>';
+          return;
+        }
+        var html = "";
+        liste.forEach(function (p) {
+          var positiv = p.beloeb > 0;
+          var klasse = positiv ? "plus" : "minus";
+          var visBelob = (positiv ? "+" : "") + App.formatKr(p.beloeb);
+          html += '<div class="kasse-post">' +
+            '<span class="kasse-venstre">' +
+              '<span class="kasse-belob ' + klasse + '">' + esc(visBelob) + "</span>" +
+              '<span class="kasse-note">' + esc(p.note) + "</span>" +
+            "</span>" +
+            '<span class="kasse-dato">' + esc(App.formatDato(p.dato)) + "</span>" +
+          "</div>";
+        });
+        el.innerHTML = html;
+      });
+    }
+
+    (function () {
+      var toggle = document.getElementById("kassebog-toggle");
+      var panel = document.getElementById("kassebog-panel");
+      if (!toggle || !panel) return;
+      toggle.addEventListener("click", function () {
+        var aaben = this.getAttribute("aria-expanded") === "true";
+        this.setAttribute("aria-expanded", aaben ? "false" : "true");
+        panel.classList.toggle("aaben", !aaben);
+      });
+    })();
 
     function renderSaldoPrMedlem() {
       return DB.getBalanceByMember().then(function (liste) {
@@ -846,6 +895,7 @@
     function aabnKasseArk() {
       document.getElementById("form-kasse").reset();
       rydFejl("kasse-delta", "fejl-kasse-delta");
+      rydFejl("kasse-note", "fejl-kasse-note");
       App.ark.open(document.getElementById("ark-kasse"));
     }
 
@@ -871,22 +921,34 @@
       if (this.value.trim() && Number(this.value.replace(",", ".")) !== 0) rydFejl("kasse-delta", "fejl-kasse-delta");
     });
 
+    document.getElementById("kasse-note").addEventListener("input", function () {
+      if (this.value.trim()) rydFejl("kasse-note", "fejl-kasse-note");
+    });
+
     document.getElementById("form-kasse").addEventListener("submit", function (e) {
       e.preventDefault();
       var raa = document.getElementById("kasse-delta").value.trim();
       var delta = Number(raa.replace(",", "."));
+      var note = document.getElementById("kasse-note").value.trim();
+      if (!note) {
+        markerFejl("kasse-note", "fejl-kasse-note");
+        App.toast("Skriv en note — den ryger i kassebogen.");
+        return;
+      }
+      rydFejl("kasse-note", "fejl-kasse-note");
       if (raa === "" || !isFinite(delta) || delta === 0) {
         markerFejl("kasse-delta", "fejl-kasse-delta");
         App.toast("Skriv et beløb (0 ændrer ingenting).");
         return;
       }
       rydFejl("kasse-delta", "fejl-kasse-delta");
-      DB.aendreKasse(delta).then(function () {
+      DB.aendreKasse(delta, note).then(function () {
         lukAlleArk();
         App.toast(delta > 0
           ? "Kassen er vokset med " + App.formatKr(delta) + "."
           : "Kassen er lettet med " + App.formatKr(Math.abs(delta)) + ".");
         renderSaldo();
+        renderKassebog();
       }).catch(function (e) {
         App.toast("Bødekassen driller. Reguleringen blev ikke bogført — prøv igen.");
         if (window.console && console.error) console.error(e);
@@ -971,6 +1033,7 @@
     fyldMedlemsVaelger()
       .then(renderKatalog)
       .then(opdaterAlt)
+      .then(renderKassebog)
       .then(renderOensker);
   })();
   </script>
