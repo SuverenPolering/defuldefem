@@ -15,12 +15,22 @@
 
   /* ---------- formatterings-hjælpere ---------- */
 
-  // 1420 -> "1.420 kr" (dansk tusindtalsseparator).
+  // 1420 -> "1.420 kr", 12.5 -> "12,5 kr" (dansk: "." tusind, "," decimal).
+  // Afrundes til 2 decimaler; brøkdel vises kun hvis >0, uden efterstillede nuller.
   function formatKr(n) {
-    var tal = Math.round(Number(n) || 0);
+    var tal = Number(n) || 0;
     var negativ = tal < 0;
     tal = Math.abs(tal);
-    var s = String(tal).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    tal = Math.round(tal * 100) / 100; // 2 decimaler
+    var heltal = Math.floor(tal);
+    var broek = Math.round((tal - heltal) * 100); // 0..99
+    var s = String(heltal).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    if (broek > 0) {
+      var dec = String(broek);
+      if (dec.length < 2) dec = '0' + dec; // 5 -> "05"
+      dec = dec.replace(/0+$/, '');        // fjern efterstillede nuller
+      s = s + ',' + dec;
+    }
     return (negativ ? '-' : '') + s + ' kr';
   }
 
@@ -248,8 +258,44 @@
     t._skjul = setTimeout(function () { t.style.opacity = '0'; }, 2600);
   }
 
+  /* ---------- auto-stort-forbogstav ---------- */
+  // Gør første bogstav i hver sætning stort i skrivefelter. ÉN document-niveau
+  // listener (registreres én gang). Kun <textarea> + <input type=text|uden type>;
+  // undtag data-no-cap samt password/number/email/date/url/tel/range. Caret bevares.
+  var _autoCapMonteret = false;
+  function _autoCapTaeller(el) {
+    if (!el) return false;
+    var tag = el.tagName;
+    if (tag === 'TEXTAREA') return true;
+    if (tag !== 'INPUT') return false;
+    var t = (el.getAttribute('type') || 'text').toLowerCase();
+    return t === 'text';
+  }
+  function montérAutoCap() {
+    if (_autoCapMonteret) return;
+    _autoCapMonteret = true;
+    document.addEventListener('input', function (e) {
+      var el = e.target;
+      if (!_autoCapTaeller(el)) return;
+      if (el.hasAttribute('data-no-cap')) return;
+      var value = el.value;
+      if (typeof value !== 'string' || !value) return;
+      var ny = value.replace(/(^\s*[a-zæøå])|([.!?]\s+[a-zæøå])/g, function (m) {
+        return m.toUpperCase();
+      });
+      if (ny !== value) {
+        var caret = el.selectionStart;
+        el.value = ny; // samme længde — caret-index uændret
+        if (caret != null && typeof el.setSelectionRange === 'function') {
+          el.setSelectionRange(caret, caret);
+        }
+      }
+    });
+  }
+
   /* ---------- opstart ---------- */
   function start() {
+    montérAutoCap();
     var side = document.body.getAttribute('data-side') || '';
 
     // (a) guard på alt undtagen login

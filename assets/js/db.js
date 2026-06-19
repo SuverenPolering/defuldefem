@@ -156,15 +156,18 @@
     });
   }
 
-  // Tøm hele protokollen (alle bøder). Rører IKKE kassens saldo. Returnér antal slettede.
+  // Ryd KUN betalte bøder fra protokollen. Ubetalt gæld bevares (skyld er uændret).
+  // Rører IKKE kassens saldo. Returnér antal slettede (betalte) bøder.
   function nulstilProtokol() {
     if (_supabase()) {
-      // TODO(supabase): delete from fines (kasse_saldo urørt)
+      // TODO(supabase): delete from fines where betalt = true (kasse_saldo urørt)
     }
     return _async(function () {
-      var antal = _read('fines', []).length;
-      _write('fines', []);
-      return antal;
+      var fines = _read('fines', []);
+      var beholdt = fines.filter(function (f) { return f.betalt !== true; });
+      var antalSlettet = fines.length - beholdt.length;
+      _write('fines', beholdt);
+      return antalSlettet;
     });
   }
 

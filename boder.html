@@ -134,7 +134,7 @@
       </label>
       <label class="felt">
         <span class="felt-label">Beløb (kr)</span>
-        <input type="number" id="boede-beloeb" min="0" step="5" inputmode="numeric" placeholder="10" required>
+        <input type="number" id="boede-beloeb" min="0" step="0.5" inputmode="numeric" placeholder="10" required>
       </label>
       <label class="felt">
         <span class="felt-label">Dato</span>
@@ -165,7 +165,7 @@
       </label>
       <label class="felt">
         <span class="felt-label">Takst (kr)</span>
-        <input type="number" id="katalog-takst" min="0" step="5" inputmode="numeric" placeholder="10" required>
+        <input type="number" id="katalog-takst" min="0" step="0.5" inputmode="numeric" placeholder="10" required>
       </label>
       <button type="submit" class="knap knap-bred">Før i kataloget</button>
     </form>
@@ -192,7 +192,7 @@
     <form id="form-kasse">
       <label class="felt">
         <span class="felt-label">Beløb (kr — minus for udgift)</span>
-        <input type="number" id="kasse-delta" step="5" inputmode="numeric" placeholder="F.eks. -240 for en kasse øl" required>
+        <input type="number" id="kasse-delta" step="0.5" inputmode="numeric" placeholder="F.eks. -240 for en kasse øl" required>
         <span class="felt-note skjult" id="fejl-kasse-delta" role="alert">Skriv et beløb (0 ændrer ingenting).</span>
       </label>
       <label class="felt">
@@ -928,9 +928,9 @@
 
     var bNulstil = document.getElementById("nulstil-protokol");
     if (bNulstil) bNulstil.addEventListener("click", function () {
-      if (!window.confirm("Er du sikker? Hele bødeprotokollen slettes — skyld nulstilles. Pengene i kassen bevares.")) return;
+      if (!window.confirm("Ryd alle BETALTE bøder fra protokollen? Ubetalt gæld bevares — kun Finansministeren kan eftergive den.")) return;
       DB.nulstilProtokol().then(function () {
-        App.toast("Protokollen er nulstillet. Pengene i kassen bevares.");
+        App.toast("Betalte bøder ryddet fra protokollen.");
         opdaterAlt();
       }).catch(function (e) {
         App.toast("Bødekassen driller. Protokollen blev ikke nulstillet — prøv igen.");

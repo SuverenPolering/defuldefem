@@ -98,10 +98,10 @@
       <span class="felt-label">Alkohol %</span>
       <input type="number" name="pct" id="o-pct" placeholder="10,2" step="0.1" min="0" max="99" inputmode="decimal">
     </label>
-    <label class="felt">
-      <span class="felt-label">Hvem havde den med?</span>
-      <select name="havdeMedId" id="o-havde"></select>
-    </label>
+    <div class="felt" role="group" aria-labelledby="o-havde-label">
+      <span class="felt-label" id="o-havde-label">Hvem havde den med?</span>
+      <div class="deltager-chips" id="o-havde"></div>
+    </div>
     <button class="knap knap-bred" type="submit">Skænk den i protokollen</button>
   </form>
 </aside>
@@ -116,8 +116,12 @@
     <input type="hidden" name="beerId" id="r-beer">
     <label class="felt">
       <span class="felt-label">Karakter (1–10)</span>
-      <input type="number" name="score" id="r-score" min="1" max="10" step="1" inputmode="numeric" placeholder="1 til 10, heltal — ingen kommaer, ingen smør">
-      <span class="fejl skjult" id="fejl-r-score" role="alert">Heltal mellem 1 og 10. Halve point er for de svage.</span>
+      <div class="krus-slider">
+        <span class="krus-emoji" id="krus-emoji" aria-hidden="true">🍺</span>
+        <input type="range" name="score" id="r-score" min="1" max="10" step="0.5" value="5" aria-label="Karakter fra 1 til 10, halve tilladt">
+        <output class="krus-vaerdi" id="krus-vaerdi" for="r-score">5</output>
+      </div>
+      <span class="fejl skjult" id="fejl-r-score" role="alert">Karakter mellem 1 og 10 — halve point tilladt.</span>
     </label>
     <button class="knap knap-bred" type="submit">Før dommen til protokols</button>
   </form>
@@ -606,7 +610,7 @@
     var valg = (s.deltagere && s.deltagere.length)
       ? members.filter(function (m) { return s.deltagere.indexOf(m.id) !== -1; })
       : members;
-    fyldMedlemSelect(document.getElementById('o-havde'), valg, true);
+    byggHavdeChips(valg);
     aabn('ark-oel');
   }
 
@@ -620,12 +624,14 @@
     skjulFejl('fejl-o-navn');
     var sessionId = document.getElementById('o-session').value;
     var pctRaw = document.getElementById('o-pct').value.trim().replace(',', '.');
+    var valgtHavde = document.querySelector('#o-havde .deltager-chip.valgt');
+    var havdeMedId = (valgtHavde && valgtHavde.getAttribute('data-medlem')) || null;
     window.DB.addBeer(sessionId, {
       navn: navn,
       bryggeri: document.getElementById('o-bryggeri').value.trim(),
       type: document.getElementById('o-type').value.trim(),
       pct: pctRaw === '' ? null : Number(pctRaw),
-      havdeMedId: document.getElementById('o-havde').value || null
+      havdeMedId: havdeMedId
     }).then(function () {
       luk('ark-oel');
       window.App.toast('Ført til protokols. Skål.');
@@ -639,25 +645,42 @@
 
   /* ---------- Rating ---------- */
 
+  // Ølkrus-slideren: sæt fyld-procent + emoji-position ud fra værdien.
+  function opdaterKrus() {
+    var slider = document.getElementById('r-score');
+    var val = Number(slider.value);
+    var frac = (val - 1) / 9;
+    slider.style.setProperty('--p', (frac * 100) + '%');
+    slider.style.setProperty('--p-num', frac);
+    document.getElementById('krus-vaerdi').textContent = visScore(val);
+  }
+
   function aabnRatingArk(b) {
     aabentOel = b; // gem hele øl-objektet, så scoren kan slås op lokalt (fund 1)
     document.getElementById('form-rating').reset();
     skjulFejl('fejl-r-score');
     document.getElementById('r-beer').value = b.id;
+    var medbragtAf = (b.havdeMedId && memMap[b.havdeMedId]) ? memMap[b.havdeMedId].titel : 'ukendt';
     document.getElementById('ark-rating-under').textContent =
-      b.navn + (b.snit ? ' · står nu til ' + visScore(b.snit) : ' · endnu udømt');
+      b.navn + (b.snit ? ' · står nu til ' + visScore(b.snit) : ' · endnu udømt') +
+      ' · Medbragt af ' + medbragtAf;
     // Bedømmelsen gælder altid den indloggede — forudfyld dennes egen tidligere karakter.
     var sess = window.Auth && window.Auth.current ? window.Auth.current() : null;
+    var egen = 5;
     if (sess && sess.memberId && b.ratings) {
       for (var i = 0; i < b.ratings.length; i++) {
         if (b.ratings[i].memberId === sess.memberId) {
-          document.getElementById('r-score').value = b.ratings[i].score;
+          egen = b.ratings[i].score;
           break;
         }
       }
     }
+    document.getElementById('r-score').value = egen;
+    opdaterKrus();
     aabn('ark-rating');
   }
+
+  document.getElementById('r-score').addEventListener('input', opdaterKrus);
 
   document.getElementById('form-rating').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -668,7 +691,7 @@
       return;
     }
     var score = Number(document.getElementById('r-score').value);
-    if (!(score >= 1 && score <= 10) || score % 1 !== 0) {
+    if (!(score >= 1 && score <= 10) || (score * 2) % 1 !== 0) {
       visFejl('fejl-r-score', 'r-score');
       return;
     }
@@ -686,20 +709,36 @@
 
   /* ---------- felt-hjælpere ---------- */
 
-  function fyldMedlemSelect(sel, liste, medTom) {
-    sel.innerHTML = '';
-    if (medTom) {
-      var tom = document.createElement('option');
-      tom.value = '';
-      tom.textContent = 'Ingen / ukendt';
-      sel.appendChild(tom);
+  // »Hvem havde den med« — enkelt-valg-chips (radio-agtigt: kun én valgt).
+  function byggHavdeChips(liste) {
+    var wrap = document.getElementById('o-havde');
+    wrap.innerHTML = '';
+
+    function vaelg(chip) {
+      Array.prototype.forEach.call(wrap.children, function (c) {
+        c.classList.remove('valgt');
+        c.setAttribute('aria-pressed', 'false');
+      });
+      chip.classList.add('valgt');
+      chip.setAttribute('aria-pressed', 'true');
     }
-    liste.forEach(function (m) {
-      var o = document.createElement('option');
-      o.value = m.id;
-      o.textContent = m.titel;
-      sel.appendChild(o);
-    });
+
+    function lavChip(medlemId, tekst) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'deltager-chip';
+      chip.setAttribute('aria-pressed', 'false');
+      chip.setAttribute('data-medlem', medlemId);
+      chip.textContent = tekst;
+      chip.addEventListener('click', function () { vaelg(chip); });
+      wrap.appendChild(chip);
+      return chip;
+    }
+
+    var ingen = lavChip('', 'Ingen / ukendt');
+    liste.forEach(function (m) { lavChip(m.id, m.titel); });
+    // Default: »Ingen« valgt.
+    vaelg(ingen);
   }
 
   function byggDeltagerTjek() {
