@@ -79,6 +79,114 @@
     { id: 'kl_seed_3', dato: '2026-02-10T12:00:00.000Z', beloeb: -395, note: 'Ølbræt og glas til Fanø-turen' }
   ];
 
+  /* ---------- FORENINGENS VEDTÆGTER (officielt dokument) ----------
+   * Lagres som redigerbar tekst med let opmærkning, så Foreningssekretæren kan
+   * rette den i en textarea og datalaget stadig kan swappes til Supabase:
+   *   '# N. Titel' = kapitel-overskrift
+   *   '§ N'        = paragraf (følgende tekstlinjer = Stk. 1)
+   *   'Stk. N'     = stykke
+   *   'a) …'       = litra
+   * Bump VEDTAEGT_VERSION når dokumentet opdateres officielt — migrer() skriver
+   * den nye tekst ud til allerede-seedet localStorage.
+   * NB: § 4 gengives med titler i stedet for navne (privatliv; offentligt site). */
+  var VEDTAEGT_VERSION = 2;
+  var FORENING_VEDTAEGT = [
+    '# 1. Navn og hjemsted',
+    '',
+    '§ 1',
+    'Foreningens navn er De fulde Fem (i det følgende benævnt Foreningen).',
+    'Stk. 2',
+    'Foreningens navn forkortes DFF.',
+    '',
+    '§ 2',
+    'Foreningen har hjemsted på Hunderupvej 58b 1., th.',
+    '',
+    '# 2. Foreningens formål',
+    '',
+    '§ 3',
+    'Foreningens har til formål at etablere et forum, hvor foreningens medlemmer kan mødes, diskutere, smage og bedømme specialøl fra forskellige bryghuse. Foreningen kan derudover danne ramme om diverse arrangementer i form af bl.a. musikquiz, udfordringer, feltture mv.',
+    '',
+    '# 3. Foreningens medlemmer',
+    '',
+    '§ 4',
+    'Foreningens stiftende medlemmer er: Bødekasseministeren, Joy, Finansministeren, Turistministeren og Foreningssekretæren.',
+    '',
+    '§ 5',
+    'De i § 4 nævnte medlemmer har fast sæde på Foreningens møder.',
+    'Stk. 2',
+    'Hvert af de stiftende medlemmer har hver 1 stemme på foreningens møder.',
+    '',
+    '§ 6',
+    'Der kan ikke optages nye faste medlemmer i Foreningen. Foreningens medlemmer kan dog bestemme, at der kan medvirke inviterede gæster på Foreningens møder.',
+    '',
+    '# 4. Foreningens møder og beslutninger',
+    '',
+    '§ 7',
+    'Foreningen holder møde på de af de stiftende medlemmer valgte dage.',
+    'Stk. 2',
+    'Foreningens møder skal afholdes én gang i kvartalet, medmindre et af de stiftende medlemmer kan godtgøre lovligt forfald.',
+    'Stk. 3',
+    'Lovligt forfald i denne bestemmelses stk. 2 skal forstås som:',
+    'a) akut sygdom,',
+    'b) arbejdsrelaterede forhindringer, når disse er af maritim karakter,',
+    'c) trælse ægtefæller/partnere, eller',
+    'd) andre efter de stiftende medlemmers skøn kvalificerede forhold.',
+    '',
+    '§ 8',
+    'Kan et medlem ikke godt, at denne har været i lovligt forfald, træffer de øvrige medlemmer beslutning om konsekvenserne heraf.',
+    'Stk. 2',
+    'De øvrige medlemmer er forpligtet til at vedtage en proportionel og retfærdig sanktion.',
+    '',
+    '§ 9',
+    'Til brug for mødet udarbejder Foreningens sekretær en dagsorden, som skal indeholde de beslutningsforslag, som Foreningens medlemmer skal tage stilling til på mødet.',
+    '',
+    '§ 10',
+    'Beslutninger på Foreningens møder træffes med simpelt flertal.',
+    'Stk. 2',
+    'Vedtægtsændringer skal dog vedtages med kvalificeret flertal, således at tre femtedele skal stemme for vedtægtsændringen.',
+    '',
+    '§ 11',
+    'Foreningen er alene beslutningsdygtig, når alle 5 stiftende medlemmer er til stede på mødet.',
+    'Stk. 2',
+    'Såfremt et medlem er mødt, men er forfalden grundet beruselse eller lignende, vil Foreningen dog stadig være beslutningsdygtig.',
+    'Stk. 3',
+    'Stk. 2 gælder ikke for vedtægtsændringer.',
+    '',
+    '# 5. Bøder',
+    '',
+    '§ 12',
+    'Bødeministeren kan træffe bestemmelse om indførelse af bøde og disses størrelse.',
+    'Stk. 2',
+    'Bødeministerens bøder er dog underlagt de øvrige medlemmers kontrol, således at en bøde som findes uholdbar af de øvrige medlemmer bortfalder, hvis de tilkendegiver utilfredsheden over for Bødeministeren på et af møderne.',
+    '',
+    '§ 13',
+    'Bøderne indbetales til Finansministeren, som sikrer beløbene på behørig vis.',
+    'Stk. 2',
+    'Finansministeren sørger for, i samarbejde med bødeministeren, at holde regnskab med de bøder, som udstedes og sørger for at bøder betales rettidigt.',
+    '',
+    '§ 14',
+    'Såfremt en bøde ikke betales rettidigt, træffer Finansministeren foranstaltninger til bødekravet inddrives.',
+    'Stk. 2',
+    'Kan kravet ikke inddrives hos det pågældende medlem fastsætter Finansministeren og Bødeministeren en passende straf.',
+    '',
+    '§ 15',
+    'Bøde for forfald på øllets dag besluttes på øllets dag af de tilstedeværende medlemmer. Straffen kan ikke lyde på under 1 omgang øl til foreningen.',
+    '',
+    '# 6. Arrangementer i foreningen',
+    '',
+    '§ 16',
+    'Ethvert medlem er berettiget til at foreslå idéer til arrangementer, som foreningen kan afholde og/eller deltage i.',
+    '',
+    '§ 17',
+    'Turistministeren drager omsorg for forslag til arrangementer og sørger for eventuelle forslag forelægges Foreningssekretæren med henblik på optagelse i dagsordenen.',
+    '',
+    '§ 18',
+    'Turistministeren forestår praktiske foranstaltninger forbundet med arrangementerne i det omfang det er hensigtsmæssigt.',
+    '',
+    '§ 19',
+    'Turistministeren kan tage Joy med på råd omkring arrangement, men er ikke forpligtet hertil.'
+  ].join('\n');
+
   window.seed = function seed() {
     if (_erTomt() === false) return false; // allerede sået — gør intet.
 
@@ -206,15 +314,13 @@
 
     /* ---------- VEDTÆGTER (læsbare for alle; redigeres pr. rolle) ---------- */
     W('vedtaegter', {
-      forening: '§1 De Fulde Fem mødes, drikker specialøl og holder fast i fynsk stædighed.\n' +
-                '§2 Nye medlemmer optages kun enstemmigt — og over mindst én øl.\n' +
-                '§3 Møder går på skift. Datoer vedtages og flyttes ikke.\n' +
-                '§4 Joy har ingen forpligtelser, men nyder turen.',
+      forening: FORENING_VEDTAEGT,
       boedekasse: '§1 Bøder fastsættes af Bødekasseministeren efter kataloget.\n' +
                   '§2 Engelske ord koster 10 kr. pr. stk. Ingen undtagelser.\n' +
                   '§3 Bøder betales til Finansministeren, som fører kassen.\n' +
                   '§4 Kassen bruges på øl. Naturligvis.'
     });
+    W('vedtaegter_version', VEDTAEGT_VERSION);
 
     return true;
   };
@@ -252,6 +358,16 @@
     if (window.DB._read('catalog_version', 0) !== KATALOG_VERSION) {
       window.DB._write('catalog', KATALOG);
       window.DB._write('catalog_version', KATALOG_VERSION);
+      aendret = true;
+    }
+
+    // Udgiv foreningens officielle vedtægter til allerede-seedet localStorage
+    // ved ny version (overskriver KUN 'forening'; bødekassens vedtægter røres ikke).
+    if (window.DB._read('vedtaegter_version', 0) !== VEDTAEGT_VERSION) {
+      var vt = window.DB._read('vedtaegter', {}) || {};
+      vt.forening = FORENING_VEDTAEGT;
+      window.DB._write('vedtaegter', vt);
+      window.DB._write('vedtaegter_version', VEDTAEGT_VERSION);
       aendret = true;
     }
 

@@ -827,6 +827,38 @@ input[type="number"]{font-weight:700}
   color:var(--tekst);
 }
 
+/* Foreningens vedtægter: kapitel-overskrift -> paragraf-accordion -> stykker.
+   Paragraf-hovedet genbruger .accordion-head (chevron + aria-expanded). */
+.vedtaegt-kapitel{
+  margin:18px 0 2px;
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--rav-moerk);
+}
+.vedtaegter-liste > .vedtaegt-kapitel:first-child{margin-top:0}
+.vedtaegt-head{gap:10px}
+.vedtaegt-head-tekst{
+  display:flex;align-items:baseline;gap:9px;
+  min-width:0;flex:1 1 auto;
+}
+.vedtaegt-nr{flex-shrink:0;font-weight:700;color:var(--hav)}
+.vedtaegt-teaser{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-weight:400;font-size:13.5px;letter-spacing:0;color:var(--tekst-svag);
+}
+.vedtaegt-krop{padding:8px 4px 14px}
+.vedtaegt-stk{margin:0 0 11px}
+.vedtaegt-stk:last-child{margin-bottom:2px}
+.vedtaegt-stk-label{
+  display:block;margin-bottom:2px;
+  font-family:'Barlow Semi Condensed',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--hav-lys);
+}
+.vedtaegt-stk-tekst{margin:0;line-height:1.6;font-size:15px;color:var(--tekst)}
+.vedtaegt-litra{list-style:none;margin:6px 0 0;padding:0 0 0 12px}
+.vedtaegt-litra li{margin:3px 0;line-height:1.55;font-size:15px;color:var(--tekst)}
+
 /* ---- Antal-stepper (Tildel-arket: tildel samme bøde N gange) ----
    Rund hav-knap med hård offset-skygge à la .knap; centreret +/- om et tal-felt.
    Total-linjen i Caveat/koral som de øvrige håndskrevne accenter. */

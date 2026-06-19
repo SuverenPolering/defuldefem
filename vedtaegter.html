@@ -68,8 +68,8 @@
     <form id="rediger-form">
       <div class="felt">
         <label for="rediger-tekst">Teksten</label>
-        <textarea id="rediger-tekst" name="tekst" rows="10" placeholder="Skriv vedtægterne her …"></textarea>
-        <span class="felt-note">Linjeskift bevares, præcis som du skriver dem.</span>
+        <textarea id="rediger-tekst" name="tekst" rows="14" placeholder="Skriv vedtægterne her …"></textarea>
+        <span class="felt-note">Opmærkning: <b>#&nbsp;Kapitel</b>, <b>§&nbsp;1</b>, <b>Stk.&nbsp;2</b> og <b>a)</b> for litra. Linjeskift bevares.</span>
       </div>
       <div class="handlinger hoejre">
         <button type="button" class="knap-sekundaer" data-luk>Fortryd</button>
@@ -124,6 +124,117 @@
           'Vedtægterne mangler. Den der må, skriver dem ned — så de holder.'
         ));
       }
+    }
+
+    /* ---------- Vedtægt-parser: tekst -> kapitler[ paragraffer[ stykker ] ] ----------
+       Opmærkning: '# Titel' = kapitel, '§ N' = paragraf, 'Stk. N' = stykke,
+       'a)' = litra. Tekst lige efter '§ N' (på linjen eller næste linjer) = Stk. 1.
+       Robust over for den gamle flade form ('§1 tekst' på én linje). */
+    function parseVedtaegt(tekst) {
+      var linjer = String(tekst == null ? '' : tekst).split('\n');
+      var kapitler = [], kap = null, para = null, stk = null;
+      function sikrKapitel() {
+        if (!kap) { kap = { titel: '', paragraffer: [] }; kapitler.push(kap); }
+      }
+      for (var i = 0; i < linjer.length; i++) {
+        var linje = linjer[i].trim();
+        if (linje === '') continue;
+        var mKap = linje.match(/^#\s+(.*)$/);
+        var mPar = linje.match(/^§\s*(\d+)\b\s*(.*)$/);
+        var mStk = linje.match(/^Stk\.?\s*(\d+)\b\s*(.*)$/);
+        var erLitra = /^[a-zæøå]\)\s+/.test(linje);
+        if (mKap) {
+          kap = { titel: mKap[1].trim(), paragraffer: [] };
+          kapitler.push(kap); para = null; stk = null;
+        } else if (mPar) {
+          sikrKapitel();
+          para = { nr: mPar[1], stykker: [] };
+          kap.paragraffer.push(para);
+          var rest = mPar[2].trim();
+          if (rest) { stk = { label: '', tekst: rest, litra: [] }; para.stykker.push(stk); }
+          else { stk = null; }
+        } else if (mStk && para) {
+          stk = { label: 'Stk. ' + mStk[1], tekst: mStk[2].trim(), litra: [] };
+          para.stykker.push(stk);
+        } else if (erLitra && stk) {
+          stk.litra.push(linje);
+        } else {
+          if (!para) { sikrKapitel(); para = { nr: '', stykker: [] }; kap.paragraffer.push(para); stk = null; }
+          if (!stk) { stk = { label: '', tekst: linje, litra: [] }; para.stykker.push(stk); }
+          else { stk.tekst = stk.tekst ? (stk.tekst + ' ' + linje) : linje; }
+        }
+      }
+      return kapitler;
+    }
+
+    /* Kort resumé til den foldede paragraf-overskrift (første stykkes start). */
+    function teaser(para) {
+      var t = '';
+      for (var i = 0; i < para.stykker.length; i++) {
+        if (para.stykker[i].tekst) { t = para.stykker[i].tekst; break; }
+      }
+      t = t.replace(/\s+/g, ' ').trim();
+      if (t.length <= 60) return t;
+      return t.slice(0, 59).replace(/[\s,.;:–-]+\S*$/, '') + '…';
+    }
+
+    /* Render vedtægt som kapitler -> paragraf-accordion -> stykker.
+       Genbruger .accordion-head/.accordion-panel/.chevron (aria-expanded). */
+    function renderVedtaegt(maalId, tekst) {
+      var maal = document.getElementById(maalId);
+      if (!maal) return;
+      ryd(maal);
+      var kapitler = parseVedtaegt(tekst);
+      var antal = 0;
+      kapitler.forEach(function (k) { antal += k.paragraffer.length; });
+      if (!antal) {
+        maal.appendChild(tomBlok('📜', 'Endnu ikke skrevet ned …',
+          'Vedtægterne mangler. Den der må, skriver dem ned — så de holder.'));
+        return;
+      }
+      var rod = el('div', 'vedtaegter-liste');
+      kapitler.forEach(function (kap) {
+        if (kap.titel) rod.appendChild(el('h3', 'vedtaegt-kapitel', kap.titel));
+        kap.paragraffer.forEach(function (para) {
+          var boks = el('div', 'vedtaegt-paragraf');
+          var hoved = el('button', 'accordion-head vedtaegt-head');
+          hoved.type = 'button';
+          hoved.setAttribute('aria-expanded', 'false');
+          var venstre = el('span', 'vedtaegt-head-tekst');
+          if (para.nr) venstre.appendChild(el('span', 'vedtaegt-nr', '§ ' + para.nr));
+          var tz = teaser(para);
+          if (tz) venstre.appendChild(el('span', 'vedtaegt-teaser', tz));
+          hoved.appendChild(venstre);
+          var chev = el('span', 'chevron', '▸');
+          chev.setAttribute('aria-hidden', 'true');
+          hoved.appendChild(chev);
+
+          var panel = el('div', 'accordion-panel vedtaegt-panel');
+          var krop = el('div', 'vedtaegt-krop');
+          para.stykker.forEach(function (s) {
+            var sb = el('div', 'vedtaegt-stk');
+            if (s.label) sb.appendChild(el('span', 'vedtaegt-stk-label', s.label));
+            if (s.tekst) sb.appendChild(el('p', 'vedtaegt-stk-tekst', s.tekst));
+            if (s.litra && s.litra.length) {
+              var ul = el('ul', 'vedtaegt-litra');
+              s.litra.forEach(function (li) { ul.appendChild(el('li', null, li)); });
+              sb.appendChild(ul);
+            }
+            krop.appendChild(sb);
+          });
+          panel.appendChild(krop);
+
+          hoved.addEventListener('click', function () {
+            var aaben = hoved.getAttribute('aria-expanded') === 'true';
+            hoved.setAttribute('aria-expanded', aaben ? 'false' : 'true');
+            panel.classList.toggle('aaben', !aaben);
+          });
+          boks.appendChild(hoved);
+          boks.appendChild(panel);
+          rod.appendChild(boks);
+        });
+      });
+      maal.appendChild(rod);
     }
 
     /* ---------- ark: redigér ---------- */
@@ -186,8 +297,8 @@
         App.toast(key === 'boedekasse'
           ? 'Bødekassens vedtægter er skrevet ned. Og de holder.'
           : 'Foreningens vedtægter er skrevet ned. Og de holder.');
-        var maalId = key === 'boedekasse' ? 'boedekasse-tekst' : 'forening-tekst';
-        renderTekst(maalId, tekst);
+        if (key === 'boedekasse') renderTekst('boedekasse-tekst', tekst);
+        else renderVedtaegt('forening-tekst', tekst);
       }).catch(function (e) {
         App.toast('Vedtægten ville ikke skrives ned. Prøv igen — den flytter sig ikke selv.');
         if (window.console && console.error) console.error(e);
@@ -196,12 +307,12 @@
 
     /* ---------- opstart ---------- */
     Promise.all([DB.getVedtaegter('forening'), DB.getVedtaegter('boedekasse')]).then(function (res) {
-      renderTekst('forening-tekst', res[0]);
+      renderVedtaegt('forening-tekst', res[0]);
       renderTekst('boedekasse-tekst', res[1]);
     }).catch(function (e) {
       App.toast('Noget gik galt i Forsamlingshuset. Prøv at åbne døren igen.');
       if (window.console && console.error) console.error(e);
-      renderTekst('forening-tekst', '');
+      renderVedtaegt('forening-tekst', '');
       renderTekst('boedekasse-tekst', '');
     });
   })();
