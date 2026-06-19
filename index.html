@@ -233,7 +233,7 @@
       if (o.type) metaDele.push(esc(o.type));
       var p = pctTekst(o.pct);
       if (p) metaDele.push(esc(p));
-      if (o.havdeMedNavn) metaDele.push(esc(o.havdeMedNavn) + ' havde den med');
+      if (o.havdeMedNavn) metaDele.push(esc(o.havdeMedNavn));
       if (o.dato) metaDele.push(esc(App.formatDato(o.dato)));
 
       html +=

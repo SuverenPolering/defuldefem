@@ -246,7 +246,7 @@
         if (b.type) metaDele.push(b.type);
         var pp = visPct(b.pct);
         if (pp) metaDele.push(pp);
-        if (b.havdeMedNavn) metaDele.push(b.havdeMedNavn + ' havde den med');
+        if (b.havdeMedNavn) metaDele.push(b.havdeMedNavn);
         if (b.dato) metaDele.push(window.App.formatDato(b.dato).replace(/^[^ ]+ /, ''));
         meta.textContent = metaDele.join(' · ');
         info.appendChild(navn);
@@ -406,7 +406,7 @@
     if (b.type) metaDele.push(b.type);
     var p = visPct(b.pct);
     if (p) metaDele.push(p);
-    if (b.havdeMedId && memMap[b.havdeMedId]) metaDele.push(memMap[b.havdeMedId].titel + ' havde den med');
+    if (b.havdeMedId && memMap[b.havdeMedId]) metaDele.push(memMap[b.havdeMedId].titel);
     meta.textContent = metaDele.join(' · ');
     venstre.appendChild(meta);
 
