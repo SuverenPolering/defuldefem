@@ -13,7 +13,7 @@
   --hav:#1f4e5f;
   --hav-lys:#3a7287;
   --rav:#d2952f;
-  --rav-moerk:#aa7621;
+  --rav-moerk:#94641a; /* a11y: mørknet fra #aa7621 -> ~5:1 mod --hvid/--himmel (AA på kicker-tekst i Caveat/versaler); løfter også hvid-på-rav på FAB'en til ~4,7:1 */
   --koral:#c75146;
   --groen:#4f7a45;
   --linje:#dde6e1;
@@ -413,7 +413,7 @@ input[type="number"]{font-weight:700}
   background:var(--hvid);
   border:1.5px solid var(--hav);
   border-radius:6px;
-  padding:6px 12px;
+  padding:6px 14px;min-height:44px; /* a11y: 44px tap-mål på inline-handlinger (Ret/Slet/Markér betalt) */
   cursor:pointer;
   text-decoration:none;
   box-shadow:0 2px 0 rgba(31,78,95,.22);
@@ -500,8 +500,8 @@ input[type="number"]{font-weight:700}
 .ark form,.ark .ark-krop{margin-top:4px}
 
 .luk-knap{
-  position:absolute;top:14px;right:16px;
-  width:34px;height:34px;border-radius:50%;
+  position:absolute;top:12px;right:14px;
+  width:44px;height:44px;border-radius:50%; /* a11y: 44x44 tap-mål (WCAG 2.5.5/2.5.8) */
   background:var(--hvid);
   border:2px solid var(--hav);
   color:var(--hav);
@@ -832,7 +832,7 @@ input[type="number"]{font-weight:700}
    Total-linjen i Caveat/koral som de øvrige håndskrevne accenter. */
 .antal-stepper{display:flex;align-items:center;justify-content:center;gap:14px;margin:10px 0}
 .antal-knap{
-  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  width:44px;height:44px;border-radius:50%;flex-shrink:0; /* a11y: 44x44 tap-mål */
   background:var(--hav);
   border:2px solid var(--hav);
   color:var(--hvid);
@@ -930,6 +930,15 @@ input[type="number"]{font-weight:700}
 }
 .accordion-panel.aaben{max-height:none}
 @media (prefers-reduced-motion:reduce){
+  /* a11y: respektér brugerens motion-præference globalt — neutralisér alle
+     transitions/animationer (ark-slide, knap-tryk, toast, chips, slider mv.),
+     ikke kun accordion. */
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
   .accordion-head .chevron{transition:none}
   .accordion-panel{transition:none}
 }
