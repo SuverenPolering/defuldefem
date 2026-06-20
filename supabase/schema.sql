@@ -3,11 +3,15 @@
 -- Matcher felterne i assets/js/db.js. I mockfasen kører appen mod
 -- localStorage; dette skema tages i brug når CONFIG.BRUG_SUPABASE = true.
 --
--- RLS: i mockfasen har anon (den offentlige nøgle) BÅDE læse- og
--- skriverettigheder, så appen kan skrive direkte fra browseren uden rigtig
--- auth. STRAM SENERE: når Supabase Auth indføres, erstattes "anon"-policies
--- med "authenticated" + medlems-tjek, og skriverettigheder til bøder/katalog
--- begrænses til Bødekasseministeren. Markeret med TODO(stram) nedenfor.
+-- RLS: appen bruger ÉT fælles klub-login (Supabase Auth) bag Dørmanden.
+-- Den offentlige anon-nøgle giver INGEN adgang — kun rollen 'authenticated'
+-- (dvs. logget ind med klub-kontoen) kan læse/skrive. Det lukker den
+-- offentlige skrive/slette-adgang, som "anon all" ellers ville give.
+--
+-- Med ÉT delt login ser databasen én bruger, så rolle-rettigheder (kun
+-- Bødekasseministeren må skrive bøder) kan IKKE håndhæves her — de er
+-- kosmetiske i klienten. Server-side rolle-håndhævelse kræver login pr.
+-- medlem + tjek på auth.uid(); se TODO(rolle-rls) nedenfor.
 
 -- ============================================================
 -- TABELLER
@@ -117,34 +121,35 @@ create table if not exists vedtaegter (
 );
 
 -- ============================================================
--- ROW LEVEL SECURITY (mockfase: anon read + write)
+-- ROW LEVEL SECURITY (fælles login: kun indloggede)
 -- ============================================================
--- TODO(stram): erstat anon-policies med authenticated + medlems-/rolle-tjek
--- når Supabase Auth er på plads. Bøder + katalog: kun Bødekasseministeren.
+-- anon (den offentlige nøgle, ikke logget ind) får INGEN policy = ingen
+-- adgang. Kun 'authenticated' (det fælles klub-login) kan læse/skrive.
+-- TODO(rolle-rls): ved login pr. medlem kan skriv til fines/fine_catalog
+-- begrænses til Bødekasseministerens konto via auth.uid().
 
-alter table members      enable row level security;
-alter table fines        enable row level security;
-alter table fine_catalog enable row level security;
-alter table wishlist     enable row level security;
-alter table meetings     enable row level security;
-alter table rsvps        enable row level security;
+alter table members       enable row level security;
+alter table fines         enable row level security;
+alter table fine_catalog  enable row level security;
+alter table wishlist      enable row level security;
+alter table meetings      enable row level security;
+alter table rsvps         enable row level security;
 alter table beer_sessions enable row level security;
-alter table beers        enable row level security;
-alter table beer_ratings enable row level security;
-alter table kasse        enable row level security;
-alter table vedtaegter   enable row level security;
+alter table beers         enable row level security;
+alter table beer_ratings  enable row level security;
+alter table kasse         enable row level security;
+alter table vedtaegter    enable row level security;
 
--- Hjælpe-makro findes ikke i ren SQL; vi skriver policies eksplicit pr. tabel.
--- anon-rollen dækker den offentlige browser-klient i mockfasen.
-
-create policy "mock anon all" on members      for all to anon using (true) with check (true);
-create policy "mock anon all" on fines         for all to anon using (true) with check (true); -- TODO(stram): kun boedekasseminister
-create policy "mock anon all" on fine_catalog  for all to anon using (true) with check (true); -- TODO(stram): kun boedekasseminister
-create policy "mock anon all" on wishlist      for all to anon using (true) with check (true);
-create policy "mock anon all" on meetings      for all to anon using (true) with check (true);
-create policy "mock anon all" on rsvps         for all to anon using (true) with check (true);
-create policy "mock anon all" on beer_sessions for all to anon using (true) with check (true);
-create policy "mock anon all" on beers         for all to anon using (true) with check (true);
-create policy "mock anon all" on beer_ratings  for all to anon using (true) with check (true);
-create policy "mock anon all" on kasse         for all to anon using (true) with check (true);
-create policy "mock anon all" on vedtaegter    for all to anon using (true) with check (true);
+-- Kun det fælles klub-login (rollen 'authenticated'). Ingen anon-policy =
+-- den offentlige nøgle alene kan hverken læse, skrive eller slette.
+create policy "klub rw" on members       for all to authenticated using (true) with check (true);
+create policy "klub rw" on fines         for all to authenticated using (true) with check (true);
+create policy "klub rw" on fine_catalog  for all to authenticated using (true) with check (true);
+create policy "klub rw" on wishlist      for all to authenticated using (true) with check (true);
+create policy "klub rw" on meetings      for all to authenticated using (true) with check (true);
+create policy "klub rw" on rsvps         for all to authenticated using (true) with check (true);
+create policy "klub rw" on beer_sessions for all to authenticated using (true) with check (true);
+create policy "klub rw" on beers         for all to authenticated using (true) with check (true);
+create policy "klub rw" on beer_ratings  for all to authenticated using (true) with check (true);
+create policy "klub rw" on kasse         for all to authenticated using (true) with check (true);
+create policy "klub rw" on vedtaegter    for all to authenticated using (true) with check (true);
