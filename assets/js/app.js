@@ -293,6 +293,55 @@
     });
   }
 
+  /* ---------- "Baren har lukket" (paused/nede database) ---------- */
+  // Ligner en fejl der skyldes at Supabase-projektet er paused/utilgængeligt
+  // (5xx, netværk, eller paused). RLS-tomt ([] uden fejl) tæller IKKE som nede.
+  function erNede(err) {
+    if (!err) return false;
+    var s = Number(err.status || err.statusCode || (err.originalError && err.originalError.status) || 0);
+    if (s >= 500 || s === 0) return true;
+    var m = ((err.message || '') + ' ' + (err.details || '') + ' ' + (err.name || '')).toLowerCase();
+    return m.indexOf('fetch') >= 0 || m.indexOf('network') >= 0 ||
+           m.indexOf('load failed') >= 0 || m.indexOf('paused') >= 0 ||
+           m.indexOf('unavailable') >= 0;
+  }
+
+  // Fuldskærms-skilt à la B4: "Baren har lukket" + Prøv igen.
+  function barLukket(besked) {
+    if (document.getElementById('app-bar-lukket')) return;
+    var o = document.createElement('div');
+    o.id = 'app-bar-lukket';
+    o.style.cssText =
+      'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;' +
+      'justify-content:center;padding:24px;background:var(--himmel,#f1f6f4);';
+    var kort = document.createElement('div');
+    kort.style.cssText =
+      'max-width:360px;width:100%;text-align:center;background:var(--hvid,#fefdf9);' +
+      'border:1px solid var(--linje,#dde6e1);border-radius:14px;padding:34px 24px;' +
+      'box-shadow:0 12px 32px rgba(31,78,95,.16);';
+    var ikon = el('div', null, '🍺');
+    ikon.setAttribute('aria-hidden', 'true');
+    ikon.style.cssText = 'font-size:46px;line-height:1;margin-bottom:10px;filter:grayscale(.35) opacity(.85)';
+    var h = el('div', null, 'Baren har lukket');
+    h.style.cssText = "font-family:'Yellowtail',cursive;font-size:40px;color:var(--hav,#1f4e5f);line-height:1.05;margin-bottom:12px";
+    var p = el('p', null, besked || 'Forsamlingshuset blunder lige nu. Prøv igen om et øjeblik — Dørmanden vågner snart.');
+    p.style.cssText = "font-family:'Barlow Semi Condensed',sans-serif;color:var(--tekst-svag,#54707e);font-size:15px;line-height:1.6;margin:0 0 22px";
+    var b = el('button', 'knap', 'Prøv igen');
+    b.type = 'button';
+    b.addEventListener('click', function () { window.location.reload(); });
+    kort.appendChild(ikon); kort.appendChild(h); kort.appendChild(p); kort.appendChild(b);
+    o.appendChild(kort);
+    document.body.appendChild(o);
+  }
+
+  // lille DOM-helper (samme som sidernes el())
+  function el(tag, klasse, tekst) {
+    var n = document.createElement(tag);
+    if (klasse) n.className = klasse;
+    if (tekst != null) n.textContent = tekst;
+    return n;
+  }
+
   /* ---------- opstart ---------- */
   // Rolle på body + topbar/nav. Kører efter login-guard (og evt. Supabase-
   // sessionstjek) er bestået.
@@ -334,12 +383,17 @@
     //      sessionStorage kan overleve sessionen (fx returnerende bruger).
     //      Ingen session → tilbage til Dørmanden (ellers tom app pga. RLS).
     if (window.CONFIG && window.CONFIG.BRUG_SUPABASE && typeof window.DB_sbClient === 'function') {
-      window.DB_sbClient().auth.getSession().then(function (res) {
+      var sb = window.DB_sbClient();
+      sb.auth.getSession().then(function (res) {
         if (!res || !res.data || !res.data.session) {
           window.location.href = 'login.html';
           return;
         }
-        _efterGuard(side);
+        // Er baren åben? Et let ping opdager paused/nede database.
+        sb.from('members').select('id').limit(1).then(function (p) {
+          if (p && p.error && erNede(p.error)) { barLukket(); return; }
+          _efterGuard(side);
+        }, function () { barLukket(); });
       }).catch(function () { window.location.href = 'login.html'; });
       return;
     }
@@ -360,6 +414,8 @@
     avg: avg,
     ark: { open: arkOpen, close: arkClose },
     toast: toast,
+    barLukket: barLukket,
+    erNede: erNede,
     FANER: FANER
   };
 })();

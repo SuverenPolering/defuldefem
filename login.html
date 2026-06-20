@@ -216,9 +216,14 @@
         visFejl(AFVISNINGER[afvisNr % AFVISNINGER.length]);
         afvisNr++;
         feltKode.select();
-      }).catch(function () {
+      }).catch(function (err) {
         knap.disabled = false;
         knap.textContent = gammel;
+        // Baren lukket (paused/nede database) -> fuldskærms-skilt i stedet.
+        if (err && err.barLukket && window.App && typeof window.App.barLukket === 'function') {
+          window.App.barLukket();
+          return;
+        }
         visFejl('Døren gik i baglås. Prøv igen.');
       });
     });

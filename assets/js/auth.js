@@ -37,6 +37,14 @@
     return !!(window.CONFIG && window.CONFIG.BRUG_SUPABASE);
   }
 
+  // Er fejlen "baren lukket" (paused/nede DB)? Genbruger App.erNede hvis muligt.
+  function _erNede(err) {
+    if (window.App && typeof window.App.erNede === 'function') return window.App.erNede(err);
+    var s = Number((err && (err.status || err.statusCode)) || 0);
+    return s >= 500 || s === 0;
+  }
+  function _nedeFejl() { var e = new Error('Baren har lukket'); e.barLukket = true; return e; }
+
   function logout() {
     try {
       sessionStorage.removeItem(NOEGLE);
@@ -79,9 +87,16 @@
         email: window.CONFIG.SUPABASE_KLUB_EMAIL,
         password: kodeord
       }).then(function (res) {
-        if (res.error || !res.data || !res.data.session) return false;
+        if (res.error) {
+          if (_erNede(res.error)) throw _nedeFejl(); // baren lukket -> login.html fanger
+          return false;                              // forkert kodeord
+        }
+        if (!res.data || !res.data.session) return false;
         return _gemProfil(memberId);
-      }).catch(function () { return false; });
+      }, function () {
+        // fetch/netværk kastede -> behandl som "baren lukket"
+        throw _nedeFejl();
+      });
     }
     if (!window.CONFIG || kodeord !== window.CONFIG.KLUB_KODEORD) {
       return Promise.resolve(false);
