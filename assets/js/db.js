@@ -1,13 +1,13 @@
 /* De Fulde Fem — datalag.
  *
- * window.DB.* — ALLE funktioner er async (returnerer Promise), så krop'en
- * trivielt kan skiftes til @supabase/supabase-js senere uden at signaturer
- * ændres. I mockfasen backes alt af localStorage under nøgler "dff:*".
+ * window.DB.* — ALLE funktioner er async (returnerer Promise). To grene:
+ *   - CONFIG.BRUG_SUPABASE = false  → localStorage ("dff:*"), offline + file://.
+ *   - CONFIG.BRUG_SUPABASE = true   → Supabase (delt backend; kræver supabase-js
+ *     i <head> + et indlogget Auth-session, ellers blokerer RLS alt).
  *
- * Beregninger (saldo, gennemsnit, top-3) sker HER i db'en — ikke i sider.
- *
- * Supabase-gren: hvis CONFIG.BRUG_SUPABASE er true, lader vi en TODO-gren
- * stå (kald til en supabase-klient). localStorage-grenen er komplet og virker.
+ * Beregninger (saldo, gennemsnit, top-3, skyld) sker HER i db'en — ikke i sider.
+ * Supabase bruger snake_case; mapperne nedenfor oversætter til appens camelCase,
+ * så sidernes datashapes er uændrede mellem de to grene.
  *
  * Klassisk script: ingen import/export. Hænger DB på window.
  */
@@ -51,10 +51,71 @@
     });
   }
 
-  // Er Supabase-grenen aktiv? (TODO-grenene nedenfor).
+  // Er Supabase-grenen aktiv?
   function _supabase() {
     return !!(window.CONFIG && window.CONFIG.BRUG_SUPABASE);
   }
+
+  /* ---------- Supabase: klient + svar-hjælpere + mappere ---------- */
+
+  var _sbClient = null;
+  function _sb() {
+    if (!_sbClient) {
+      if (!window.supabase || !window.supabase.createClient) {
+        throw new Error('supabase-js er ikke loadet (mangler <script> i <head>).');
+      }
+      _sbClient = window.supabase.createClient(
+        window.CONFIG.SUPABASE_URL, window.CONFIG.SUPABASE_ANON
+      );
+    }
+    return _sbClient;
+  }
+  window.DB_sbClient = _sb; // bruges af Dørmanden (auth)
+
+  // Smid fejl / returnér data fra et supabase-svar.
+  function _data(res) {
+    if (res && res.error) throw res.error;
+    return res ? res.data : null;
+  }
+
+  // snake_case (DB) -> camelCase (app)
+  function _fineFromDb(r) {
+    return { id: r.id, memberId: r.member_id, grund: r.grund, enhed: r.enhed, antal: r.antal, betalt: r.betalt, dato: r.dato };
+  }
+  function _wishFromDb(r) {
+    return { id: r.id, tekst: r.tekst, memberId: r.member_id, oprettet: r.oprettet };
+  }
+  function _rsvpFromDb(r) {
+    return { id: r.id, meetingId: r.meeting_id, memberId: r.member_id, svar: r.svar, tekst: r.tekst };
+  }
+  function _beerFromDb(r) {
+    return { id: r.id, sessionId: r.session_id, bryggeri: r.bryggeri, navn: r.navn, type: r.type, pct: r.pct, havdeMedId: r.havde_med_id };
+  }
+  function _ratingFromDb(r) {
+    return { id: r.id, beerId: r.beer_id, memberId: r.member_id, score: r.score };
+  }
+  function _meetingFromDb(m) {
+    return {
+      id: m.id, type: m.type || 'moede', dato: m.dato,
+      datoer: m.datoer || (m.dato ? [m.dato] : []),
+      sted: m.sted, tema: m.tema, arkiveret: !!m.arkiveret
+    };
+  }
+  function _kasseLogFromDb(r) {
+    return { id: r.id, dato: r.dato, beloeb: r.beloeb, note: r.note };
+  }
+
+  // Kategori-rækkefølge i bødekataloget (DB-rækker har ingen iboende orden).
+  var _KAT_ORDEN = [
+    'Snak, telefon og bordopførsel',
+    'Øl – spild og uheld',
+    'Øl – forkert eller dårlig øl',
+    'Glemt udstyr',
+    'Fremmøde og mødedisciplin',
+    'Ritualer: challenge og sang',
+    'Tøj',
+    'Skade, gæster og status'
+  ];
 
   /* ---------- beregnings-hjælpere (intern) ---------- */
 
@@ -79,7 +140,7 @@
 
   function getMembers() {
     if (_supabase()) {
-      // TODO(supabase): return _sb().from('members').select('*').order('navn');
+      return _sb().from('members').select('*').order('navn').then(_data);
     }
     return _async(function () {
       return _read('members', []);
@@ -92,7 +153,8 @@
 
   function getFines() {
     if (_supabase()) {
-      // TODO(supabase): from('fines').select('*').order('dato', {ascending:false})
+      return _sb().from('fines').select('*').order('dato', { ascending: false })
+        .then(function (res) { return _data(res).map(_fineFromDb); });
     }
     return _async(function () {
       return _read('fines', []);
@@ -100,15 +162,27 @@
   }
 
   function addFine(b) {
+    var enhed = (b.enhed != null ? Number(b.enhed) : Number(b.beloeb)) || 0;
+    var antal = Math.max(1, Math.floor(Number(b.antal) || 1));
+    var dato = b.dato || new Date().toISOString().slice(0, 10);
     if (_supabase()) {
-      // TODO(supabase): from('fines').insert(...).select().single()
+      // MERGE: læg oveni en eksisterende UBETALT bøde med samme memberId+grund+enhed.
+      return _sb().from('fines').select('*')
+        .eq('member_id', b.memberId).eq('grund', b.grund).eq('enhed', enhed).eq('betalt', false)
+        .limit(1).then(function (res) {
+          var ex = _data(res)[0];
+          if (ex) {
+            return _sb().from('fines').update({ antal: ex.antal + antal, dato: dato })
+              .eq('id', ex.id).select().single()
+              .then(function (r) { return _fineFromDb(_data(r)); });
+          }
+          return _sb().from('fines').insert({
+            member_id: b.memberId, grund: b.grund, enhed: enhed, antal: antal, betalt: false, dato: dato
+          }).select().single().then(function (r) { return _fineFromDb(_data(r)); });
+        });
     }
     return _async(function () {
       var fines = _read('fines', []);
-      var enhed = (b.enhed != null ? Number(b.enhed) : Number(b.beloeb)) || 0;
-      var antal = Math.max(1, Math.floor(Number(b.antal) || 1));
-      var dato = b.dato || new Date().toISOString().slice(0, 10);
-      // MERGE: læg oveni en eksisterende UBETALT bøde med samme memberId+grund+enhed.
       for (var i = 0; i < fines.length; i++) {
         var f = fines[i];
         if (f.betalt !== true && f.memberId === b.memberId &&
@@ -120,13 +194,8 @@
         }
       }
       var ny = {
-        id: _id('fine'),
-        memberId: b.memberId,
-        grund: b.grund,
-        enhed: enhed,
-        antal: antal,
-        betalt: false,
-        dato: dato
+        id: _id('fine'), memberId: b.memberId, grund: b.grund,
+        enhed: enhed, antal: antal, betalt: false, dato: dato
       };
       fines.push(ny);
       _write('fines', fines);
@@ -137,7 +206,13 @@
   // Sænk antallet på en bøde med 1. Fjern bøden helt når antal når 0. Returnér true.
   function decrementFine(id) {
     if (_supabase()) {
-      // TODO(supabase): update fines set antal=antal-1 (slet hvis <=0) where id=..
+      return _sb().from('fines').select('antal').eq('id', id).single().then(function (res) {
+        var ny = (Number(_data(res).antal) || 1) - 1;
+        if (ny <= 0) {
+          return _sb().from('fines').delete().eq('id', id).then(function (r) { _data(r); return true; });
+        }
+        return _sb().from('fines').update({ antal: ny }).eq('id', id).then(function (r) { _data(r); return true; });
+      });
     }
     return _async(function () {
       var fines = _read('fines', []);
@@ -146,7 +221,7 @@
         var f = fines[i];
         if (f.id === id) {
           var nyAntal = (f.antal != null ? Number(f.antal) : 1) - 1;
-          if (nyAntal <= 0) continue; // fjern bøden helt
+          if (nyAntal <= 0) continue;
           f.antal = nyAntal;
         }
         ud.push(f);
@@ -156,11 +231,11 @@
     });
   }
 
-  // Ryd KUN betalte bøder fra protokollen. Ubetalt gæld bevares (skyld er uændret).
-  // Rører IKKE kassens saldo. Returnér antal slettede (betalte) bøder.
+  // Ryd KUN betalte bøder fra protokollen. Ubetalt gæld bevares. Rører IKKE kassen.
   function nulstilProtokol() {
     if (_supabase()) {
-      // TODO(supabase): delete from fines where betalt = true (kasse_saldo urørt)
+      return _sb().from('fines').delete().eq('betalt', true).select('id')
+        .then(function (res) { return _data(res).length; });
     }
     return _async(function () {
       var fines = _read('fines', []);
@@ -173,7 +248,7 @@
 
   function removeFine(id) {
     if (_supabase()) {
-      // TODO(supabase): from('fines').delete().eq('id', id)
+      return _sb().from('fines').delete().eq('id', id).then(function (r) { _data(r); return true; });
     }
     return _async(function () {
       var fines = _read('fines', []);
@@ -183,11 +258,26 @@
     });
   }
 
-  // Skyld pr. medlem: [{memberId, navn, titel, beloeb}] = sum af UBETALTE bøder,
-  // sorteret efter mest skyldige først.
+  // Skyld pr. medlem: [{memberId, navn, titel, beloeb}] = sum af UBETALTE bøder.
   function getBalanceByMember() {
     if (_supabase()) {
-      // TODO(supabase): group by member_id, kun betalt=false (view/rpc)
+      return Promise.all([
+        _sb().from('members').select('*').then(_data),
+        _sb().from('fines').select('member_id,enhed,antal').eq('betalt', false).then(_data)
+      ]).then(function (r) {
+        var members = r[0], fines = r[1];
+        var pr = {};
+        members.forEach(function (m) { pr[m.id] = 0; });
+        fines.forEach(function (f) {
+          if (!(f.member_id in pr)) pr[f.member_id] = 0;
+          pr[f.member_id] += (Number(f.enhed) || 0) * (f.antal != null ? Number(f.antal) : 1);
+        });
+        var liste = members.map(function (m) {
+          return { memberId: m.id, navn: m.navn, titel: m.titel, beloeb: pr[m.id] || 0 };
+        });
+        liste.sort(function (a, b) { return b.beloeb - a.beloeb; });
+        return liste;
+      });
     }
     return _async(function () {
       var members = _read('members', []);
@@ -195,7 +285,7 @@
       var pr = {};
       members.forEach(function (m) { pr[m.id] = 0; });
       fines.forEach(function (f) {
-        if (f.betalt === true) return; // kun ubetalte tæller som skyld
+        if (f.betalt === true) return;
         if (!(f.memberId in pr)) pr[f.memberId] = 0;
         pr[f.memberId] += _fineBeloeb(f);
       });
@@ -210,41 +300,45 @@
   // Penge i kassen (et lagret tal).
   function getKasseSaldo() {
     if (_supabase()) {
-      // TODO(supabase): hent kassens saldo (settings/view/rpc)
+      return _sb().from('kasse').select('saldo').eq('id', 1).maybeSingle()
+        .then(function (res) { var d = _data(res); return d ? Number(d.saldo) || 0 : 0; });
     }
     return _async(function () {
       return Number(_read('kasse_saldo', 0)) || 0;
     });
   }
 
-  // Justér kassens saldo med delta (kan være negativt). Logfører ændringen i
-  // 'kasse_log' (manuelle reguleringer). note er valgfri (tom hvis udeladt).
-  // Returnér ny saldo (tal).
+  // Justér kassens saldo med delta (+/-). Logfører i kasse_log. Returnér ny saldo.
   function aendreKasse(delta, note) {
+    var beloeb = Number(delta) || 0;
+    var rentNote = (note == null ? '' : String(note)).trim();
     if (_supabase()) {
-      // TODO(supabase): opdatér kassens saldo (settings/rpc) + indsæt i kasse_log
+      return _sb().from('kasse').select('saldo').eq('id', 1).maybeSingle().then(function (res) {
+        var cur = _data(res);
+        var nyt = (cur ? Number(cur.saldo) || 0 : 0) + beloeb;
+        return _sb().from('kasse').upsert({ id: 1, saldo: nyt }).then(function (u) {
+          _data(u);
+          return _sb().from('kasse_log').insert({ beloeb: beloeb, note: rentNote }).then(function (l) {
+            _data(l); return nyt;
+          });
+        });
+      });
     }
     return _async(function () {
-      var beloeb = Number(delta) || 0;
       var nyt = (Number(_read('kasse_saldo', 0)) || 0) + beloeb;
       _write('kasse_saldo', nyt);
       var log = _read('kasse_log', []);
-      log.push({
-        id: _id('kasse'),
-        dato: new Date().toISOString(),
-        beloeb: beloeb,
-        note: (note == null ? '' : String(note)).trim()
-      });
+      log.push({ id: _id('kasse'), dato: new Date().toISOString(), beloeb: beloeb, note: rentNote });
       _write('kasse_log', log);
       return nyt;
     });
   }
 
-  // Kassebog: manuelle reguleringer (Regulér kassen), nyeste først.
-  // Markér-betalt logges IKKE her.
+  // Kassebog: alle posteringer (ind/ud), nyeste først.
   function getKasseLog() {
     if (_supabase()) {
-      // TODO(supabase): from('kasse_log').select('*').order('dato', {ascending:false})
+      return _sb().from('kasse_log').select('*').order('dato', { ascending: false })
+        .then(function (res) { return _data(res).map(_kasseLogFromDb); });
     }
     return _async(function () {
       var log = _read('kasse_log', []);
@@ -254,10 +348,37 @@
   }
 
   // Markér ALLE et medlems ubetalte bøder som betalt; læg summen til kassen.
-  // Bøderne bevares i protokollen (betalt:true). Returnér {antal, beloeb, nySaldo}.
   function markerBetalt(memberId) {
     if (_supabase()) {
-      // TODO(supabase): update fines set betalt=true where member_id=.. and betalt=false; opdatér kasse
+      return Promise.all([
+        _sb().from('fines').select('enhed,antal').eq('member_id', memberId).eq('betalt', false).then(_data),
+        _sb().from('kasse').select('saldo').eq('id', 1).maybeSingle().then(_data),
+        _sb().from('members').select('titel').eq('id', memberId).maybeSingle().then(_data)
+      ]).then(function (r) {
+        var unpaid = r[0] || [];
+        var saldo = r[1] ? Number(r[1].saldo) || 0 : 0;
+        var titel = r[2] ? r[2].titel : memberId;
+        var antal = unpaid.length;
+        var beloeb = unpaid.reduce(function (s, f) {
+          return s + (Number(f.enhed) || 0) * (f.antal != null ? Number(f.antal) : 1);
+        }, 0);
+        if (antal === 0) return { antal: 0, beloeb: 0, nySaldo: saldo };
+        var nySaldo = saldo + beloeb;
+        return _sb().from('fines').update({ betalt: true })
+          .eq('member_id', memberId).eq('betalt', false).then(function (u) {
+            _data(u);
+            return _sb().from('kasse').upsert({ id: 1, saldo: nySaldo }).then(function (k) {
+              _data(k);
+              return _sb().from('kasse_log').insert({
+                beloeb: beloeb,
+                note: 'Bøder betalt: ' + titel + (antal > 1 ? ' (' + antal + ' bøder)' : '')
+              }).then(function (l) {
+                _data(l);
+                return { antal: antal, beloeb: beloeb, nySaldo: nySaldo };
+              });
+            });
+          });
+      });
     }
     return _async(function () {
       var fines = _read('fines', []);
@@ -277,7 +398,6 @@
       _write('fines', fines);
       var nySaldo = (Number(_read('kasse_saldo', 0)) || 0) + beloeb;
       _write('kasse_saldo', nySaldo);
-      // Bogfør indbetalingen i kassebogen (markér betalt logges også).
       if (beloeb > 0) {
         var medlemmer = _read('members', []);
         var titel = memberId;
@@ -286,9 +406,7 @@
         }
         var log = _read('kasse_log', []);
         log.push({
-          id: _id('kasse'),
-          dato: new Date().toISOString(),
-          beloeb: beloeb,
+          id: _id('kasse'), dato: new Date().toISOString(), beloeb: beloeb,
           note: 'Bøder betalt: ' + titel + (antal > 1 ? ' (' + antal + ' bøder)' : '')
         });
         _write('kasse_log', log);
@@ -299,7 +417,17 @@
 
   function getCatalog() {
     if (_supabase()) {
-      // TODO(supabase): from('fine_catalog').select('*').order('forseelse')
+      return _sb().from('fine_catalog').select('*').then(function (res) {
+        var rows = _data(res);
+        rows.sort(function (a, b) {
+          var ia = _KAT_ORDEN.indexOf(a.kategori); if (ia < 0) ia = 99;
+          var ib = _KAT_ORDEN.indexOf(b.kategori); if (ib < 0) ib = 99;
+          if (ia !== ib) return ia - ib;
+          if ((a.takst || 0) !== (b.takst || 0)) return (a.takst || 0) - (b.takst || 0);
+          return (a.forseelse || '').localeCompare(b.forseelse || '', 'da');
+        });
+        return rows;
+      });
     }
     return _async(function () {
       return _read('catalog', []);
@@ -309,7 +437,15 @@
   // Opretter (intet id) eller opdaterer (med id) en katalogpost.
   function upsertCatalogItem(post) {
     if (_supabase()) {
-      // TODO(supabase): from('fine_catalog').upsert(...)
+      var row = {
+        kategori: post.kategori != null ? post.kategori : '',
+        forseelse: post.forseelse,
+        takst: Number(post.takst) || 0
+      };
+      if (post.id) {
+        return _sb().from('fine_catalog').update(row).eq('id', post.id).select().single().then(_data);
+      }
+      return _sb().from('fine_catalog').insert(row).select().single().then(_data);
     }
     return _async(function () {
       var katalog = _read('catalog', []);
@@ -342,7 +478,7 @@
 
   function removeCatalogItem(id) {
     if (_supabase()) {
-      // TODO(supabase): from('fine_catalog').delete().eq('id', id)
+      return _sb().from('fine_catalog').delete().eq('id', id).then(function (r) { _data(r); return true; });
     }
     return _async(function () {
       var katalog = _read('catalog', []);
@@ -353,7 +489,8 @@
 
   function getWishlist() {
     if (_supabase()) {
-      // TODO(supabase): from('wishlist').select('*').order('oprettet')
+      return _sb().from('wishlist').select('*').order('oprettet')
+        .then(function (res) { return _data(res).map(_wishFromDb); });
     }
     return _async(function () {
       return _read('wishlist', []);
@@ -362,16 +499,12 @@
 
   function addWish(w) {
     if (_supabase()) {
-      // TODO(supabase): from('wishlist').insert(...)
+      return _sb().from('wishlist').insert({ tekst: w.tekst, member_id: w.memberId || null })
+        .select().single().then(function (r) { return _wishFromDb(_data(r)); });
     }
     return _async(function () {
       var liste = _read('wishlist', []);
-      var ny = {
-        id: _id('wish'),
-        tekst: w.tekst,
-        memberId: w.memberId || null,
-        oprettet: new Date().toISOString()
-      };
+      var ny = { id: _id('wish'), tekst: w.tekst, memberId: w.memberId || null, oprettet: new Date().toISOString() };
       liste.push(ny);
       _write('wishlist', liste);
       return ny;
@@ -380,7 +513,13 @@
 
   function updateWish(id, felter) {
     if (_supabase()) {
-      // TODO(supabase): from('wishlist').update(...).eq('id', id)
+      var f = felter || {};
+      if (f.tekst == null) {
+        return _sb().from('wishlist').select('*').eq('id', id).maybeSingle()
+          .then(function (res) { var d = _data(res); return d ? _wishFromDb(d) : null; });
+      }
+      return _sb().from('wishlist').update({ tekst: String(f.tekst) }).eq('id', id)
+        .select().single().then(function (r) { return _wishFromDb(_data(r)); });
     }
     return _async(function () {
       var liste = _read('wishlist', []);
@@ -399,14 +538,11 @@
 
   function removeWish(id) {
     if (_supabase()) {
-      // TODO(supabase): from('wishlist').delete().eq('id', id)
+      return _sb().from('wishlist').delete().eq('id', id).then(function (r) { _data(r); return true; });
     }
     return _async(function () {
       var liste = _read('wishlist', []);
-      var ny = liste.filter(function (w) {
-        return w.id !== id;
-      });
-      _write('wishlist', ny);
+      _write('wishlist', liste.filter(function (w) { return w.id !== id; }));
       return true;
     });
   }
@@ -417,12 +553,17 @@
 
   function getMeetings() {
     if (_supabase()) {
-      // TODO(supabase): from('meetings').select('*, rsvps(*)')
+      return _sb().from('meetings').select('*, rsvps(*)').then(function (res) {
+        return _data(res).map(function (m) {
+          var k = _meetingFromDb(m);
+          k.svar = (m.rsvps || []).map(_rsvpFromDb);
+          return k;
+        });
+      });
     }
     return _async(function () {
       var moeder = _read('meetings', []);
       var rsvps = _read('rsvps', []);
-      // Hæng svar på hvert møde for nem visning.
       return moeder.map(function (m) {
         var kopi = {
           id: m.id, dato: m.dato, sted: m.sted, tema: m.tema,
@@ -437,21 +578,24 @@
   }
 
   function addMeeting(m) {
+    var datoer = (m.datoer && m.datoer.length) ? m.datoer.slice() : (m.dato ? [m.dato] : []);
+    datoer.sort();
     if (_supabase()) {
-      // TODO(supabase): from('meetings').insert(...)
-    }
-    return _async(function () {
-      var moeder = _read('meetings', []);
-      var datoer = (m.datoer && m.datoer.length) ? m.datoer.slice() : (m.dato ? [m.dato] : []);
-      datoer.sort(); // stigende ISO
-      var ny = {
-        id: _id('meet'),
+      return _sb().from('meetings').insert({
         type: m.type || 'moede',
-        dato: datoer[0] || m.dato || '', // tidligste dato, til sortering/kompatibilitet
+        dato: datoer[0] || m.dato,
         datoer: datoer,
         sted: m.sted || '',
         tema: m.tema || '',
         arkiveret: !!m.arkiveret
+      }).select().single().then(function (r) { return _meetingFromDb(_data(r)); });
+    }
+    return _async(function () {
+      var moeder = _read('meetings', []);
+      var ny = {
+        id: _id('meet'), type: m.type || 'moede',
+        dato: datoer[0] || m.dato || '', datoer: datoer,
+        sted: m.sted || '', tema: m.tema || '', arkiveret: !!m.arkiveret
       };
       moeder.push(ny);
       _write('meetings', moeder);
@@ -459,11 +603,27 @@
     });
   }
 
-  // Opdatér et møde. felter: {type?, dato?, datoer?, sted?, tema?, arkiveret?}.
-  // Datoer normaliseres som i addMeeting (sorteret; dato = datoer[0]).
   function updateMeeting(id, felter) {
     if (_supabase()) {
-      // TODO(supabase): from('meetings').update(...).eq('id', id)
+      return _sb().from('meetings').select('*').eq('id', id).single().then(function (res) {
+        var m = _data(res);
+        var f = felter || {};
+        var datoer;
+        if (f.datoer && f.datoer.length) datoer = f.datoer.slice();
+        else if (f.dato) datoer = [f.dato];
+        else datoer = (m.datoer && m.datoer.length) ? m.datoer.slice() : (m.dato ? [m.dato] : []);
+        datoer.sort();
+        var upd = {
+          type: f.type != null ? f.type : (m.type || 'moede'),
+          dato: datoer[0] || m.dato,
+          datoer: datoer,
+          sted: f.sted != null ? f.sted : (m.sted || ''),
+          tema: f.tema != null ? f.tema : (m.tema || ''),
+          arkiveret: f.arkiveret != null ? !!f.arkiveret : !!m.arkiveret
+        };
+        return _sb().from('meetings').update(upd).eq('id', id).select().single()
+          .then(function (r) { return _meetingFromDb(_data(r)); });
+      });
     }
     return _async(function () {
       var moeder = _read('meetings', []);
@@ -472,14 +632,10 @@
         if (m.id !== id) return m;
         var f = felter || {};
         var datoer;
-        if (f.datoer && f.datoer.length) {
-          datoer = f.datoer.slice();
-        } else if (f.dato) {
-          datoer = [f.dato];
-        } else {
-          datoer = (m.datoer && m.datoer.length) ? m.datoer.slice() : (m.dato ? [m.dato] : []);
-        }
-        datoer.sort(); // stigende ISO
+        if (f.datoer && f.datoer.length) datoer = f.datoer.slice();
+        else if (f.dato) datoer = [f.dato];
+        else datoer = (m.datoer && m.datoer.length) ? m.datoer.slice() : (m.dato ? [m.dato] : []);
+        datoer.sort();
         opdateret = {
           id: m.id,
           type: f.type != null ? f.type : (m.type || 'moede'),
@@ -496,10 +652,10 @@
     });
   }
 
-  // Fjern et møde OG dets rsvps. Returnér true.
   function removeMeeting(id) {
     if (_supabase()) {
-      // TODO(supabase): from('meetings').delete().eq('id', id) (rsvps via cascade)
+      // rsvps fjernes via FK on delete cascade.
+      return _sb().from('meetings').delete().eq('id', id).then(function (r) { _data(r); return true; });
     }
     return _async(function () {
       var moeder = _read('meetings', []);
@@ -510,10 +666,11 @@
     });
   }
 
-  // Sæt/opdatér ét medlems svar på et møde. svar: 'ja' | 'nej' | 'maaske'.
   function setRSVP(meetingId, memberId, data) {
     if (_supabase()) {
-      // TODO(supabase): from('rsvps').upsert(..., {onConflict:'meeting_id,member_id'})
+      return _sb().from('rsvps').upsert({
+        meeting_id: meetingId, member_id: memberId, svar: data.svar, tekst: data.tekst || ''
+      }, { onConflict: 'meeting_id,member_id' }).then(function (r) { _data(r); return true; });
     }
     return _async(function () {
       var rsvps = _read('rsvps', []);
@@ -521,31 +678,22 @@
       rsvps = rsvps.map(function (r) {
         if (r.meetingId === meetingId && r.memberId === memberId) {
           fundet = true;
-          return {
-            id: r.id, meetingId: meetingId, memberId: memberId,
-            svar: data.svar, tekst: data.tekst || ''
-          };
+          return { id: r.id, meetingId: meetingId, memberId: memberId, svar: data.svar, tekst: data.tekst || '' };
         }
         return r;
       });
       if (!fundet) {
-        rsvps.push({
-          id: _id('rsvp'),
-          meetingId: meetingId,
-          memberId: memberId,
-          svar: data.svar,
-          tekst: data.tekst || ''
-        });
+        rsvps.push({ id: _id('rsvp'), meetingId: meetingId, memberId: memberId, svar: data.svar, tekst: data.tekst || '' });
       }
       _write('rsvps', rsvps);
       return true;
     });
   }
 
-  // Arkiv: kun arkiverede møder (dato/sted/tema), nyeste først.
   function getArchive() {
     if (_supabase()) {
-      // TODO(supabase): from('meetings').select('*').eq('arkiveret', true)
+      return _sb().from('meetings').select('*').eq('arkiveret', true).order('dato', { ascending: false })
+        .then(function (res) { return _data(res).map(_meetingFromDb); });
     }
     return _async(function () {
       var moeder = _read('meetings', []);
@@ -553,13 +701,9 @@
       arkiv.sort(function (a, b) { return (b.dato || '').localeCompare(a.dato || ''); });
       return arkiv.map(function (m) {
         return {
-          id: m.id,
-          type: m.type || 'moede',
-          dato: m.dato,
+          id: m.id, type: m.type || 'moede', dato: m.dato,
           datoer: m.datoer || (m.dato ? [m.dato] : []),
-          sted: m.sted,
-          tema: m.tema,
-          arkiveret: !!m.arkiveret
+          sted: m.sted, tema: m.tema, arkiveret: !!m.arkiveret
         };
       });
     });
@@ -571,26 +715,38 @@
 
   function getSessions() {
     if (_supabase()) {
-      // TODO(supabase): from('beer_sessions').select('*, beers(*, beer_ratings(*))')
+      return _sb().from('beer_sessions').select('*, beers(*, beer_ratings(*))').then(function (res) {
+        return _data(res).map(function (s) {
+          return {
+            id: s.id, dato: s.dato, sted: s.sted,
+            deltagere: s.deltagere || [], tema: s.tema || '',
+            oel: (s.beers || []).map(function (b) {
+              var ratings = (b.beer_ratings || []).map(_ratingFromDb);
+              return {
+                id: b.id, sessionId: b.session_id,
+                bryggeri: b.bryggeri, navn: b.navn, type: b.type, pct: b.pct,
+                havdeMedId: b.havde_med_id || null,
+                ratings: ratings,
+                snit: _avg(ratings.map(function (x) { return x.score; }))
+              };
+            })
+          };
+        });
+      });
     }
     return _async(function () {
       var sessioner = _read('sessions', []);
       var oel = _read('beers', []);
       var ratings = _read('ratings', []);
       return sessioner.map(function (s) {
-        var kopi = {
-          id: s.id, dato: s.dato, sted: s.sted,
-          deltagere: s.deltagere || [], tema: s.tema || ''
-        };
+        var kopi = { id: s.id, dato: s.dato, sted: s.sted, deltagere: s.deltagere || [], tema: s.tema || '' };
         kopi.oel = oel.filter(function (b) { return b.sessionId === s.id; }).map(function (b) {
           var r = ratings.filter(function (x) { return x.beerId === b.id; });
           var scorer = r.map(function (x) { return x.score; });
           return {
             id: b.id, sessionId: b.sessionId,
             bryggeri: b.bryggeri, navn: b.navn, type: b.type, pct: b.pct,
-            havdeMedId: b.havdeMedId || null,
-            ratings: r,
-            snit: _avg(scorer)
+            havdeMedId: b.havdeMedId || null, ratings: r, snit: _avg(scorer)
           };
         });
         return kopi;
@@ -600,42 +756,35 @@
 
   function addSession(s) {
     if (_supabase()) {
-      // TODO(supabase): from('beer_sessions').insert(...)
+      return _sb().from('beer_sessions').insert({
+        dato: s.dato, sted: s.sted || '', deltagere: s.deltagere || [], tema: s.tema || ''
+      }).select().single().then(function (r) {
+        var x = _data(r);
+        return { id: x.id, dato: x.dato, sted: x.sted, deltagere: x.deltagere || [], tema: x.tema || '' };
+      });
     }
     return _async(function () {
       var sessioner = _read('sessions', []);
-      var ny = {
-        id: _id('sess'),
-        dato: s.dato,
-        sted: s.sted || '',
-        deltagere: s.deltagere || [],
-        tema: s.tema || ''
-      };
+      var ny = { id: _id('sess'), dato: s.dato, sted: s.sted || '', deltagere: s.deltagere || [], tema: s.tema || '' };
       sessioner.push(ny);
       _write('sessions', sessioner);
       return ny;
     });
   }
 
-  // Tilføj en øl til en session.
-  // b: {bryggeri, navn, type, pct, havdeMedId?}
-  //   havdeMedId er valgfrit (memberId på den der havde øllen med) — bruges af
-  //   getSessions/getBeerTop3 til at udstille havdeMedNavn ("… havde den med").
-  //   Supabase-skemaet (beers-tabellen) skal have en tilsvarende kolonne.
   function addBeer(sessionId, b) {
     if (_supabase()) {
-      // TODO(supabase): from('beers').insert(...) — inkl. kolonnen havde_med_id
+      return _sb().from('beers').insert({
+        session_id: sessionId, bryggeri: b.bryggeri || '', navn: b.navn,
+        type: b.type || '', pct: b.pct != null ? Number(b.pct) : null,
+        havde_med_id: b.havdeMedId || null
+      }).select().single().then(function (r) { return _beerFromDb(_data(r)); });
     }
     return _async(function () {
       var oel = _read('beers', []);
       var ny = {
-        id: _id('beer'),
-        sessionId: sessionId,
-        bryggeri: b.bryggeri || '',
-        navn: b.navn,
-        type: b.type || '',
-        pct: b.pct != null ? Number(b.pct) : null,
-        havdeMedId: b.havdeMedId || null
+        id: _id('beer'), sessionId: sessionId, bryggeri: b.bryggeri || '', navn: b.navn,
+        type: b.type || '', pct: b.pct != null ? Number(b.pct) : null, havdeMedId: b.havdeMedId || null
       };
       oel.push(ny);
       _write('beers', oel);
@@ -643,10 +792,11 @@
     });
   }
 
-  // Sæt ét medlems score (1–10, heltal) for en øl. Overskriver tidligere.
   function rateBeer(beerId, memberId, score) {
     if (_supabase()) {
-      // TODO(supabase): from('beer_ratings').upsert(..., {onConflict:'beer_id,member_id'})
+      return _sb().from('beer_ratings').upsert({
+        beer_id: beerId, member_id: memberId, score: Number(score)
+      }, { onConflict: 'beer_id,member_id' }).then(function (r) { _data(r); return true; });
     }
     return _async(function () {
       var ratings = _read('ratings', []);
@@ -666,42 +816,53 @@
     });
   }
 
-  // Top 3 øl på tværs af alle sessioner, efter gennemsnitsscore.
   function getBeerTop3() {
     if (_supabase()) {
-      // TODO(supabase): view/rpc der rangerer øl efter snit
+      return Promise.all([
+        _sb().from('beers').select('*, beer_ratings(score)').then(_data),
+        _sb().from('beer_sessions').select('id,dato').then(_data),
+        _sb().from('members').select('id,titel').then(_data)
+      ]).then(function (res) {
+        var oel = res[0], sessioner = res[1], members = res[2];
+        var sessMap = {}; sessioner.forEach(function (s) { sessMap[s.id] = s; });
+        var memMap = {}; members.forEach(function (m) { memMap[m.id] = m; });
+        var rangeret = oel.map(function (b) {
+          var scorer = (b.beer_ratings || []).map(function (x) { return x.score; });
+          var sess = sessMap[b.session_id] || {};
+          var med = memMap[b.havde_med_id];
+          return {
+            id: b.id, navn: b.navn, bryggeri: b.bryggeri, type: b.type, pct: b.pct,
+            snit: _avg(scorer), antalStemmer: scorer.length,
+            dato: sess.dato || null,
+            havdeMedId: b.havde_med_id || null,
+            havdeMedNavn: med ? med.titel : null
+          };
+        });
+        rangeret.sort(function (a, b) {
+          if (b.snit !== a.snit) return b.snit - a.snit;
+          return b.antalStemmer - a.antalStemmer;
+        });
+        return rangeret.slice(0, 3);
+      });
     }
     return _async(function () {
       var sessioner = _read('sessions', []);
       var oel = _read('beers', []);
       var ratings = _read('ratings', []);
       var members = _read('members', []);
-
-      var sessMap = {};
-      sessioner.forEach(function (s) { sessMap[s.id] = s; });
-      var memMap = {};
-      members.forEach(function (m) { memMap[m.id] = m; });
-
+      var sessMap = {}; sessioner.forEach(function (s) { sessMap[s.id] = s; });
+      var memMap = {}; members.forEach(function (m) { memMap[m.id] = m; });
       var rangeret = oel.map(function (b) {
-        var scorer = ratings
-          .filter(function (x) { return x.beerId === b.id; })
-          .map(function (x) { return x.score; });
+        var scorer = ratings.filter(function (x) { return x.beerId === b.id; }).map(function (x) { return x.score; });
         var sess = sessMap[b.sessionId] || {};
         var med = memMap[b.havdeMedId];
         return {
-          id: b.id,
-          navn: b.navn,
-          bryggeri: b.bryggeri,
-          type: b.type,
-          pct: b.pct,
-          snit: _avg(scorer),
-          antalStemmer: scorer.length,
-          dato: sess.dato || null,
-          havdeMedId: b.havdeMedId || null,
+          id: b.id, navn: b.navn, bryggeri: b.bryggeri, type: b.type, pct: b.pct,
+          snit: _avg(scorer), antalStemmer: scorer.length,
+          dato: sess.dato || null, havdeMedId: b.havdeMedId || null,
           havdeMedNavn: med ? med.titel : null
         };
       });
-
       rangeret.sort(function (a, b) {
         if (b.snit !== a.snit) return b.snit - a.snit;
         return b.antalStemmer - a.antalStemmer;
@@ -716,7 +877,8 @@
 
   function getVedtaegter(key) {
     if (_supabase()) {
-      // TODO(supabase): from('vedtaegter').select('tekst').eq('key', key).single()
+      return _sb().from('vedtaegter').select('tekst').eq('noegle', key).maybeSingle()
+        .then(function (res) { var d = _data(res); return d ? d.tekst : ''; });
     }
     return _async(function () {
       var alle = _read('vedtaegter', {});
@@ -726,7 +888,8 @@
 
   function setVedtaegter(key, tekst) {
     if (_supabase()) {
-      // TODO(supabase): from('vedtaegter').upsert({key, tekst})
+      return _sb().from('vedtaegter').upsert({ noegle: key, tekst: String(tekst) }, { onConflict: 'noegle' })
+        .then(function (r) { _data(r); return String(tekst); });
     }
     return _async(function () {
       var alle = _read('vedtaegter', {});
@@ -740,7 +903,6 @@
   /* ---------- eksportér ---------- */
 
   window.DB = {
-    // intern hjælp brugt af seed.js (idempotens-tjek)
     _read: _read,
     _write: _write,
     _PRA: PRA,
