@@ -31,7 +31,8 @@ create table if not exists fines (
   id        uuid primary key default gen_random_uuid(),
   member_id text not null references members(id) on delete cascade,
   grund     text not null,
-  beloeb    integer not null default 0, -- kroner (heltal)
+  enhed     integer not null default 0,  -- takst pr. styk (kroner, heltal)
+  antal     integer not null default 1,  -- antal gange (beløb = enhed * antal)
   betalt    boolean not null default false,
   dato      date not null default current_date,
   oprettet  timestamptz not null default now()
@@ -114,6 +115,16 @@ create table if not exists kasse (
   saldo integer not null default 0
 );
 
+-- Kassebog — logbog over ind/ud af kassen (manuelle reguleringer + markér betalt).
+create table if not exists kasse_log (
+  id       uuid primary key default gen_random_uuid(),
+  dato     timestamptz not null default now(),
+  beloeb   integer not null default 0,   -- + ind / − ud (kroner, heltal)
+  note     text not null default '',
+  oprettet timestamptz not null default now()
+);
+create index if not exists kasse_log_dato_idx on kasse_log(dato desc);
+
 -- Vedtægter — fri tekst pr. nøgle ('forening' | 'boedekasse').
 create table if not exists vedtaegter (
   noegle text primary key,
@@ -138,6 +149,7 @@ alter table beer_sessions enable row level security;
 alter table beers         enable row level security;
 alter table beer_ratings  enable row level security;
 alter table kasse         enable row level security;
+alter table kasse_log     enable row level security;
 alter table vedtaegter    enable row level security;
 
 -- Kun det fælles klub-login (rollen 'authenticated'). Ingen anon-policy =
@@ -152,4 +164,5 @@ create policy "klub rw" on beer_sessions for all to authenticated using (true) w
 create policy "klub rw" on beers         for all to authenticated using (true) with check (true);
 create policy "klub rw" on beer_ratings  for all to authenticated using (true) with check (true);
 create policy "klub rw" on kasse         for all to authenticated using (true) with check (true);
+create policy "klub rw" on kasse_log     for all to authenticated using (true) with check (true);
 create policy "klub rw" on vedtaegter    for all to authenticated using (true) with check (true);
