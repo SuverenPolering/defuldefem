@@ -389,10 +389,10 @@
           window.location.href = 'login.html';
           return;
         }
-        // Er baren åben? Et let ping opdager paused/nede database.
+        _efterGuard(side); // tegn straks (getSession er lokal/hurtig)
+        // Bar-lukket-detektion i baggrunden — blokerer IKKE siden.
         sb.from('members').select('id').limit(1).then(function (p) {
-          if (p && p.error && erNede(p.error)) { barLukket(); return; }
-          _efterGuard(side);
+          if (p && p.error && erNede(p.error)) barLukket();
         }, function () { barLukket(); });
       }).catch(function () { window.location.href = 'login.html'; });
       return;

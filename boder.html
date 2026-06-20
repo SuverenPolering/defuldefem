@@ -1031,11 +1031,14 @@
       return Promise.all([renderSaldo(), renderSaldoPrMedlem(), renderBoeder()]);
     }
 
-    fyldMedlemsVaelger()
-      .then(renderKatalog)
-      .then(opdaterAlt)
-      .then(renderKassebog)
-      .then(renderOensker);
+    // Parallelt (uafhængige sektioner) — ~1 netværksrunde i stedet for 5 i træk.
+    Promise.all([
+      fyldMedlemsVaelger(),
+      renderKatalog(),
+      opdaterAlt(),
+      renderKassebog(),
+      renderOensker()
+    ]);
   })();
   </script>
 </body>

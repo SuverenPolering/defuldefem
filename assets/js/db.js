@@ -78,6 +78,18 @@
     return res ? res.data : null;
   }
 
+  // Letvægts-cache (sessionStorage) til UFORANDERLIGE reference-data. Bruges
+  // kun til 'members' (de fem er faste, jf. vedtægt § 6), så hvert sideskift
+  // ikke henter dem igen. Ryddes ved tab-luk.
+  function _cacheGet(navn) {
+    try { var r = sessionStorage.getItem('dff:cache:' + navn); return r ? JSON.parse(r) : null; }
+    catch (e) { return null; }
+  }
+  function _cacheSet(navn, vaerdi) {
+    try { sessionStorage.setItem('dff:cache:' + navn, JSON.stringify(vaerdi)); } catch (e) {}
+    return vaerdi;
+  }
+
   // snake_case (DB) -> camelCase (app)
   function _fineFromDb(r) {
     return { id: r.id, memberId: r.member_id, grund: r.grund, enhed: r.enhed, antal: r.antal, betalt: r.betalt, dato: r.dato };
@@ -140,7 +152,11 @@
 
   function getMembers() {
     if (_supabase()) {
-      return _sb().from('members').select('*').order('navn').then(_data);
+      var c = _cacheGet('members');
+      if (c && c.length) return Promise.resolve(c);
+      return _sb().from('members').select('*').order('navn').then(function (res) {
+        return _cacheSet('members', _data(res));
+      });
     }
     return _async(function () {
       return _read('members', []);
@@ -262,7 +278,7 @@
   function getBalanceByMember() {
     if (_supabase()) {
       return Promise.all([
-        _sb().from('members').select('*').then(_data),
+        getMembers(),
         _sb().from('fines').select('member_id,enhed,antal').eq('betalt', false).then(_data)
       ]).then(function (r) {
         var members = r[0], fines = r[1];
@@ -821,7 +837,7 @@
       return Promise.all([
         _sb().from('beers').select('*, beer_ratings(score)').then(_data),
         _sb().from('beer_sessions').select('id,dato').then(_data),
-        _sb().from('members').select('id,titel').then(_data)
+        getMembers()
       ]).then(function (res) {
         var oel = res[0], sessioner = res[1], members = res[2];
         var sessMap = {}; sessioner.forEach(function (s) { sessMap[s.id] = s; });
