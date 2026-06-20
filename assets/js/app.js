@@ -294,23 +294,14 @@
   }
 
   /* ---------- opstart ---------- */
-  function start() {
-    montérAutoCap();
-    var side = document.body.getAttribute('data-side') || '';
-
-    // (a) guard på alt undtagen login
-    if (side !== 'login') {
-      if (window.Auth && typeof window.Auth.kraevLogin === 'function') {
-        if (!window.Auth.kraevLogin()) return; // redirecter — stop her
-      }
-    }
-
+  // Rolle på body + topbar/nav. Kører efter login-guard (og evt. Supabase-
+  // sessionstjek) er bestået.
+  function _efterGuard(side) {
     // (c) rolle på body til .kun-minister-styring
     var sess = (window.Auth && window.Auth.current) ? window.Auth.current() : null;
     document.body.dataset.rolle = (sess && sess.rolle) ? sess.rolle : '';
 
-    // (b) topbar + nav. Login: hverken topbar eller nav — dørmands-kortet
-    //     skal stå rent med sin egen .skilt-branding.
+    // (b) topbar + nav. Login/velkommen: ingen topbar — de står rent.
     if (side !== 'login' && side !== 'velkommen') {
       injicerTopbar();
       injicerNav(side);
@@ -323,9 +314,37 @@
           }
           var migEl = document.getElementById('topbar-mig');
           if (migEl && m) migEl.textContent = m.titel;
-        });
+        }).catch(function () { /* topbar-titel er pynt — ignorér */ });
       }
     }
+  }
+
+  function start() {
+    montérAutoCap();
+    var side = document.body.getAttribute('data-side') || '';
+
+    if (side === 'login') { _efterGuard(side); return; }
+
+    // (a) profil-guard (sessionStorage). Redirecter til Dørmanden uden profil.
+    if (window.Auth && typeof window.Auth.kraevLogin === 'function') {
+      if (!window.Auth.kraevLogin()) return;
+    }
+
+    // (a2) Supabase: bekræft også en gyldig Auth-session — profilen i
+    //      sessionStorage kan overleve sessionen (fx returnerende bruger).
+    //      Ingen session → tilbage til Dørmanden (ellers tom app pga. RLS).
+    if (window.CONFIG && window.CONFIG.BRUG_SUPABASE && typeof window.DB_sbClient === 'function') {
+      window.DB_sbClient().auth.getSession().then(function (res) {
+        if (!res || !res.data || !res.data.session) {
+          window.location.href = 'login.html';
+          return;
+        }
+        _efterGuard(side);
+      }).catch(function () { window.location.href = 'login.html'; });
+      return;
+    }
+
+    _efterGuard(side);
   }
 
   if (document.readyState === 'loading') {

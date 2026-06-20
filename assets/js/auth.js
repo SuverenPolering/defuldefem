@@ -33,26 +33,60 @@
     }
   }
 
+  function _supa() {
+    return !!(window.CONFIG && window.CONFIG.BRUG_SUPABASE);
+  }
+
   function logout() {
     try {
       sessionStorage.removeItem(NOEGLE);
     } catch (e) { /* ignorér */ }
+    // Supabase: log også ud af Auth-sessionen (rydder den persisterede token).
+    if (_supa() && typeof window.DB_sbClient === 'function') {
+      try { window.DB_sbClient().auth.signOut(); } catch (e) { /* ignorér */ }
+    }
+  }
+
+  // Gem profil (memberId+rolle) fra den valgte brik. Returnér Promise<bool>.
+  // Rollen slås op i den kanoniske picker-liste (CONFIG.MEDLEMMER), så det ikke
+  // afhænger af et DB-kald — falder tilbage på datalaget hvis listen mangler.
+  function _gemProfil(memberId) {
+    var list = (window.CONFIG && window.CONFIG.MEDLEMMER) || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === memberId) {
+        gemSession(list[i].id, list[i].rolle);
+        return Promise.resolve(true);
+      }
+    }
+    return window.DB.getMembers().then(function (members) {
+      for (var j = 0; j < members.length; j++) {
+        if (members[j].id === memberId) {
+          gemSession(members[j].id, members[j].rolle);
+          return true;
+        }
+      }
+      return false;
+    });
   }
 
   // Returnerer Promise<bool>. true = logget ind (session gemt).
+  // Supabase: kodeordet er det fælles klub-password (Supabase Auth). Profilen
+  //   (hvem af de fem) kommer fra den valgte brik. localStorage: fælles kodeord.
   function login(memberId, kodeord) {
+    if (_supa()) {
+      if (typeof window.DB_sbClient !== 'function') return Promise.resolve(false);
+      return window.DB_sbClient().auth.signInWithPassword({
+        email: window.CONFIG.SUPABASE_KLUB_EMAIL,
+        password: kodeord
+      }).then(function (res) {
+        if (res.error || !res.data || !res.data.session) return false;
+        return _gemProfil(memberId);
+      }).catch(function () { return false; });
+    }
     if (!window.CONFIG || kodeord !== window.CONFIG.KLUB_KODEORD) {
       return Promise.resolve(false);
     }
-    return window.DB.getMembers().then(function (members) {
-      var m = null;
-      for (var i = 0; i < members.length; i++) {
-        if (members[i].id === memberId) { m = members[i]; break; }
-      }
-      if (!m) return false;
-      gemSession(m.id, m.rolle);
-      return true;
-    });
+    return _gemProfil(memberId);
   }
 
   // Kald på alle ikke-login-sider. Redirecter til login.html uden session.

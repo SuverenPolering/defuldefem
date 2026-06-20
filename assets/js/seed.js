@@ -188,6 +188,8 @@
   ].join('\n');
 
   window.seed = function seed() {
+    // Supabase-tilstand: data ligger i databasen — så ikke localStorage.
+    if (window.CONFIG && window.CONFIG.BRUG_SUPABASE) return false;
     if (_erTomt() === false) return false; // allerede sået — gør intet.
 
     var W = window.DB._write;
@@ -339,6 +341,7 @@
   };
 
   function migrer() {
+    if (window.CONFIG && window.CONFIG.BRUG_SUPABASE) return false; // Supabase: ingen localStorage-migrering.
     var members = window.DB._read('members', []);
     if (!members || !members.length) return false; // intet at migrere.
 

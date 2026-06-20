@@ -60,6 +60,7 @@
   </div>
 
   <!-- Datalag + stel (præcis rækkefølge) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="assets/js/config.js"></script>
   <script src="assets/js/db.js"></script>
   <script src="assets/js/seed.js"></script>
@@ -114,16 +115,16 @@
         // Roving tabindex: kun den første brik er i tab-rækken indtil et valg.
         knapEl.tabIndex = idx === 0 ? 0 : -1;
         knapEl.setAttribute('data-id', m.id);
-        knapEl.title = m.navn + ' — ' + m.titel;
+        knapEl.title = (m.fornavn || m.navn || '') + ' — ' + m.titel;
 
         var brik = document.createElement('span');
         brik.className = 'brik';
-        brik.textContent = m.initial || (m.navn ? m.navn.charAt(0) : '?');
+        brik.textContent = m.initial || (m.fornavn || m.navn || '?').charAt(0);
 
         var label = document.createElement('span');
         label.className = 'navn-label';
         // Kun fornavn på briken — der er ikke plads til efternavnet.
-        label.textContent = (m.navn || '').split(' ')[0];
+        label.textContent = m.fornavn || (m.navn || '').split(' ')[0];
 
         knapEl.appendChild(brik);
         knapEl.appendChild(label);
@@ -173,16 +174,15 @@
       maal.focus();
     }
 
-    // Hent medlemmer fra DB og tegn navnevælgeren.
-    window.DB.getMembers().then(function (members) {
-      if (!members || !members.length) {
-        visFejl('Ingen ministre fundet. Mistænkeligt.');
-        return;
-      }
-      tegnBrikker(members);
-    }).catch(function () {
-      visFejl('Døren driller. Genindlæs siden.');
-    });
+    // Tegn navnevælgeren fra den kanoniske picker-liste (CONFIG.MEDLEMMER).
+    // FØR login kan vi ikke læse medlems-tabellen (RLS blokerer anon), så de fem
+    // faste brikker kommer fra config — ikke databasen.
+    var medlemmer = (window.CONFIG && window.CONFIG.MEDLEMMER) || [];
+    if (!medlemmer.length) {
+      visFejl('Ingen ministre fundet. Mistænkeligt.');
+    } else {
+      tegnBrikker(medlemmer);
+    }
 
     // Ryd fejl når man begynder at skrive kodeordet.
     feltKode.addEventListener('input', ryddFejl);
