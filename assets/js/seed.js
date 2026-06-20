@@ -187,6 +187,32 @@
     'Turistministeren kan tage Joy med på råd omkring arrangement, men er ikke forpligtet hertil.'
   ].join('\n');
 
+  /* ---------- BØDEKASSENS VEDTÆGTER (officielt dokument) ---------- */
+  var BOEDEKASSE_VEDTAEGT = [
+    '§ 1',
+    'Bødekassen gøres op fra møde til møde. Opgørelsen foreligger senest dagen efter et officielt DFF-møde.',
+    '§ 2',
+    'Bødekasseministeren står for opgørelsen, Finansministeren for opkrævningen.',
+    '§ 3',
+    'Bøderne fastsættes i rimeligt omfang af Bødekasseministeren. I tvivlstilfælde afgøres spørgsmålet ved flertalsafstemning.',
+    '§ 4',
+    'Bødernes størrelse fastsættes af Bødekasseministeren og kan til enhver tid ændres ved flertalsafstemning.',
+    '§ 5',
+    'Finansministeren fremlægger bødekassens indhold fra møde til møde.',
+    '§ 6',
+    'Forslag til brug af bødekassens indhold sendes til Foreningssekretæren senest to dage før et officielt DFF-møde. Sekretæren fremlægger forslagene, hvorefter der holdes hemmelig afstemning.',
+    '§ 7',
+    'Alle forslag til brug af bødekassens indhold skal vedrøre DFF\'s grundværdi: øl.',
+    '§ 8',
+    'Forslag til nye bøder sendes til Bødekasseministeren senest to dage før et officielt DFF-møde. Bødekasseministeren udvælger og prissætter bøden. Hvert officielt medlem kan én gang om året nedlægge veto mod en ny bøde, hvorefter prisen fastsættes ved afstemning.',
+    '§ 9',
+    'Bøder, der ikke værdsættes af medlemmerne, kan fjernes ved afstemning. Samtidig skal der vedtages en ny bøde med samme størrelse, som først kan ændres ved afstemning på næste møde.',
+    '§ 10',
+    'Ønskes der afstemninger, skal de være sendt til Bødekasseministeren senest ét døgn før et officielt DFF-møde.',
+    '§ 11',
+    'Alle medlemmer kan påkalde bødestraf efter de gældende bøder.'
+  ].join('\n');
+
   window.seed = function seed() {
     // Supabase-tilstand: data ligger i databasen — så ikke localStorage.
     if (window.CONFIG && window.CONFIG.BRUG_SUPABASE) return false;
@@ -317,10 +343,7 @@
     /* ---------- VEDTÆGTER (læsbare for alle; redigeres pr. rolle) ---------- */
     W('vedtaegter', {
       forening: FORENING_VEDTAEGT,
-      boedekasse: '§1 Bøder fastsættes af Bødekasseministeren efter kataloget.\n' +
-                  '§2 Engelske ord koster 10 kr. pr. stk. Ingen undtagelser.\n' +
-                  '§3 Bøder betales til Finansministeren, som fører kassen.\n' +
-                  '§4 Kassen bruges på øl. Naturligvis.'
+      boedekasse: BOEDEKASSE_VEDTAEGT
     });
     W('vedtaegter_version', VEDTAEGT_VERSION);
 
