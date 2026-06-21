@@ -412,15 +412,35 @@
     meta.textContent = metaDele.join(' · ');
     venstre.appendChild(meta);
 
-    // Antal stemmer
+    // Scoreboard: hver persons karakter (chips). Udømt -> note.
     var antal = (b.ratings && b.ratings.length) || 0;
-    var stemmeNote = document.createElement('span');
-    stemmeNote.className = 'svar';
-    stemmeNote.style.cssText = 'display:block;margin-top:4px';
-    stemmeNote.textContent = antal
-      ? (antal + (antal === 1 ? ' dom afsagt' : ' domme afsagt'))
-      : 'Endnu udømt';
-    venstre.appendChild(stemmeNote);
+    if (antal) {
+      var board = document.createElement('div');
+      board.className = 'oel-scoreboard';
+      b.ratings.slice().sort(function (a, c) { return c.score - a.score; }).forEach(function (r) {
+        var m = memMap[r.memberId];
+        if (!m) return;
+        var chip = document.createElement('span');
+        chip.className = 'score-chip';
+        chip.title = m.titel + ': ' + visScore(r.score);
+        var ini = document.createElement('span');
+        ini.className = 'sc-ini';
+        ini.textContent = m.initial || (m.titel || '?').charAt(0);
+        var val = document.createElement('span');
+        val.className = 'sc-val';
+        val.textContent = visScore(r.score);
+        chip.appendChild(ini);
+        chip.appendChild(val);
+        board.appendChild(chip);
+      });
+      venstre.appendChild(board);
+    } else {
+      var stemmeNote = document.createElement('span');
+      stemmeNote.className = 'svar';
+      stemmeNote.style.cssText = 'display:block;margin-top:4px';
+      stemmeNote.textContent = 'Endnu udømt';
+      venstre.appendChild(stemmeNote);
+    }
 
     raekke.appendChild(venstre);
 

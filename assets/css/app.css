@@ -246,6 +246,17 @@ body{
 .oel-meta{font-size:12px;color:var(--tekst-svag);font-style:italic;margin-top:2px}
 .oel-score{font-size:26px;font-weight:700;color:var(--hav)}
 
+/* Scoreboard pr. øl: hver persons karakter som lille chip (initial + tal). */
+.oel-scoreboard{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.score-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 7px;border-radius:999px;
+  background:var(--himmel);border:1px solid var(--linje);
+  font-family:'Barlow Semi Condensed',sans-serif;font-size:12px;line-height:1.5;
+}
+.score-chip .sc-ini{font-weight:700;color:var(--hav-lys);letter-spacing:.02em}
+.score-chip .sc-val{font-weight:700;color:var(--hav)}
+
 /* Regeringen */
 .medlem{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--linje)}
 .medlem:last-child{border-bottom:none}

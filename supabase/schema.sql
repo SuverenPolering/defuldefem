@@ -105,7 +105,7 @@ create table if not exists beer_ratings (
   id        uuid primary key default gen_random_uuid(),
   beer_id   uuid not null references beers(id) on delete cascade,
   member_id text not null references members(id) on delete cascade,
-  score     integer not null check (score between 1 and 10),
+  score     integer not null check (score between 0 and 10),
   unique (beer_id, member_id)
 );
 
