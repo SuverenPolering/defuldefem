@@ -48,7 +48,7 @@
 <div class="ark-baggrund" id="bg-session"></div>
 <aside class="ark" id="ark-session" aria-hidden="true" role="dialog" aria-label="Ny aften">
   <button class="luk-knap" type="button" data-luk="ark-session" aria-label="Luk">×</button>
-  <div class="ark-titel">Ny aften i protokollen</div>
+  <div class="ark-titel" id="ark-session-titel">Ny aften i protokollen</div>
   <span class="ark-under">Hvornår, hvor — og hvad var temaet?</span>
   <form id="form-session" novalidate>
     <label class="felt">
@@ -77,7 +77,7 @@
 <div class="ark-baggrund" id="bg-oel"></div>
 <aside class="ark" id="ark-oel" aria-hidden="true" role="dialog" aria-label="Ny øl">
   <button class="luk-knap" type="button" data-luk="ark-oel" aria-label="Luk">×</button>
-  <div class="ark-titel">Ny øl i protokollen</div>
+  <div class="ark-titel" id="ark-oel-titel">Ny øl i protokollen</div>
   <span class="ark-under" id="ark-oel-under">Før den til protokols, inden den er drukket.</span>
   <form id="form-oel" novalidate>
     <input type="hidden" name="sessionId" id="o-session">
@@ -152,6 +152,8 @@
   var memMap  = {};
   var aktivSessionId = null; // valgt fane (mappe)
   var aabentOel = null;      // det øl rating-arket aktuelt er åbnet for (fund 1)
+  var redigerSessionId = null; // !=null => ark-session redigerer (ellers opretter)
+  var redigerOelId = null;     // !=null => ark-oel redigerer (ellers opretter)
 
   var MAANED_KORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
   function maanedKort(n) { return MAANED_KORT[n - 1] || ''; }
@@ -384,6 +386,32 @@
       tilfoej.textContent = '+ Øl';
       tilfoej.addEventListener('click', function () { aabnOelArk(s); });
       handlinger.appendChild(tilfoej);
+
+      var redigS = document.createElement('button');
+      redigS.type = 'button';
+      redigS.className = 'knap-lille';
+      redigS.textContent = 'Redigér aften';
+      redigS.addEventListener('click', function () { aabnRedigerSession(s); });
+      handlinger.appendChild(redigS);
+
+      var sletS = document.createElement('button');
+      sletS.type = 'button';
+      sletS.className = 'knap-lille fare';
+      sletS.textContent = 'Slet aften';
+      sletS.addEventListener('click', function () {
+        var navn = s.tema || (s.dato ? window.App.formatDato(s.dato) : 'aftenen');
+        if (!window.confirm('Slet hele aftenen (' + navn + ') med alle øl og karakterer? Det kan ikke fortrydes.')) return;
+        window.DB.removeSession(s.id).then(function () {
+          aktivSessionId = null;
+          window.App.toast('Aftenen er slettet.');
+          return Promise.all([renderSessioner(), renderTop3()]);
+        }).catch(function (err) {
+          console.error('Kunne ikke slette aftenen:', err);
+          window.App.toast('Aftenen ville ikke slettes — prøv igen.');
+        });
+      });
+      handlinger.appendChild(sletS);
+
       mappe.appendChild(handlinger);
     }
 
@@ -461,6 +489,36 @@
     domKnap.addEventListener('click', function () { aabnRatingArk(b); });
     hoejre.appendChild(domKnap);
 
+    // Sekretæren kan redigere/slette den enkelte øl. Redigér+Slet ligger
+    // vandret ved siden af hinanden (ikke en høj lodret stak).
+    if (erSekretaer) {
+      var sekrRad = document.createElement('div');
+      sekrRad.style.cssText = 'display:flex;gap:6px';
+      var redigO = document.createElement('button');
+      redigO.type = 'button';
+      redigO.className = 'knap-lille';
+      redigO.textContent = 'Redigér';
+      redigO.addEventListener('click', function () { aabnRedigerOel(b); });
+      sekrRad.appendChild(redigO);
+
+      var sletO = document.createElement('button');
+      sletO.type = 'button';
+      sletO.className = 'knap-lille fare';
+      sletO.textContent = 'Slet';
+      sletO.addEventListener('click', function () {
+        if (!window.confirm('Slet "' + b.navn + '" og dens karakterer? Det kan ikke fortrydes.')) return;
+        window.DB.removeBeer(b.id).then(function () {
+          window.App.toast('Øllet er slettet.');
+          return Promise.all([renderSessioner(), renderTop3()]);
+        }).catch(function (err) {
+          console.error('Kunne ikke slette øllet:', err);
+          window.App.toast('Øllet ville ikke slettes — prøv igen.');
+        });
+      });
+      sekrRad.appendChild(sletO);
+      hoejre.appendChild(sekrRad);
+    }
+
     raekke.appendChild(hoejre);
     return raekke;
   }
@@ -529,6 +587,10 @@
       udloeserEl.focus();
     }
     udloeserEl = null;
+    // Forlad redigér-tilstand når et ark lukkes (Esc/×/baggrund) — så et
+    // efterfølgende "opret" ikke ved en fejl rammer en gammel redigér-id.
+    redigerSessionId = null;
+    redigerOelId = null;
   }
 
   function lukAlle() {
@@ -576,17 +638,27 @@
 
   document.getElementById('ny-session-knap').addEventListener('click', function () {
     if (!erSekretaer) return;
+    redigerSessionId = null;
+    document.getElementById('ark-session-titel').textContent = 'Ny aften i protokollen';
     document.getElementById('form-session').reset();
     skjulFejl('fejl-s-dato');
-    Array.prototype.forEach.call(
-      document.querySelectorAll('#s-deltagere .deltager-chip'),
-      function (chip) {
-        chip.classList.add('valgt');
-        chip.setAttribute('aria-pressed', 'true');
-      }
-    );
+    byggDeltagerTjek(); // alle valgt
     aabn('ark-session');
   });
+
+  // Redigér en eksisterende aften (kun sekretær).
+  function aabnRedigerSession(s) {
+    if (!erSekretaer) return;
+    redigerSessionId = s.id;
+    document.getElementById('ark-session-titel').textContent = 'Redigér aften';
+    document.getElementById('form-session').reset();
+    skjulFejl('fejl-s-dato');
+    document.getElementById('s-dato').value = s.dato || '';
+    document.getElementById('s-sted').value = s.sted || '';
+    document.getElementById('s-tema').value = s.tema || '';
+    byggDeltagerTjek(s.deltagere || []);
+    aabn('ark-session');
+  }
 
   document.getElementById('form-session').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -605,26 +677,33 @@
         }
       }
     );
-    window.DB.addSession({
+    var sData = {
       dato: dato,
       sted: document.getElementById('s-sted').value.trim(),
       tema: document.getElementById('s-tema').value.trim(),
       deltagere: deltagere
-    }).then(function (ny) {
-      aktivSessionId = ny.id;
+    };
+    var erRedigS = !!redigerSessionId;
+    var pS = erRedigS ? window.DB.updateSession(redigerSessionId, sData) : window.DB.addSession(sData);
+    pS.then(function (ny) {
+      if (ny && ny.id) aktivSessionId = ny.id;
+      redigerSessionId = null;
       luk('ark-session');
-      window.App.toast('Mappen er åbnet. Nu mangler bare øllet.');
-      return renderSessioner();
+      window.App.toast(erRedigS ? 'Aftenen er rettet.' : 'Mappen er åbnet. Nu mangler bare øllet.');
+      // Også top-3: en ændret dato/tema kan ændre æresvæggens dato-label.
+      return Promise.all([renderSessioner(), renderTop3()]);
     }).catch(function (err) {
-      console.error('Kunne ikke åbne mappen:', err);
+      console.error('Kunne ikke gemme aftenen:', err);
       luk('ark-session');
-      window.App.toast('Mappen nægtede at åbne. Protokollen er stædig — prøv igen.');
+      window.App.toast('Aftenen nægtede at blive gemt. Protokollen er stædig — prøv igen.');
     });
   });
 
   /* ---------- + : ny øl ---------- */
 
   function aabnOelArk(s) {
+    redigerOelId = null;
+    document.getElementById('ark-oel-titel').textContent = 'Ny øl i protokollen';
     document.getElementById('form-oel').reset();
     skjulFejl('fejl-o-navn');
     document.getElementById('o-session').value = s.id;
@@ -634,6 +713,23 @@
       ? members.filter(function (m) { return s.deltagere.indexOf(m.id) !== -1; })
       : members;
     byggHavdeChips(valg);
+    aabn('ark-oel');
+  }
+
+  // Redigér en eksisterende øl (kun sekretær).
+  function aabnRedigerOel(b) {
+    if (!erSekretaer) return;
+    redigerOelId = b.id;
+    document.getElementById('ark-oel-titel').textContent = 'Redigér øl';
+    document.getElementById('form-oel').reset();
+    skjulFejl('fejl-o-navn');
+    document.getElementById('o-session').value = b.sessionId;
+    document.getElementById('ark-oel-under').textContent = b.navn || '';
+    document.getElementById('o-navn').value = b.navn || '';
+    document.getElementById('o-bryggeri').value = b.bryggeri || '';
+    document.getElementById('o-type').value = b.type || '';
+    document.getElementById('o-pct').value = (b.pct != null ? b.pct : '');
+    byggHavdeChips(members, b.havdeMedId || '');
     aabn('ark-oel');
   }
 
@@ -649,20 +745,24 @@
     var pctRaw = document.getElementById('o-pct').value.trim().replace(',', '.');
     var valgtHavde = document.querySelector('#o-havde .deltager-chip.valgt');
     var havdeMedId = (valgtHavde && valgtHavde.getAttribute('data-medlem')) || null;
-    window.DB.addBeer(sessionId, {
+    var bData = {
       navn: navn,
       bryggeri: document.getElementById('o-bryggeri').value.trim(),
       type: document.getElementById('o-type').value.trim(),
       pct: pctRaw === '' ? null : Number(pctRaw),
       havdeMedId: havdeMedId
-    }).then(function () {
+    };
+    var erRedigO = !!redigerOelId;
+    var pO = erRedigO ? window.DB.updateBeer(redigerOelId, bData) : window.DB.addBeer(sessionId, bData);
+    pO.then(function () {
+      redigerOelId = null;
       luk('ark-oel');
-      window.App.toast('Ført til protokols. Skål.');
+      window.App.toast(erRedigO ? 'Øllet er rettet.' : 'Ført til protokols. Skål.');
       return Promise.all([renderSessioner(), renderTop3()]);
     }).catch(function (err) {
-      console.error('Kunne ikke føre øllet til protokols:', err);
+      console.error('Kunne ikke gemme øllet:', err);
       luk('ark-oel');
-      window.App.toast('Øllet løb i sandet. Det blev ikke ført — prøv igen.');
+      window.App.toast('Øllet løb i sandet. Det blev ikke gemt — prøv igen.');
     });
   });
 
@@ -736,9 +836,10 @@
   /* ---------- felt-hjælpere ---------- */
 
   // »Hvem havde den med« — enkelt-valg-chips (radio-agtigt: kun én valgt).
-  function byggHavdeChips(liste) {
+  function byggHavdeChips(liste, forvalgt) {
     var wrap = document.getElementById('o-havde');
     wrap.innerHTML = '';
+    var chipMap = {};
 
     function vaelg(chip) {
       Array.prototype.forEach.call(wrap.children, function (c) {
@@ -758,25 +859,28 @@
       chip.textContent = tekst;
       chip.addEventListener('click', function () { vaelg(chip); });
       wrap.appendChild(chip);
+      chipMap[medlemId] = chip;
       return chip;
     }
 
     var ingen = lavChip('', 'Ingen / ukendt');
     liste.forEach(function (m) { lavChip(m.id, m.titel); });
-    // Default: »Ingen« valgt.
-    vaelg(ingen);
+    // Forvalg ved redigering, ellers »Ingen«.
+    vaelg(forvalgt && chipMap[forvalgt] ? chipMap[forvalgt] : ingen);
   }
 
-  function byggDeltagerTjek() {
+  // valgte: array af medlems-id'er der skal være forvalgt. Udeladt => alle valgt.
+  function byggDeltagerTjek(valgte) {
     var wrap = document.getElementById('s-deltagere');
     wrap.innerHTML = '';
     var chips = document.createElement('div');
     chips.className = 'deltager-chips';
     members.forEach(function (m) {
+      var erValgt = valgte ? (valgte.indexOf(m.id) !== -1) : true;
       var chip = document.createElement('button');
       chip.type = 'button';
-      chip.className = 'deltager-chip valgt';
-      chip.setAttribute('aria-pressed', 'true');
+      chip.className = 'deltager-chip' + (erValgt ? ' valgt' : '');
+      chip.setAttribute('aria-pressed', erValgt ? 'true' : 'false');
       chip.setAttribute('data-medlem', m.id);
       chip.textContent = m.titel;
       chip.addEventListener('click', function () {

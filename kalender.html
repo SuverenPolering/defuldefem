@@ -168,7 +168,7 @@
     var erTurist = sess && sess.rolle === 'turistminister';
 
     var memberMap = {};
-    var memberRaekkefoelge = ['henning', 'jakob', 'kim', 'anders', 'steffen'];
+    var memberRaekkefoelge = ['henning', 'jakob', 'kim', 'anders', 'steffen', 'gaest'];
 
     /* ---------- små DOM-hjælpere (sikre: textContent, ikke HTML) ---------- */
     function el(tag, klasse, tekst) {
@@ -387,7 +387,7 @@
 
         var mitSvar = (m.svar || []).filter(function (s) { return s.memberId === minId; })[0];
         var handlinger = el('div', 'handlinger');
-        var knap = el('button', 'knap-lille svar-knap', mitSvar ? 'Ret mit svar' : 'Sæt mit svar');
+        var knap = el('button', 'knap-lille svar-knap skjul-gaest', mitSvar ? 'Ret mit svar' : 'Sæt mit svar');
         knap.type = 'button';
         knap.setAttribute('data-meeting', m.id);
         knap.addEventListener('click', function () { aabnSvar(m.id); });

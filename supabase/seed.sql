@@ -23,7 +23,8 @@ insert into members (id, navn, titel, initial, rolle) values
   ('jakob', 'Jakob Jakobsen', 'Bødekasseminister', 'J', 'boedekasseminister'),
   ('kim', 'Kim Hanen', 'Finansminister', 'K', 'finansminister'),
   ('anders', 'Anders Trab', 'Foreningssekretær', 'A', 'foreningssekretaer'),
-  ('steffen', 'Steffen Due Lund', 'Joy — nyder bare turen', 'S', 'joy')
+  ('steffen', 'Steffen Due Lund', 'Joy — nyder bare turen', 'S', 'joy'),
+  ('gaest', 'Gæst', 'Gæst', 'G', 'gaest')
 on conflict (id) do nothing;
 
 delete from fine_catalog;

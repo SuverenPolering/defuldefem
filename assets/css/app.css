@@ -618,6 +618,10 @@ input[type="number"]{font-weight:700}
 [data-rolle]:not([data-rolle="turistminister"]) .kun-turist{display:none !important}
 /* Skjul finans-kun-UI når rollen ikke er finansminister (kassens penge). */
 [data-rolle]:not([data-rolle="finansminister"]) .kun-finans{display:none !important}
+/* Gæst må KUN bedømme øl. Skjul handlinger der ellers er åbne for alle
+   (ønsker, møde-svar). Minister-handlinger er allerede skjult (matcher ikke
+   .kun-*). Gæst kan stadig SE alt (læsning er ikke rollestyret). */
+[data-rolle="gaest"] .skjul-gaest{display:none !important}
 
 /* ---- Betalt bøde (markeret af Finansministeren) ----
    Bøden bevares i protokollen, men dæmpes; lille grønt mærke à la .frikendt. */

@@ -808,6 +808,105 @@
     });
   }
 
+  // Opdatér en session (dato/sted/tema/deltagere). Kun angivne felter ændres.
+  function updateSession(id, felter) {
+    var f = felter || {};
+    if (_supabase()) {
+      var upd = {};
+      if (f.dato != null) upd.dato = f.dato;
+      if (f.sted != null) upd.sted = f.sted;
+      if (f.tema != null) upd.tema = f.tema;
+      if (f.deltagere != null) upd.deltagere = f.deltagere;
+      return _sb().from('beer_sessions').update(upd).eq('id', id).select().single()
+        .then(function (r) {
+          var x = _data(r);
+          return { id: x.id, dato: x.dato, sted: x.sted, deltagere: x.deltagere || [], tema: x.tema || '' };
+        });
+    }
+    return _async(function () {
+      var sessioner = _read('sessions', []);
+      var opdateret = null;
+      sessioner = sessioner.map(function (s) {
+        if (s.id !== id) return s;
+        opdateret = {
+          id: s.id,
+          dato: f.dato != null ? f.dato : s.dato,
+          sted: f.sted != null ? f.sted : (s.sted || ''),
+          tema: f.tema != null ? f.tema : (s.tema || ''),
+          deltagere: f.deltagere != null ? f.deltagere : (s.deltagere || [])
+        };
+        return opdateret;
+      });
+      _write('sessions', sessioner);
+      return opdateret;
+    });
+  }
+
+  // Slet en session + dens øl + karakterer.
+  function removeSession(id) {
+    if (_supabase()) {
+      // beers + beer_ratings fjernes via FK on delete cascade.
+      return _sb().from('beer_sessions').delete().eq('id', id).then(function (r) { _data(r); return true; });
+    }
+    return _async(function () {
+      var beers = _read('beers', []);
+      var fjern = beers.filter(function (b) { return b.sessionId === id; }).map(function (b) { return b.id; });
+      _write('beers', beers.filter(function (b) { return b.sessionId !== id; }));
+      var ratings = _read('ratings', []);
+      _write('ratings', ratings.filter(function (r) { return fjern.indexOf(r.beerId) === -1; }));
+      var sessioner = _read('sessions', []);
+      _write('sessions', sessioner.filter(function (s) { return s.id !== id; }));
+      return true;
+    });
+  }
+
+  // Opdatér en øl (navn/bryggeri/type/pct/havdeMedId). Kun angivne felter ændres.
+  function updateBeer(id, felter) {
+    var f = felter || {};
+    if (_supabase()) {
+      var upd = {};
+      if (f.navn != null) upd.navn = f.navn;
+      if (f.bryggeri != null) upd.bryggeri = f.bryggeri;
+      if (f.type != null) upd.type = f.type;
+      if (f.pct !== undefined) upd.pct = f.pct != null ? Number(f.pct) : null;
+      if (f.havdeMedId !== undefined) upd.havde_med_id = f.havdeMedId || null;
+      return _sb().from('beers').update(upd).eq('id', id).select().single()
+        .then(function (r) { return _beerFromDb(_data(r)); });
+    }
+    return _async(function () {
+      var oel = _read('beers', []);
+      var opdateret = null;
+      oel = oel.map(function (b) {
+        if (b.id !== id) return b;
+        opdateret = {
+          id: b.id, sessionId: b.sessionId,
+          bryggeri: f.bryggeri != null ? f.bryggeri : (b.bryggeri || ''),
+          navn: f.navn != null ? f.navn : b.navn,
+          type: f.type != null ? f.type : (b.type || ''),
+          pct: f.pct !== undefined ? (f.pct != null ? Number(f.pct) : null) : (b.pct != null ? b.pct : null),
+          havdeMedId: f.havdeMedId !== undefined ? (f.havdeMedId || null) : (b.havdeMedId || null)
+        };
+        return opdateret;
+      });
+      _write('beers', oel);
+      return opdateret;
+    });
+  }
+
+  // Slet en øl + dens karakterer.
+  function removeBeer(id) {
+    if (_supabase()) {
+      return _sb().from('beers').delete().eq('id', id).then(function (r) { _data(r); return true; });
+    }
+    return _async(function () {
+      var oel = _read('beers', []);
+      _write('beers', oel.filter(function (b) { return b.id !== id; }));
+      var ratings = _read('ratings', []);
+      _write('ratings', ratings.filter(function (r) { return r.beerId !== id; }));
+      return true;
+    });
+  }
+
   function rateBeer(beerId, memberId, score) {
     if (_supabase()) {
       return _sb().from('beer_ratings').upsert({
@@ -954,7 +1053,11 @@
 
     getSessions: getSessions,
     addSession: addSession,
+    updateSession: updateSession,
+    removeSession: removeSession,
     addBeer: addBeer,
+    updateBeer: updateBeer,
+    removeBeer: removeBeer,
     rateBeer: rateBeer,
     getBeerTop3: getBeerTop3,
 

@@ -226,7 +226,8 @@
       { id: 'jakob',   navn: 'Jakob Jakobsen',   titel: 'Bødekasseminister',      initial: 'J', rolle: 'boedekasseminister' },
       { id: 'kim',     navn: 'Kim Hanen',        titel: 'Finansminister',         initial: 'K', rolle: 'finansminister' },
       { id: 'anders',  navn: 'Anders Trab',      titel: 'Foreningssekretær',      initial: 'A', rolle: 'foreningssekretaer' },
-      { id: 'steffen', navn: 'Steffen Due Lund', titel: 'Joy — nyder bare turen', initial: 'S', rolle: 'joy' }
+      { id: 'steffen', navn: 'Steffen Due Lund', titel: 'Joy — nyder bare turen', initial: 'S', rolle: 'joy' },
+      { id: 'gaest',   navn: 'Gæst',             titel: 'Gæst',                   initial: 'G', rolle: 'gaest' }
     ];
     W('members', members);
 

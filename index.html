@@ -270,9 +270,10 @@
       return;
     }
 
-    // Joy står for sig selv på sin egen seddel (én nål). Resten i ét kort.
-    var regering = members.filter(function (m) { return m.rolle !== 'joy'; });
+    // Joy + Gæst står for sig selv på egne sedler. Ministrene i ét kort.
+    var regering = members.filter(function (m) { return m.rolle !== 'joy' && m.rolle !== 'gaest'; });
     var joy = members.filter(function (m) { return m.rolle === 'joy'; });
+    var gaester = members.filter(function (m) { return m.rolle === 'gaest'; });
 
     // Adgangstekst pr. rolle (vises i accordion-panelet under hvert medlem).
     var adgang = {
@@ -280,7 +281,8 @@
       boedekasseminister: 'Registrerer, redigerer, sletter og tildeler bøder samt bødekataloget. Rydder betalte bøder fra protokollen. Redigerer bødekassens vedtægter.',
       finansminister: 'Regulerer kassens saldo, markerer bøder betalt og eftergiver gæld.',
       foreningssekretaer: 'Opretter øl-aftener og tilføjer øl. Redigerer og sletter ønsker. Redigerer foreningens vedtægter.',
-      joy: 'Ingen forpligtelser — men bedømmer øl, svarer på møder og tilføjer ønsker som alle andre.'
+      joy: 'Ingen forpligtelser — men bedømmer øl, svarer på møder og tilføjer ønsker som alle andre.',
+      gaest: 'Ingen rettigheder — bedømmer øl og kan få bøder. Ser med, men styrer intet.'
     };
 
     function medlemRaekke(m) {
@@ -312,6 +314,14 @@
         '<div class="kort joy-seddel">' +
           '<span class="pin" style="top:-6px;left:16px"></span>' +
           medlemRaekke(joy[k]) +
+        '</div>';
+    }
+
+    for (var g = 0; g < gaester.length; g++) {
+      html +=
+        '<div class="kort joy-seddel">' +
+          '<span class="pin hav" style="top:-6px;left:16px"></span>' +
+          medlemRaekke(gaester[g]) +
         '</div>';
     }
 
