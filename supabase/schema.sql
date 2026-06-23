@@ -166,3 +166,60 @@ create policy "klub rw" on beer_ratings  for all to authenticated using (true) w
 create policy "klub rw" on kasse         for all to authenticated using (true) with check (true);
 create policy "klub rw" on kasse_log     for all to authenticated using (true) with check (true);
 create policy "klub rw" on vedtaegter    for all to authenticated using (true) with check (true);
+
+-- ============================================================
+-- TAVLE, NÆSER & STEMMEBOKS
+-- ============================================================
+
+-- Informationstavle — opslag fra medlemmerne.
+create table if not exists opslag (
+  id        uuid primary key default gen_random_uuid(),
+  member_id text references members(id) on delete set null, -- hvem skrev det (nullable)
+  tekst     text not null,
+  oprettet  timestamptz not null default now()
+);
+
+-- Joy's næser — tæller hvor mange gange nogen har fået en næse.
+create table if not exists naeser (
+  id       uuid primary key default gen_random_uuid(),
+  titel    text not null,
+  antal    integer not null default 1,
+  oprettet timestamptz not null default now()
+);
+
+-- Stemmeboks — ja/nej-afstemninger ('aaben' indtil de offentliggøres).
+create table if not exists afstemninger (
+  id          uuid primary key default gen_random_uuid(),
+  spoergsmaal text not null,
+  status      text not null default 'aaben',  -- 'aaben' | 'offentlig'
+  oprettet    timestamptz not null default now()
+);
+
+-- Stemmesvar (ét pr. medlem pr. afstemning).
+-- Blød anonymitet: vi gemmer member_id, men UI viser KUN optællingen,
+-- aldrig hvem der stemte hvad. Med ÉT delt login kan ægte anonymitet
+-- ikke håndhæves i RLS (databasen ser kun én bruger), så hemmeligheden
+-- holdes i klienten — den slår aldrig identiteter op til visning.
+-- ADVARSEL: "klub rw"-policyen nedenfor giver enhver med det fælles login
+-- fuld SELECT, så et klubmedlem KAN læse (member_id, svar) direkte via en rå
+-- supabase-query i DevTools — også før offentliggørelse. Anonymiteten gælder
+-- altså kun i UI'et, ikke mod et medlem der graver i databasen. Vil man have
+-- ægte hemmelighed kræver det login pr. medlem + en SECURITY DEFINER-funktion
+-- der kun returnerer {ja,nej} (se TODO(rolle-rls) øverst).
+create table if not exists afstemning_svar (
+  id            uuid primary key default gen_random_uuid(),
+  afstemning_id uuid not null references afstemninger(id) on delete cascade,
+  member_id     text not null references members(id) on delete cascade,
+  svar          text not null,             -- 'ja' | 'nej'
+  unique (afstemning_id, member_id)
+);
+
+alter table opslag          enable row level security;
+alter table naeser          enable row level security;
+alter table afstemninger    enable row level security;
+alter table afstemning_svar enable row level security;
+
+create policy "klub rw" on opslag          for all to authenticated using (true) with check (true);
+create policy "klub rw" on naeser          for all to authenticated using (true) with check (true);
+create policy "klub rw" on afstemninger    for all to authenticated using (true) with check (true);
+create policy "klub rw" on afstemning_svar for all to authenticated using (true) with check (true);

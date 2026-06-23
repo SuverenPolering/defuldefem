@@ -26,6 +26,10 @@
 <section class="sektion">
   <div class="sektion-titel"><h2>Opslagstavlen</h2><span class="nips">næste møde</span></div>
   <div id="moede-vaert"></div>
+  <div id="opslag-vaert"></div>
+  <div class="handlinger hoejre">
+    <button type="button" class="knap-lille" id="aabn-opslag">+ Tilføj information</button>
+  </div>
 </section>
 
 <section class="sektion">
@@ -39,6 +43,11 @@
 </section>
 
 <section class="sektion">
+  <div class="sektion-titel"><h2>Joy's næser</h2><span class="nips">én streg ad gangen</span></div>
+  <div id="naeser-vaert"></div>
+</section>
+
+<section class="sektion">
   <div class="sektion-titel"><h2>Regeringen</h2><span class="nips">valgt uden modkandidater</span></div>
   <div id="regering-vaert"></div>
 </section>
@@ -48,6 +57,43 @@
   Foreningen har til huse på Fyn, verdens midtpunkt.<br>
   Broen kan bruges i begge retninger. Vi anbefaler hjemturen.
 </footer>
+
+<!-- Bottom-sheet: hæng en seddel op (opret/redigér information) -->
+<div class="ark" id="ark-opslag" aria-hidden="true" role="dialog" aria-label="Hæng en seddel op">
+  <button class="luk-knap" type="button" data-luk aria-label="Luk">&times;</button>
+  <div class="ark-titel">Hæng en seddel op</div>
+  <span class="ark-under">Hold det kort. Tavlen er ikke et læserbrev.</span>
+  <form id="form-opslag">
+    <input type="hidden" id="opslag-id">
+    <div class="felt">
+      <label class="felt-label" for="opslag-tekst">Hvad skal de andre vide?</label>
+      <textarea id="opslag-tekst" maxlength="400" rows="4" required
+        placeholder="Husk at tage kapsler med — eller hvad du nu vil prale af."></textarea>
+      <span class="felt-note">Højst 400 tegn. Joy læser alligevel kun overskriften.</span>
+    </div>
+    <div class="handlinger hoejre">
+      <button type="submit" class="knap knap-bred">Hæng op</button>
+    </div>
+  </form>
+</div>
+
+<!-- Bottom-sheet: ny næse (kun Joy) -->
+<div class="ark" id="ark-naese" aria-hidden="true" role="dialog" aria-label="Ny næse">
+  <button class="luk-knap" type="button" data-luk aria-label="Luk">&times;</button>
+  <div class="ark-titel">Ny næse</div>
+  <span class="ark-under">Hvad lavede Joy nu? Skriv det ned, før hun benægter det.</span>
+  <form id="form-naese">
+    <div class="felt">
+      <label class="felt-label" for="naese-titel">Forseelsen</label>
+      <input type="text" id="naese-titel" maxlength="80" required
+        placeholder="Glemte kapslerne. Igen.">
+      <span class="felt-note">Højst 80 tegn. Det er en næse, ikke en anmeldelse.</span>
+    </div>
+    <div class="handlinger hoejre">
+      <button type="submit" class="knap knap-bred">Giv næse</button>
+    </div>
+  </form>
+</div>
 
 <!-- Fundament: præcis inkluderingsrækkefølge -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -61,6 +107,9 @@
 <script>
 (function () {
   'use strict';
+
+  // Hvem er logget ind? Bruges til ejerskab (opslag) og rolle-gating (Joy).
+  var sess = (window.Auth && Auth.current) ? Auth.current() : null;
 
   // Lille html-escaper: ALT data fra DB køres igennem denne før det sættes
   // som innerHTML, så fri brugertekst ikke kan bryde markup/injicere script.
@@ -339,6 +388,217 @@
     }
   }
 
+  /* ---------- (A) Information på tavlen ---------- */
+  // Bevarer linjeskift i fri tekst: esc() FØRST (sikkerhed), så \n -> <br>.
+  function nl2br(s) {
+    return esc(s).replace(/\n/g, '<br>');
+  }
+
+  // Åbn opslag-arket — tomt (nyt opslag) eller fyldt (redigering).
+  function aabnOpslagArk(opslag) {
+    $('opslag-id').value = opslag ? opslag.id : '';
+    $('opslag-tekst').value = opslag ? (opslag.tekst || '') : '';
+    App.ark.open($('ark-opslag'));
+  }
+
+  function renderOpslag(medlemNavn) {
+    var vaert = $('opslag-vaert');
+    return DB.getOpslag().then(function (opslag) {
+      opslag = opslag || [];
+      if (!opslag.length) {
+        vaert.innerHTML =
+          '<div class="kort">' +
+            '<span class="pin" style="top:-6px;left:14px"></span>' +
+            '<div class="tom">' +
+              '<span class="tom-ikon">📌</span>' +
+              '<div class="tom-titel">Ingen sedler endnu</div>' +
+              '<p>Tavlen gaber tom. Hæng den første seddel op — gerne noget ' +
+              'vigtigere end »husk øl«.</p>' +
+            '</div>' +
+          '</div>';
+        return;
+      }
+
+      // Sekretæren må slette alles sedler (ud over sit eget ejerskab).
+      var erSekretaer = !!(sess && sess.rolle === 'foreningssekretaer');
+
+      var html = '';
+      for (var i = 0; i < opslag.length; i++) {
+        var o = opslag[i];
+        var titel = medlemNavn[o.memberId] || 'Et medlem';
+        var datoDel = String(o.oprettet || '').slice(0, 10);
+        var ejer = !!(sess && o.memberId === sess.memberId);
+
+        // En enkelt skæv pin pr. seddel — skiftevis side for liv på tavlen.
+        var pin = (i % 2 === 0)
+          ? '<span class="pin" style="top:-6px;left:14px"></span>'
+          : '<span class="pin hav" style="top:-6px;right:14px"></span>';
+
+        var handling = '';
+        if (ejer || erSekretaer) {
+          handling += '<div class="opslag-handling handlinger hoejre">';
+          if (ejer) {
+            handling += '<button type="button" class="knap-lille" ' +
+              'data-ret="' + esc(o.id) + '">Ret</button>';
+          }
+          handling += '<button type="button" class="knap-lille fare" ' +
+            'data-slet="' + esc(o.id) + '">Slet</button>';
+          handling += '</div>';
+        }
+
+        html +=
+          '<div class="kort">' +
+            pin +
+            '<div class="opslag-tekst">' + nl2br(o.tekst) + '</div>' +
+            '<div class="opslag-byline hvem">' +
+              esc(titel) + ' · ' + esc(App.formatDato(datoDel)) +
+            '</div>' +
+            handling +
+          '</div>';
+      }
+      vaert.innerHTML = html;
+
+      // Wire Ret/Slet pr. seddel.
+      var retKnapper = vaert.querySelectorAll('[data-ret]');
+      for (var r = 0; r < retKnapper.length; r++) {
+        retKnapper[r].addEventListener('click', function () {
+          var id = this.getAttribute('data-ret');
+          var fundet = null;
+          for (var k = 0; k < opslag.length; k++) {
+            if (String(opslag[k].id) === String(id)) { fundet = opslag[k]; break; }
+          }
+          if (fundet) aabnOpslagArk(fundet);
+        });
+      }
+      var sletKnapper = vaert.querySelectorAll('[data-slet]');
+      for (var s = 0; s < sletKnapper.length; s++) {
+        sletKnapper[s].addEventListener('click', function () {
+          var id = this.getAttribute('data-slet');
+          if (!window.confirm('Tag sedlen ned for altid?')) return;
+          DB.removeOpslag(id).then(function () {
+            App.toast('Sedlen er taget ned.');
+            return renderOpslag(medlemNavn);
+          }).catch(function (e) {
+            App.toast('Sedlen sad godt fast. Prøv igen.');
+            if (window.console && console.error) console.error(e);
+          });
+        });
+      }
+    });
+  }
+
+  /* ---------- (B) Joy's næser ---------- */
+  function renderNaeser() {
+    var vaert = $('naeser-vaert');
+    var erJoy = !!(sess && sess.rolle === 'joy');
+
+    return DB.getNaeser().then(function (naeser) {
+      naeser = naeser || [];
+
+      var indre = '';
+      if (!naeser.length) {
+        indre =
+          '<div class="tom">' +
+            '<span class="tom-ikon">👃</span>' +
+            '<div class="tom-titel">Ingen næser endnu</div>' +
+            '<p>Joy har en ren straffeattest. Det varer næppe ved.</p>' +
+          '</div>';
+      } else {
+        for (var i = 0; i < naeser.length; i++) {
+          var n = naeser[i];
+          var joyHandling = '';
+          if (erJoy) {
+            joyHandling =
+              '<div class="naese-handling handlinger hoejre kun-joy">' +
+                '<button type="button" class="knap-lille" data-plus="' + esc(n.id) + '">+</button>' +
+                '<button type="button" class="knap-lille fare" data-naese-slet="' + esc(n.id) + '">Slet</button>' +
+              '</div>';
+          }
+          indre +=
+            '<div class="naese-raekke">' +
+              '<span class="naese-titel">' + esc(n.titel) + '</span>' +
+              '<span class="naese-tal">👃 ' + esc(String(n.antal)) + '</span>' +
+              joyHandling +
+            '</div>';
+        }
+      }
+
+      // Joy kan tilføje en ny næse — knappen ligger nederst i panelet.
+      var nyKnap = erJoy
+        ? '<div class="handlinger hoejre">' +
+            '<button type="button" class="knap-lille kun-joy" id="aabn-naese">+ Ny næse</button>' +
+          '</div>'
+        : '';
+
+      // Bevar fold-tilstanden hen over re-render (Joy klikker '+' inde i det
+      // åbne panel; ellers ville panelet klappe sammen ved hvert klik).
+      var hovedFoer = vaert.querySelector('.accordion-head');
+      var varAaben = !!(hovedFoer && hovedFoer.getAttribute('aria-expanded') === 'true');
+
+      // Fold-ud: titlerne ligger i panelet, antallet vises ved siden af.
+      vaert.innerHTML =
+        '<div class="kort">' +
+          '<span class="pin hav" style="top:-6px;left:16px"></span>' +
+          '<button type="button" class="accordion-head" aria-expanded="' + (varAaben ? 'true' : 'false') + '">' +
+            '<div class="medlem-navn">Joy\'s synderegister</div>' +
+            '<span class="chevron" aria-hidden="true">▸</span>' +
+          '</button>' +
+          '<div class="accordion-panel' + (varAaben ? ' aaben' : '') + '">' +
+            indre +
+            nyKnap +
+          '</div>' +
+        '</div>';
+
+      // UAFHÆNGIG accordion-toggle (samme mønster som renderRegering).
+      var hoved = vaert.querySelector('.accordion-head');
+      if (hoved) {
+        hoved.addEventListener('click', function () {
+          var aaben = this.getAttribute('aria-expanded') === 'true';
+          this.setAttribute('aria-expanded', aaben ? 'false' : 'true');
+          var panel = this.nextElementSibling;
+          if (panel) panel.classList.toggle('aaben', !aaben);
+        });
+      }
+
+      // Joy-handlinger: +1, slet, og ny næse.
+      if (erJoy) {
+        var plusKnapper = vaert.querySelectorAll('[data-plus]');
+        for (var p = 0; p < plusKnapper.length; p++) {
+          plusKnapper[p].addEventListener('click', function () {
+            var id = this.getAttribute('data-plus');
+            DB.incrementNaese(id).then(function () {
+              return renderNaeser();
+            }).catch(function (e) {
+              App.toast('Den næse ville ikke tælles. Prøv igen.');
+              if (window.console && console.error) console.error(e);
+            });
+          });
+        }
+        var slettere = vaert.querySelectorAll('[data-naese-slet]');
+        for (var d = 0; d < slettere.length; d++) {
+          slettere[d].addEventListener('click', function () {
+            var id = this.getAttribute('data-naese-slet');
+            if (!window.confirm('Stryg næsen fra registret?')) return;
+            DB.removeNaese(id).then(function () {
+              App.toast('Næsen er strøget. Joy slipper billigt.');
+              return renderNaeser();
+            }).catch(function (e) {
+              App.toast('Næsen sad fast. Prøv igen.');
+              if (window.console && console.error) console.error(e);
+            });
+          });
+        }
+        var nyBtn = $('aabn-naese');
+        if (nyBtn) {
+          nyBtn.addEventListener('click', function () {
+            $('naese-titel').value = '';
+            App.ark.open($('ark-naese'));
+          });
+        }
+      }
+    });
+  }
+
   /* ---------- opstart: hent alt fra DB parallelt ---------- */
   function navnOpslag(members) {
     var map = {};
@@ -365,6 +625,75 @@
     renderKasse(saldo, fines, medlemNavn);
     renderAeresvaeg(top3);
     renderRegering(members);
+    renderOpslag(medlemNavn);
+    renderNaeser();
+
+    /* ---------- wire ark-knapper + formularer ---------- */
+    // »+ Tilføj information« åbner et tomt opslag-ark.
+    var aabnOpslag = $('aabn-opslag');
+    if (aabnOpslag) {
+      aabnOpslag.addEventListener('click', function () { aabnOpslagArk(null); });
+    }
+
+    // Opret/redigér opslag — samme ark, #opslag-id afgør hvilken.
+    var formOpslag = $('form-opslag');
+    if (formOpslag) {
+      formOpslag.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!sess || !sess.memberId) {
+          App.toast('Log ind, før du hænger noget op.');
+          return;
+        }
+        var tekst = ($('opslag-tekst').value || '').trim();
+        if (!tekst) {
+          App.toast('Tom seddel? Den hænger vi ikke op.');
+          return;
+        }
+        var id = $('opslag-id').value;
+        var arbejde = id
+          ? DB.updateOpslag(id, { tekst: tekst })
+          : DB.addOpslag({ memberId: sess.memberId, tekst: tekst });
+        arbejde.then(function () {
+          App.ark.close($('ark-opslag'));
+          App.toast(id ? 'Sedlen er rettet.' : 'Sedlen hænger.');
+          return renderOpslag(medlemNavn);
+        }).catch(function (err) {
+          App.toast('Sedlen ville ikke hænge. Prøv igen.');
+          if (window.console && console.error) console.error(err);
+        });
+      });
+    }
+
+    // Ny næse — kun Joy ser knappen, men vi vogter alligevel rollen.
+    var formNaese = $('form-naese');
+    if (formNaese) {
+      formNaese.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (!sess || sess.rolle !== 'joy') {
+          App.toast('Kun Joy uddeler næser til Joy.');
+          return;
+        }
+        var titel = ($('naese-titel').value || '').trim();
+        if (!titel) {
+          App.toast('En næse uden forseelse? Skriv hvad hun lavede.');
+          return;
+        }
+        DB.addNaese({ titel: titel }).then(function () {
+          App.ark.close($('ark-naese'));
+          App.toast('Næse noteret.');
+          return renderNaeser();
+        }).catch(function (err) {
+          App.toast('Næsen ville ikke noteres. Prøv igen.');
+          if (window.console && console.error) console.error(err);
+        });
+      });
+    }
+
+    // Fælles luk-knapper i begge nye ark.
+    var lukKnapper = document.querySelectorAll('[data-luk]');
+    for (var lk = 0; lk < lukKnapper.length; lk++) {
+      lukKnapper[lk].addEventListener('click', function () { App.ark.close(); });
+    }
   }).catch(function (e) {
     App.toast('Noget gik galt i Forsamlingshuset. Prøv at åbne døren igen.');
     if (window.console && console.error) console.error(e);

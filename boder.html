@@ -388,15 +388,21 @@
             '<p>Ingen bøder ført endnu. Mistænkeligt stille.</p></div>';
           return;
         }
+        // Bøderne grupperes pr. medlem. Inden for hvert medlem bevares dato-faldende rækkefølge.
         var sorteret = fines.slice().sort(function (a, b) {
           return String(b.dato || "").localeCompare(String(a.dato || ""));
         });
-        var html = "";
+        var grupper = {};
         sorteret.forEach(function (f) {
+          (grupper[f.memberId] || (grupper[f.memberId] = [])).push(f);
+        });
+
+        // Én række i protokollen, i NØJAGTIG den eksisterende .boede-markup.
+        function boedeRaekke(f) {
           var betalt = f.betalt === true;
           var antal = (f.antal != null ? Number(f.antal) : 1);
           var enhed = Number(f.enhed) || 0;
-          html += '<div class="boede' + (betalt ? " betalt" : "") + '">' +
+          return '<div class="boede' + (betalt ? " betalt" : "") + '">' +
             '<div class="grund">' +
               "<em>" + esc(f.grund) + (antal > 1 ? (" ×" + antal) : "") + "</em>" +
               '<span class="hvem">' + esc(navnFor(f.memberId)) + " · " + esc(App.formatDato(f.dato)) + "</span>" +
@@ -412,8 +418,45 @@
                 : "") +
             "</div>" +
           "</div>";
+        }
+
+        // Medlems-rækkefølge: gæst nederst. Medlemmer uden bøder udelades.
+        // Eventuelle bøder på ukendte/slettede medlems-id'er hægtes på til sidst,
+        // så ingen bøde forsvinder lydløst hvis membersCache ikke kender id'et.
+        var raekkefoelge = App.medlemmerGaestSidst(membersCache).map(function (m) { return m.id; });
+        Object.keys(grupper).forEach(function (id) {
+          if (raekkefoelge.indexOf(id) === -1) raekkefoelge.push(id);
+        });
+        var html = "";
+        raekkefoelge.forEach(function (mid) {
+          var raekker = grupper[mid];
+          if (!raekker || !raekker.length) return;
+          var sum = 0;
+          raekker.forEach(function (f) {
+            sum += (Number(f.enhed) || 0) * (f.antal != null ? Number(f.antal) : 1);
+          });
+          var resume = raekker.length + (raekker.length === 1 ? " bøde · " : " bøder · ") + App.formatKr(sum);
+          var indhold = "";
+          raekker.forEach(function (f) { indhold += boedeRaekke(f); });
+          html += '<button type="button" class="accordion-head" aria-expanded="false">' +
+              '<span class="medlem-navn">' + esc(navnFor(mid)) + "</span>" +
+              ' <span class="boede-resume">' + esc(resume) + "</span>" +
+              ' <span class="chevron" aria-hidden="true">▸</span>' +
+            "</button>" +
+            '<div class="accordion-panel">' + indhold + "</div>";
         });
         el.innerHTML = html;
+
+        // Accordion: hvert medlem åbnes/lukkes uafhængigt.
+        var heads = el.querySelectorAll(".accordion-head");
+        for (var hi = 0; hi < heads.length; hi++) {
+          heads[hi].addEventListener("click", function () {
+            var aaben = this.getAttribute("aria-expanded") === "true";
+            this.setAttribute("aria-expanded", aaben ? "false" : "true");
+            var panel = this.nextElementSibling;
+            if (panel) panel.classList.toggle("aaben", !aaben);
+          });
+        }
 
         if (erMinister) {
           var knapper = el.querySelectorAll("[data-slet-boede]");
@@ -576,7 +619,7 @@
 
       var liste = document.getElementById("tildel-medlemmer");
       liste.innerHTML = "";
-      membersCache.forEach(function (m) {
+      App.medlemmerGaestSidst(membersCache).forEach(function (m) {
         var knap = document.createElement("button");
         knap.type = "button";
         knap.className = "knap-sekundaer";
@@ -738,7 +781,7 @@
         membersCache = members;
         var sel = document.getElementById("boede-medlem");
         var html = '<option value="" disabled selected>Vælg synder…</option>';
-        members.forEach(function (m) {
+        App.medlemmerGaestSidst(members).forEach(function (m) {
           html += '<option value="' + esc(m.id) + '">' + esc(m.titel) + "</option>";
         });
         sel.innerHTML = html;
@@ -1031,14 +1074,16 @@
       return Promise.all([renderSaldo(), renderSaldoPrMedlem(), renderBoeder()]);
     }
 
-    // Parallelt (uafhængige sektioner) — ~1 netværksrunde i stedet for 5 i træk.
-    Promise.all([
-      fyldMedlemsVaelger(),
-      renderKatalog(),
-      opdaterAlt(),
-      renderKassebog(),
-      renderOensker()
-    ]);
+    // Medlemmerne SKAL hentes først: renderBoeder grupperer bøder pr. medlem ud
+    // af membersCache (og rækkefølgen gæst-sidst). Resten kører parallelt bagefter.
+    fyldMedlemsVaelger().then(function () {
+      return Promise.all([
+        renderKatalog(),
+        opdaterAlt(),
+        renderKassebog(),
+        renderOensker()
+      ]);
+    });
   })();
   </script>
 </body>

@@ -64,6 +64,19 @@
     return sum / tal.length;
   }
 
+  // Nyt array med samme orden, men gæster (rolle==='gaest') skubbet til slut.
+  // Stabilt: medlemmer beholder indbyrdes rækkefølge, gæster ligeså.
+  function medlemmerGaestSidst(list) {
+    var arr = (list || []).slice();
+    var ikkeGaest = [];
+    var gaester = [];
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i] && arr[i].rolle === 'gaest') gaester.push(arr[i]);
+      else ikkeGaest.push(arr[i]);
+    }
+    return ikkeGaest.concat(gaester);
+  }
+
   /* ---------- nav-konfiguration ---------- */
   // Rækkefølge = visning. Aktiv fane sættes ud fra body[data-side].
   var FANER = [
@@ -362,10 +375,98 @@
             if (members[i].id === sess.memberId) { m = members[i]; break; }
           }
           var migEl = document.getElementById('topbar-mig');
-          if (migEl && m) migEl.textContent = m.titel;
+          if (migEl && m) {
+            migEl.textContent = m.titel;
+            // Kun Bødekasseministeren kan skifte hat uden at logge ud.
+            if (sess.rolle === 'boedekasseminister') {
+              _goerProfilSkifter(migEl, sess);
+            }
+          }
         }).catch(function () { /* topbar-titel er pynt — ignorér */ });
       }
     }
+  }
+
+  /* ---------- profil-skifter (kun Bødekasseministeren) ---------- */
+  // Gør topbar-titlen til en klikbar knap der åbner et bottom-sheet, hvorfra
+  // man kan hoppe ind i et andet medlems profil uden at logge ud. Bygges kun
+  // hvis den indloggede er boedekasseminister (kaldt fra _efterGuard).
+  function _goerProfilSkifter(migEl, sess) {
+    if (migEl.classList.contains('topbar-mig-knap')) return; // allerede gjort
+    migEl.classList.add('topbar-mig-knap');
+    migEl.setAttribute('role', 'button');
+    migEl.setAttribute('tabindex', '0');
+    migEl.setAttribute('aria-haspopup', 'dialog');
+    // Flyt titlen ind i et indre span, så text-overflow:ellipsis stadig virker:
+    // knappen er en flex-container, og ellipsis virker ikke på en rå flex-tekstnode.
+    var tekst = document.createElement('span');
+    tekst.className = 'topbar-mig-tekst';
+    tekst.textContent = migEl.textContent;
+    migEl.textContent = '';
+    migEl.appendChild(tekst);
+    var caret = document.createElement('span');
+    caret.className = 'topbar-mig-caret';
+    caret.setAttribute('aria-hidden', 'true');
+    caret.textContent = '▾';
+    migEl.appendChild(caret);
+
+    function aabn() { arkOpen(_byggProfilArk(sess)); }
+    migEl.addEventListener('click', aabn);
+    migEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        aabn();
+      }
+    });
+  }
+
+  // Bygger #ark-profil én gang (append til body) og fylder medlemslisten.
+  // Returnerer ark-elementet, klar til arkOpen().
+  function _byggProfilArk(sess) {
+    var ark = document.getElementById('ark-profil');
+    if (ark) return ark;
+
+    ark = document.createElement('div');
+    ark.className = 'ark';
+    ark.id = 'ark-profil';
+    ark.setAttribute('aria-hidden', 'true');
+
+    var luk = el('button', 'luk-knap', '×');
+    luk.type = 'button';
+    luk.setAttribute('data-luk', '');
+    luk.setAttribute('aria-label', 'Luk');
+    luk.addEventListener('click', function () { arkClose(ark); });
+
+    var titel = el('div', 'ark-titel', 'Skift profil');
+    var under = el('span', 'ark-under',
+      'Kun for Bødekasseministeren — skift hat uden at logge ud.');
+
+    var liste = el('div', 'tildel-valg-liste');
+    var medlemmer = (window.CONFIG && window.CONFIG.MEDLEMMER) || [];
+    medlemmerGaestSidst(medlemmer).forEach(function (m) {
+      var knap = el('button', 'knap-sekundaer');
+      knap.type = 'button';
+      var nuvaerende = (m.id === sess.memberId);
+      if (nuvaerende) knap.classList.add('valgt');
+      var brik = el('div', 'brik', m.initial || (m.fornavn ? m.fornavn.charAt(0) : '?'));
+      brik.setAttribute('aria-hidden', 'true');
+      knap.appendChild(brik);
+      knap.appendChild(document.createTextNode(m.titel + (nuvaerende ? ' (nu)' : '')));
+      knap.addEventListener('click', function () {
+        if (window.Auth && typeof window.Auth.gemSession === 'function') {
+          window.Auth.gemSession(m.id, m.rolle);
+        }
+        window.location.reload();
+      });
+      liste.appendChild(knap);
+    });
+
+    ark.appendChild(luk);
+    ark.appendChild(titel);
+    ark.appendChild(under);
+    ark.appendChild(liste);
+    document.body.appendChild(ark);
+    return ark;
   }
 
   function start() {
@@ -412,6 +513,7 @@
     formatKr: formatKr,
     formatDato: formatDato,
     avg: avg,
+    medlemmerGaestSidst: medlemmerGaestSidst,
     ark: { open: arkOpen, close: arkClose },
     toast: toast,
     barLukket: barLukket,

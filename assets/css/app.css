@@ -974,8 +974,12 @@ input[type="number"]{font-weight:700}
   overflow:hidden;
   max-height:0;
   transition:max-height .25s ease;
+  /* a11y: et lukket panel skal ikke kunne tastatur-fokuseres eller læses op.
+     visibility:hidden tager knapper (Slet, +, Markér betalt) ud af tab-orden
+     og skærmlæser, indtil panelet foldes ud. */
+  visibility:hidden;
 }
-.accordion-panel.aaben{max-height:none}
+.accordion-panel.aaben{max-height:none;visibility:visible}
 @media (prefers-reduced-motion:reduce){
   /* a11y: respektér brugerens motion-præference globalt — neutralisér alle
      transitions/animationer (ark-slide, knap-tryk, toast, chips, slider mv.),
@@ -1109,3 +1113,100 @@ input[type="number"]{font-weight:700}
 .kasse-belob.minus{color:var(--koral-tekst)}
 .kasse-note{color:var(--tekst);overflow-wrap:anywhere}
 .kasse-dato{color:var(--tekst-svag);font-size:12px;white-space:nowrap;flex-shrink:0}
+
+/* ============================================================
+   UDVIDELSE 3 — header-skifter, info-tavle, grupperede bøder,
+   stemmeboks, Joy's næser.
+   Samme B4-palet/æstetik. Ingen nye fonte, ingen gradients.
+   Alle interaktive elementer ≥44px. Kun nye klasser; eksisterende
+   rør jeg ikke.
+   ============================================================ */
+
+/* ---- 1) Rolle-gate: Joy (kun Joy ser sine næse-knapper) ---- */
+[data-rolle]:not([data-rolle="joy"]) .kun-joy{display:none !important}
+
+/* ---- 2) Topbar profil-skifter ----
+   Forstør »mig«-navnet til en klikbar knap; behold Caveat og én linje
+   (trunkér med ellipsis — må ALDRIG bryde til to linjer eller skubbe
+   brand/badge). */
+.topbar-mig{font-size:21px}
+.topbar-mig-knap{
+  background:none;border:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;
+  min-height:44px;
+  font:inherit;color:inherit;
+  max-width:100%;
+  white-space:nowrap; /* caret må aldrig ombryde til ny linje */
+}
+/* Titlen ligger i et indre span, så ellipsis virker selvom knappen er flex. */
+.topbar-mig-tekst{
+  min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.topbar-mig-caret{font-size:13px;color:var(--hav-lys);flex:0 0 auto}
+.topbar-mig-knap:focus-visible{
+  outline:3px solid var(--hav-lys);outline-offset:2px;border-radius:6px;
+}
+/* Aktiv profil i profil-arket markeres tydeligt. */
+.tildel-valg-liste .knap-sekundaer.valgt{border-color:var(--hav);font-weight:700}
+
+/* ---- 3) Info-tavle (opslag) ----
+   Hvert opslag i et .kort; fri tekst bevarer linjeskift og bryder grimme
+   lange ord. Byline genbruger .hvem-looket (versaler, spatieret, svag). */
+.opslag-tekst{
+  font-size:15px;line-height:1.6;color:var(--tekst);
+  white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.opslag-byline{
+  font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--tekst-svag);
+  margin-top:8px;
+}
+.opslag-handling{display:flex;gap:6px;margin-top:10px}
+
+/* ---- 4) Grupperede bøder: resumé i accordion-hovedet ----
+   Sidder mellem titel og .chevron; håndskrevet Caveat-tone som de øvrige
+   nips. Skubbes til højre, holder sig på én linje. */
+.boede-resume{
+  font-family:'Caveat',cursive;font-size:15px;color:var(--tekst-svag);
+  margin-left:auto;margin-right:10px;white-space:nowrap;
+}
+
+/* ---- 5) Stemmeboks (vedtaegter.html) ----
+   Spørgsmål i hav-blå; aye/no som to brede knapper i grøn/koral, valgt
+   = malet flade. Optælling viser KUN tal (aldrig identiteter). */
+.stemmeboks-spm{
+  font-weight:700;font-size:17px;color:var(--hav);line-height:1.35;
+  margin-bottom:14px;
+}
+.stemme-valg{display:flex;gap:12px;margin-top:6px}
+.stemme-knap{
+  flex:1;min-height:52px;border-radius:10px;border:2px solid;
+  background:var(--hvid);
+  font-family:inherit;font-weight:700;font-size:16px;
+  cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.stemme-knap.aye{border-color:var(--groen);color:var(--groen)}
+.stemme-knap.no{border-color:var(--koral-tekst);color:var(--koral-tekst)}
+.stemme-knap.aye.valgt{background:var(--groen);color:var(--hvid)}
+.stemme-knap.no.valgt{background:var(--koral-tekst);color:var(--hvid)}
+.stemme-knap:focus-visible{outline:3px solid var(--hav-lys);outline-offset:2px}
+.stemme-optaelling{display:flex;gap:18px;margin-top:14px;font-weight:700;color:var(--hav)}
+.stemme-optaelling .ja{color:var(--groen)}
+.stemme-optaelling .nej{color:var(--koral-tekst)}
+
+/* ---- 6) Joy's næser ----
+   Rækker med titel til venstre, »👃 N« til højre; stiplet skillelinje à la
+   .boede/.medlem (sidste uden border). Joy-knapper hænger yderst. */
+.naese-raekke{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:9px 0;border-bottom:1px dashed var(--linje);
+}
+.naese-raekke:last-child{border-bottom:none}
+.naese-titel{font-weight:600;color:var(--tekst);min-width:0;overflow-wrap:anywhere}
+.naese-tal{
+  font-weight:700;color:var(--hav);white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.naese-handling{display:flex;gap:6px;flex-shrink:0}

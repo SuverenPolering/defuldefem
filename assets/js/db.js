@@ -116,6 +116,15 @@
   function _kasseLogFromDb(r) {
     return { id: r.id, dato: r.dato, beloeb: r.beloeb, note: r.note };
   }
+  function _opslagFromDb(r) {
+    return { id: r.id, memberId: r.member_id, tekst: r.tekst, oprettet: r.oprettet };
+  }
+  function _naeseFromDb(r) {
+    return { id: r.id, titel: r.titel, antal: r.antal, oprettet: r.oprettet };
+  }
+  function _afstemningFromDb(r) {
+    return { id: r.id, spoergsmaal: r.spoergsmaal, status: r.status, oprettet: r.oprettet };
+  }
 
   // Kategori-rækkefølge i bødekataloget (DB-rækker har ingen iboende orden).
   var _KAT_ORDEN = [
@@ -1015,6 +1024,256 @@
     });
   }
 
+  /* =========================================================
+   * INFORMATIONSTAVLEN: OPSLAG
+   * ======================================================= */
+
+  function getOpslag() {
+    if (_supabase()) {
+      return _sb().from('opslag').select('*').order('oprettet', { ascending: false })
+        .then(function (res) { return _data(res).map(_opslagFromDb); });
+    }
+    return _async(function () {
+      var liste = _read('opslag', []);
+      liste.sort(function (a, b) { return (b.oprettet || '').localeCompare(a.oprettet || ''); });
+      return liste;
+    });
+  }
+
+  function addOpslag(o) {
+    if (_supabase()) {
+      return _sb().from('opslag').insert({ tekst: o.tekst, member_id: o.memberId || null })
+        .select().single().then(function (r) { return _opslagFromDb(_data(r)); });
+    }
+    return _async(function () {
+      var liste = _read('opslag', []);
+      var ny = { id: _id('opslag'), memberId: o.memberId || null, tekst: o.tekst, oprettet: new Date().toISOString() };
+      liste.push(ny);
+      _write('opslag', liste);
+      return ny;
+    });
+  }
+
+  function updateOpslag(id, felter) {
+    if (_supabase()) {
+      var f = felter || {};
+      if (f.tekst == null) {
+        return _sb().from('opslag').select('*').eq('id', id).maybeSingle()
+          .then(function (res) { var d = _data(res); return d ? _opslagFromDb(d) : null; });
+      }
+      return _sb().from('opslag').update({ tekst: String(f.tekst) }).eq('id', id)
+        .select().single().then(function (r) { return _opslagFromDb(_data(r)); });
+    }
+    return _async(function () {
+      var liste = _read('opslag', []);
+      var opdateret = null;
+      for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id === id) {
+          liste[i].tekst = (felter && felter.tekst != null) ? String(felter.tekst) : liste[i].tekst;
+          opdateret = liste[i];
+          break;
+        }
+      }
+      _write('opslag', liste);
+      return opdateret;
+    });
+  }
+
+  function removeOpslag(id) {
+    if (_supabase()) {
+      return _sb().from('opslag').delete().eq('id', id).then(function (r) { _data(r); return true; });
+    }
+    return _async(function () {
+      var liste = _read('opslag', []);
+      _write('opslag', liste.filter(function (o) { return o.id !== id; }));
+      return true;
+    });
+  }
+
+  /* =========================================================
+   * JOY'S NÆSER (👃 tæller pr. forseelse)
+   * ======================================================= */
+
+  function getNaeser() {
+    if (_supabase()) {
+      return _sb().from('naeser').select('*').order('oprettet')
+        .then(function (res) { return _data(res).map(_naeseFromDb); });
+    }
+    return _async(function () {
+      var liste = _read('naeser', []);
+      liste.sort(function (a, b) { return (a.oprettet || '').localeCompare(b.oprettet || ''); });
+      return liste;
+    });
+  }
+
+  function addNaese(n) {
+    if (_supabase()) {
+      return _sb().from('naeser').insert({ titel: n.titel, antal: 1 })
+        .select().single().then(function (r) { return _naeseFromDb(_data(r)); });
+    }
+    return _async(function () {
+      var liste = _read('naeser', []);
+      var ny = { id: _id('naese'), titel: n.titel, antal: 1, oprettet: new Date().toISOString() };
+      liste.push(ny);
+      _write('naeser', liste);
+      return ny;
+    });
+  }
+
+  // Hæv antallet på en næse med 1. Returnér den opdaterede række.
+  // NB: SELECT+UPDATE er ikke atomisk (samme mønster som addFine/decrementFine);
+  // to samtidige klik kan teoretisk tabe ét +1. Acceptabelt her — kun Joy tildeler
+  // næser, og tælleren er ren pynt uden økonomisk konsekvens.
+  function incrementNaese(id) {
+    if (_supabase()) {
+      return _sb().from('naeser').select('antal').eq('id', id).single().then(function (res) {
+        var ny = (Number(_data(res).antal) || 0) + 1;
+        return _sb().from('naeser').update({ antal: ny }).eq('id', id).select().single()
+          .then(function (r) { return _naeseFromDb(_data(r)); });
+      });
+    }
+    return _async(function () {
+      var liste = _read('naeser', []);
+      var opdateret = null;
+      for (var i = 0; i < liste.length; i++) {
+        if (liste[i].id === id) {
+          liste[i].antal = (Number(liste[i].antal) || 0) + 1;
+          opdateret = liste[i];
+          break;
+        }
+      }
+      _write('naeser', liste);
+      return opdateret;
+    });
+  }
+
+  function removeNaese(id) {
+    if (_supabase()) {
+      return _sb().from('naeser').delete().eq('id', id).then(function (r) { _data(r); return true; });
+    }
+    return _async(function () {
+      var liste = _read('naeser', []);
+      _write('naeser', liste.filter(function (n) { return n.id !== id; }));
+      return true;
+    });
+  }
+
+  /* =========================================================
+   * STEMMEBOKSEN: AFSTEMNINGER + SVAR (hemmelig optælling)
+   * ======================================================= */
+
+  // Seneste afstemning (eller null). Optællingen leveres separat — aldrig hvem.
+  function getAktivAfstemning() {
+    if (_supabase()) {
+      return _sb().from('afstemninger').select('*').order('oprettet', { ascending: false }).limit(1).maybeSingle()
+        .then(function (res) { var d = _data(res); return d ? _afstemningFromDb(d) : null; });
+    }
+    return _async(function () {
+      var liste = _read('afstemninger', []);
+      if (!liste.length) return null;
+      var nyeste = liste[0];
+      for (var i = 1; i < liste.length; i++) {
+        if ((liste[i].oprettet || '').localeCompare(nyeste.oprettet || '') > 0) nyeste = liste[i];
+      }
+      return nyeste;
+    });
+  }
+
+  function addAfstemning(a) {
+    if (_supabase()) {
+      return _sb().from('afstemninger').insert({ spoergsmaal: a.spoergsmaal, status: 'aaben' })
+        .select().single().then(function (r) { return _afstemningFromDb(_data(r)); });
+    }
+    return _async(function () {
+      var liste = _read('afstemninger', []);
+      var ny = { id: _id('afst'), spoergsmaal: a.spoergsmaal, status: 'aaben', oprettet: new Date().toISOString() };
+      liste.push(ny);
+      _write('afstemninger', liste);
+      return ny;
+    });
+  }
+
+  // Sæt (eller skift) ét medlems stemme. Én pr. medlem pr. afstemning. Returnér true.
+  function setStemme(afstemningId, memberId, svar) {
+    if (_supabase()) {
+      return _sb().from('afstemning_svar').upsert({
+        afstemning_id: afstemningId, member_id: memberId, svar: svar
+      }, { onConflict: 'afstemning_id,member_id' }).then(function (r) { _data(r); return true; });
+    }
+    return _async(function () {
+      var svarListe = _read('afstemning_svar', []);
+      var fundet = false;
+      svarListe = svarListe.map(function (s) {
+        if (s.afstemningId === afstemningId && s.memberId === memberId) {
+          fundet = true;
+          return { id: s.id, afstemningId: afstemningId, memberId: memberId, svar: svar };
+        }
+        return s;
+      });
+      if (!fundet) {
+        svarListe.push({ id: _id('svar'), afstemningId: afstemningId, memberId: memberId, svar: svar });
+      }
+      _write('afstemning_svar', svarListe);
+      return true;
+    });
+  }
+
+  function getMinStemme(afstemningId, memberId) {
+    if (_supabase()) {
+      return _sb().from('afstemning_svar').select('svar')
+        .eq('afstemning_id', afstemningId).eq('member_id', memberId).maybeSingle()
+        .then(function (res) { var d = _data(res); return d ? d.svar : null; });
+    }
+    return _async(function () {
+      var svarListe = _read('afstemning_svar', []);
+      for (var i = 0; i < svarListe.length; i++) {
+        if (svarListe[i].afstemningId === afstemningId && svarListe[i].memberId === memberId) {
+          return svarListe[i].svar;
+        }
+      }
+      return null;
+    });
+  }
+
+  // KUN tal — identiteter forlader aldrig db'en (afstemningen er hemmelig).
+  function getStemmeTally(afstemningId) {
+    if (_supabase()) {
+      return _sb().from('afstemning_svar').select('svar').eq('afstemning_id', afstemningId)
+        .then(function (res) {
+          var rows = _data(res);
+          var ja = 0, nej = 0;
+          rows.forEach(function (r) { if (r.svar === 'ja') ja++; else if (r.svar === 'nej') nej++; });
+          return { ja: ja, nej: nej };
+        });
+    }
+    return _async(function () {
+      var svarListe = _read('afstemning_svar', []);
+      var ja = 0, nej = 0;
+      svarListe.forEach(function (s) {
+        if (s.afstemningId !== afstemningId) return;
+        if (s.svar === 'ja') ja++; else if (s.svar === 'nej') nej++;
+      });
+      return { ja: ja, nej: nej };
+    });
+  }
+
+  // Luk afstemningen op: status -> 'offentlig' (resultatet må vises).
+  function offentliggoerAfstemning(id) {
+    if (_supabase()) {
+      return _sb().from('afstemninger').update({ status: 'offentlig' }).eq('id', id)
+        .then(function (r) { _data(r); return true; });
+    }
+    return _async(function () {
+      var liste = _read('afstemninger', []);
+      liste = liste.map(function (a) {
+        if (a.id === id) a.status = 'offentlig';
+        return a;
+      });
+      _write('afstemninger', liste);
+      return true;
+    });
+  }
+
   /* ---------- eksportér ---------- */
 
   window.DB = {
@@ -1062,6 +1321,23 @@
     getBeerTop3: getBeerTop3,
 
     getVedtaegter: getVedtaegter,
-    setVedtaegter: setVedtaegter
+    setVedtaegter: setVedtaegter,
+
+    getOpslag: getOpslag,
+    addOpslag: addOpslag,
+    updateOpslag: updateOpslag,
+    removeOpslag: removeOpslag,
+
+    getNaeser: getNaeser,
+    addNaese: addNaese,
+    incrementNaese: incrementNaese,
+    removeNaese: removeNaese,
+
+    getAktivAfstemning: getAktivAfstemning,
+    addAfstemning: addAfstemning,
+    setStemme: setStemme,
+    getMinStemme: getMinStemme,
+    getStemmeTally: getStemmeTally,
+    offentliggoerAfstemning: offentliggoerAfstemning
   };
 })();
