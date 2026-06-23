@@ -119,9 +119,6 @@
   function _opslagFromDb(r) {
     return { id: r.id, memberId: r.member_id, tekst: r.tekst, oprettet: r.oprettet };
   }
-  function _naeseFromDb(r) {
-    return { id: r.id, titel: r.titel, antal: r.antal, oprettet: r.oprettet };
-  }
   function _afstemningFromDb(r) {
     return { id: r.id, spoergsmaal: r.spoergsmaal, status: r.status, oprettet: r.oprettet };
   }
@@ -1091,70 +1088,53 @@
   }
 
   /* =========================================================
-   * JOY'S NÆSER (👃 tæller pr. forseelse)
+   * JOY'S NÆSER (👃 tæller pr. medlem)
    * ======================================================= */
 
+  // Alle medlemmer med mindst én næse: [{memberId, antal}]. Kun rækker der findes.
   function getNaeser() {
     if (_supabase()) {
-      return _sb().from('naeser').select('*').order('oprettet')
-        .then(function (res) { return _data(res).map(_naeseFromDb); });
+      return _sb().from('naeser').select('member_id,antal')
+        .then(function (res) {
+          return _data(res).map(function (r) { return { memberId: r.member_id, antal: r.antal }; });
+        });
     }
     return _async(function () {
-      var liste = _read('naeser', []);
-      liste.sort(function (a, b) { return (a.oprettet || '').localeCompare(b.oprettet || ''); });
-      return liste;
+      return _read('naeser', []);
     });
   }
 
-  function addNaese(n) {
-    if (_supabase()) {
-      return _sb().from('naeser').insert({ titel: n.titel, antal: 1 })
-        .select().single().then(function (r) { return _naeseFromDb(_data(r)); });
-    }
-    return _async(function () {
-      var liste = _read('naeser', []);
-      var ny = { id: _id('naese'), titel: n.titel, antal: 1, oprettet: new Date().toISOString() };
-      liste.push(ny);
-      _write('naeser', liste);
-      return ny;
-    });
-  }
-
-  // Hæv antallet på en næse med 1. Returnér den opdaterede række.
+  // Tildel ét medlem en næse (+1). Opretter rækken hvis den mangler. Returnér {memberId, antal}.
   // NB: SELECT+UPDATE er ikke atomisk (samme mønster som addFine/decrementFine);
   // to samtidige klik kan teoretisk tabe ét +1. Acceptabelt her — kun Joy tildeler
   // næser, og tælleren er ren pynt uden økonomisk konsekvens.
-  function incrementNaese(id) {
+  function tildelNaese(memberId) {
     if (_supabase()) {
-      return _sb().from('naeser').select('antal').eq('id', id).single().then(function (res) {
-        var ny = (Number(_data(res).antal) || 0) + 1;
-        return _sb().from('naeser').update({ antal: ny }).eq('id', id).select().single()
-          .then(function (r) { return _naeseFromDb(_data(r)); });
+      return _sb().from('naeser').select('antal').eq('member_id', memberId).maybeSingle().then(function (res) {
+        var ex = _data(res);
+        if (ex) {
+          var ny = (Number(ex.antal) || 0) + 1;
+          return _sb().from('naeser').update({ antal: ny }).eq('member_id', memberId)
+            .then(function (r) { _data(r); return { memberId: memberId, antal: ny }; });
+        }
+        return _sb().from('naeser').insert({ member_id: memberId, antal: 1 })
+          .then(function (r) { _data(r); return { memberId: memberId, antal: 1 }; });
       });
     }
     return _async(function () {
       var liste = _read('naeser', []);
-      var opdateret = null;
+      var fundet = null;
       for (var i = 0; i < liste.length; i++) {
-        if (liste[i].id === id) {
-          liste[i].antal = (Number(liste[i].antal) || 0) + 1;
-          opdateret = liste[i];
-          break;
-        }
+        if (liste[i].memberId === memberId) { fundet = liste[i]; break; }
+      }
+      if (fundet) {
+        fundet.antal = (Number(fundet.antal) || 0) + 1;
+      } else {
+        fundet = { memberId: memberId, antal: 1 };
+        liste.push(fundet);
       }
       _write('naeser', liste);
-      return opdateret;
-    });
-  }
-
-  function removeNaese(id) {
-    if (_supabase()) {
-      return _sb().from('naeser').delete().eq('id', id).then(function (r) { _data(r); return true; });
-    }
-    return _async(function () {
-      var liste = _read('naeser', []);
-      _write('naeser', liste.filter(function (n) { return n.id !== id; }));
-      return true;
+      return { memberId: fundet.memberId, antal: fundet.antal };
     });
   }
 
@@ -1162,20 +1142,31 @@
    * STEMMEBOKSEN: AFSTEMNINGER + SVAR (hemmelig optælling)
    * ======================================================= */
 
-  // Seneste afstemning (eller null). Optællingen leveres separat — aldrig hvem.
-  function getAktivAfstemning() {
+  // Alle afstemninger, nyeste først. Optællingen leveres separat — aldrig hvem.
+  function getAfstemninger() {
     if (_supabase()) {
-      return _sb().from('afstemninger').select('*').order('oprettet', { ascending: false }).limit(1).maybeSingle()
-        .then(function (res) { var d = _data(res); return d ? _afstemningFromDb(d) : null; });
+      return _sb().from('afstemninger').select('*').order('oprettet', { ascending: false })
+        .then(function (res) { return _data(res).map(_afstemningFromDb); });
     }
     return _async(function () {
       var liste = _read('afstemninger', []);
-      if (!liste.length) return null;
-      var nyeste = liste[0];
-      for (var i = 1; i < liste.length; i++) {
-        if ((liste[i].oprettet || '').localeCompare(nyeste.oprettet || '') > 0) nyeste = liste[i];
-      }
-      return nyeste;
+      liste.sort(function (a, b) { return (b.oprettet || '').localeCompare(a.oprettet || ''); });
+      return liste;
+    });
+  }
+
+  // Slet en afstemning + alle dens svar. Returnér true.
+  function removeAfstemning(id) {
+    if (_supabase()) {
+      // afstemning_svar fjernes via FK on delete cascade.
+      return _sb().from('afstemninger').delete().eq('id', id).then(function (r) { _data(r); return true; });
+    }
+    return _async(function () {
+      var liste = _read('afstemninger', []);
+      _write('afstemninger', liste.filter(function (a) { return a.id !== id; }));
+      var svarListe = _read('afstemning_svar', []);
+      _write('afstemning_svar', svarListe.filter(function (s) { return s.afstemningId !== id; }));
+      return true;
     });
   }
 
@@ -1329,11 +1320,10 @@
     removeOpslag: removeOpslag,
 
     getNaeser: getNaeser,
-    addNaese: addNaese,
-    incrementNaese: incrementNaese,
-    removeNaese: removeNaese,
+    tildelNaese: tildelNaese,
 
-    getAktivAfstemning: getAktivAfstemning,
+    getAfstemninger: getAfstemninger,
+    removeAfstemning: removeAfstemning,
     addAfstemning: addAfstemning,
     setStemme: setStemme,
     getMinStemme: getMinStemme,

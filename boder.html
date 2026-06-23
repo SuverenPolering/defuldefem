@@ -65,18 +65,6 @@
     <div class="kort skaev-b">
       <span class="kapsel" style="top:-8px;left:30px"></span>
       <div id="saldo-pr-medlem"></div>
-    </div>
-  </section>
-
-  <section class="sektion">
-    <div class="sektion-titel">
-      <h2>Bødeprotokollen</h2>
-      <span class="nips">alt bogføres</span>
-    </div>
-    <div class="kort skaev-a">
-      <span class="pin" style="top:-6px;right:34px"></span>
-      <span class="aeseloere"></span>
-      <div id="boede-liste"></div>
       <div class="handlinger hoejre kun-minister">
         <button type="button" class="knap-lille fare kun-minister" id="nulstil-protokol">Nulstil</button>
       </div>
@@ -330,8 +318,13 @@
       });
     })();
 
-    function renderSaldoPrMedlem() {
-      return DB.getBalanceByMember().then(function (liste) {
+    // Skyld pr. mand OG bødeprotokollen er smeltet til ét: hvert medlem er en
+    // saldo-række i balance-rækkefølge (Gæst IKKE tvunget nederst); har medlemmet
+    // bøder, foldes de ud i et accordion-panel med den eksisterende .boede-markup.
+    function renderSkyld() {
+      return Promise.all([DB.getBalanceByMember(), DB.getFines()]).then(function (res) {
+        var liste = res[0];
+        var fines = res[1];
         var el = document.getElementById("saldo-pr-medlem");
         if (!liste.length) {
           el.innerHTML = '<div class="tom"><span class="tom-ikon">🪙</span>' +
@@ -339,55 +332,7 @@
             '<p>Ingen har syndet endnu. Det varer.</p></div>';
           return;
         }
-        var html = "";
-        liste.forEach(function (r) {
-          var klasse = r.beloeb > 0 ? "saldo-belob skyld" : "saldo-belob";
-          var handling;
-          if (r.beloeb > 0) {
-            handling = erFinans
-              ? '<button type="button" class="knap-lille kun-finans" data-betal="' + esc(r.memberId) + '">Markér betalt</button>'
-              : "";
-          } else {
-            handling = '<span class="hvem">intet at betale</span>';
-          }
-          html += '<div class="saldo-raekke">' +
-            "<span>" + esc(navnFor(r.memberId)) + "</span>" +
-            '<span class="skyld-handling">' +
-              '<span class="' + klasse + '">' + App.formatKr(r.beloeb) + "</span>" +
-              handling +
-            "</span>" +
-            "</div>";
-        });
-        el.innerHTML = html;
 
-        if (erFinans) {
-          var betal = el.querySelectorAll("[data-betal]");
-          for (var i = 0; i < betal.length; i++) {
-            betal[i].addEventListener("click", function () {
-              var memberId = this.getAttribute("data-betal");
-              if (!window.confirm("Markér alle " + navnFor(memberId) + "s bøder som betalt? Pengene lægges i kassen.")) return;
-              DB.markerBetalt(memberId).then(function () {
-                App.toast("Gælden er udlignet. Pengene i kassen.");
-                opdaterAlt();
-              }).catch(function (e) {
-                App.toast("Bødekassen driller. Betalingen blev ikke bogført — prøv igen.");
-                if (window.console && console.error) console.error(e);
-              });
-            });
-          }
-        }
-      });
-    }
-
-    function renderBoeder() {
-      return DB.getFines().then(function (fines) {
-        var el = document.getElementById("boede-liste");
-        if (!fines.length) {
-          el.innerHTML = '<div class="tom"><span class="tom-ikon">📜</span>' +
-            '<div class="tom-titel">Blankt protokol-ark</div>' +
-            '<p>Ingen bøder ført endnu. Mistænkeligt stille.</p></div>';
-          return;
-        }
         // Bøderne grupperes pr. medlem. Inden for hvert medlem bevares dato-faldende rækkefølge.
         var sorteret = fines.slice().sort(function (a, b) {
           return String(b.dato || "").localeCompare(String(a.dato || ""));
@@ -397,7 +342,7 @@
           (grupper[f.memberId] || (grupper[f.memberId] = [])).push(f);
         });
 
-        // Én række i protokollen, i NØJAGTIG den eksisterende .boede-markup.
+        // Én bøde-række, i NØJAGTIG den eksisterende .boede-markup.
         function boedeRaekke(f) {
           var betalt = f.betalt === true;
           var antal = (f.antal != null ? Number(f.antal) : 1);
@@ -420,42 +365,83 @@
           "</div>";
         }
 
-        // Medlems-rækkefølge: gæst nederst. Medlemmer uden bøder udelades.
-        // Eventuelle bøder på ukendte/slettede medlems-id'er hægtes på til sidst,
-        // så ingen bøde forsvinder lydløst hvis membersCache ikke kender id'et.
-        var raekkefoelge = App.medlemmerGaestSidst(membersCache).map(function (m) { return m.id; });
-        Object.keys(grupper).forEach(function (id) {
-          if (raekkefoelge.indexOf(id) === -1) raekkefoelge.push(id);
-        });
+        // Medlems-rækkefølge = balancens (beløbssorteret, Gæst IKKE tvunget nederst).
         var html = "";
-        raekkefoelge.forEach(function (mid) {
-          var raekker = grupper[mid];
-          if (!raekker || !raekker.length) return;
-          var sum = 0;
-          raekker.forEach(function (f) {
-            sum += (Number(f.enhed) || 0) * (f.antal != null ? Number(f.antal) : 1);
-          });
-          var resume = raekker.length + (raekker.length === 1 ? " bøde · " : " bøder · ") + App.formatKr(sum);
-          var indhold = "";
-          raekker.forEach(function (f) { indhold += boedeRaekke(f); });
-          html += '<button type="button" class="accordion-head" aria-expanded="false">' +
-              '<span class="medlem-navn">' + esc(navnFor(mid)) + "</span>" +
-              ' <span class="boede-resume">' + esc(resume) + "</span>" +
-              ' <span class="chevron" aria-hidden="true">▸</span>' +
-            "</button>" +
-            '<div class="accordion-panel">' + indhold + "</div>";
+        liste.forEach(function (r) {
+          var raekker = grupper[r.memberId];
+          var harBoeder = !!(raekker && raekker.length);
+          var klasse = r.beloeb > 0 ? "saldo-belob skyld" : "saldo-belob";
+          var handling;
+          if (r.beloeb > 0) {
+            handling = erFinans
+              ? '<button type="button" class="knap-lille kun-finans" data-betal="' + esc(r.memberId) + '">Markér betalt</button>'
+              : "";
+          } else {
+            handling = '<span class="hvem">intet at betale</span>';
+          }
+          if (harBoeder) {
+            // Foldbart hoved. Det er et <div role="button"> (IKKE en <button>), så
+            // "Markér betalt"-knappen kan ligge inde i hovedet uden ugyldig knap-i-knap.
+            html += '<div class="accordion-head" role="button" tabindex="0" aria-expanded="false">' +
+                '<span class="medlem-navn">' + esc(navnFor(r.memberId)) + "</span>" +
+                '<span class="' + klasse + '">' + App.formatKr(r.beloeb) + "</span>" +
+                handling +
+                ' <span class="chevron" aria-hidden="true">▸</span>' +
+              "</div>";
+            var indhold = "";
+            raekker.forEach(function (f) { indhold += boedeRaekke(f); });
+            html += '<div class="accordion-panel">' + indhold + "</div>";
+          } else {
+            // Afregnet medlem uden bøder: simpel, ikke-interaktiv række (intet at folde ud).
+            html += '<div class="saldo-raekke">' +
+                "<span>" + esc(navnFor(r.memberId)) + "</span>" +
+                '<span class="skyld-handling">' +
+                  '<span class="' + klasse + '">' + App.formatKr(r.beloeb) + "</span>" +
+                  handling +
+                "</span>" +
+              "</div>";
+          }
         });
         el.innerHTML = html;
 
-        // Accordion: hvert medlem åbnes/lukkes uafhængigt.
-        var heads = el.querySelectorAll(".accordion-head");
+        // Accordion: hvert medlem med bøder åbnes/lukkes uafhængigt (klik + tastatur).
+        // "Markér betalt" ligger i hovedet; dens klik må IKKE også toggle (stopPropagation).
+        var heads = el.querySelectorAll('.accordion-head[aria-expanded]');
         for (var hi = 0; hi < heads.length; hi++) {
-          heads[hi].addEventListener("click", function () {
-            var aaben = this.getAttribute("aria-expanded") === "true";
-            this.setAttribute("aria-expanded", aaben ? "false" : "true");
-            var panel = this.nextElementSibling;
-            if (panel) panel.classList.toggle("aaben", !aaben);
-          });
+          (function (head) {
+            function toggle() {
+              var aaben = head.getAttribute("aria-expanded") === "true";
+              head.setAttribute("aria-expanded", aaben ? "false" : "true");
+              var panel = head.nextElementSibling;
+              if (panel) panel.classList.toggle("aaben", !aaben);
+            }
+            head.addEventListener("click", toggle);
+            head.addEventListener("keydown", function (e) {
+              if (e.target !== head) return; // ikke når fokus er på "Markér betalt"
+              if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+                e.preventDefault();
+                toggle();
+              }
+            });
+          })(heads[hi]);
+        }
+
+        if (erFinans) {
+          var betal = el.querySelectorAll("[data-betal]");
+          for (var b = 0; b < betal.length; b++) {
+            betal[b].addEventListener("click", function (ev) {
+              ev.stopPropagation();
+              var memberId = this.getAttribute("data-betal");
+              if (!window.confirm("Markér alle " + navnFor(memberId) + "s bøder som betalt? Pengene lægges i kassen.")) return;
+              DB.markerBetalt(memberId).then(function () {
+                App.toast("Gælden er udlignet. Pengene i kassen.");
+                opdaterAlt();
+              }).catch(function (e) {
+                App.toast("Bødekassen driller. Betalingen blev ikke bogført — prøv igen.");
+                if (window.console && console.error) console.error(e);
+              });
+            });
+          }
         }
 
         if (erMinister) {
@@ -1071,11 +1057,11 @@
     });
 
     function opdaterAlt() {
-      return Promise.all([renderSaldo(), renderSaldoPrMedlem(), renderBoeder()]);
+      return Promise.all([renderSaldo(), renderSkyld()]);
     }
 
-    // Medlemmerne SKAL hentes først: renderBoeder grupperer bøder pr. medlem ud
-    // af membersCache (og rækkefølgen gæst-sidst). Resten kører parallelt bagefter.
+    // Medlemmerne SKAL hentes først: renderSkyld grupperer bøder pr. medlem ud
+    // af membersCache (navnFor). Resten kører parallelt bagefter.
     fyldMedlemsVaelger().then(function () {
       return Promise.all([
         renderKatalog(),

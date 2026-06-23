@@ -336,9 +336,10 @@
     });
 
     /* ---------- stemmeboks ----------
-       Anonym Ja/Nej-afstemning. Sekretæren stiller spørgsmål og ser KUN
-       optællingstal (aldrig hvem). Alle ministre stemmer; gæsten kigger på.
-       Bygges med el()/ryd() som resten af siden — ingen rå brugertekst i HTML. */
+       Anonyme Ja/Nej-afstemninger — flere kan stå åbne samtidig (en LISTE,
+       nyeste først). Sekretæren stiller spørgsmål og ser KUN optællingstal
+       (aldrig hvem), kan offentliggøre og slette. Alle ministre stemmer;
+       gæsten kigger på. Bygges med el()/ryd() — ingen rå brugertekst i HTML. */
     var sekretaer = !!sess && sess.rolle === 'foreningssekretaer';
     var erGaest = !sess || sess.rolle === 'gaest';
 
@@ -354,96 +355,133 @@
       return t;
     }
 
+    // Sekretærens »+ Stil et spørgsmål«-knap (flere afstemninger tilladt nu).
+    function stilSpmKnap() {
+      var h = el('div', 'handlinger hoejre');
+      var b = el('button', 'knap-lille');
+      b.type = 'button';
+      b.id = 'aabn-spm';
+      b.textContent = '+ Stil et spørgsmål';
+      b.addEventListener('click', aabnSpm);
+      h.appendChild(b);
+      return h;
+    }
+
+    // Byg én afstemnings-blok (et kort i listen). status afgør indholdet:
+    // 'aaben' -> stemme-knapper (ministre) / kig-note (gæst) + sekretær-værktøj;
+    // 'offentlig' -> kun tal + »Afgjort«-note. Sekretæren kan altid slette.
+    function afstemningBlok(afst) {
+      var blok = el('div', 'stemme-blok');
+
+      // Spørgsmålet (esc'd via textContent).
+      blok.appendChild(el('div', 'stemmeboks-spm', afst.spoergsmaal));
+
+      if (afst.status === 'offentlig') {
+        // Afgjort: alle ser kun tallene + en lille note. Ingen stemme-knapper.
+        DB.getStemmeTally(afst.id).then(function (tally) {
+          blok.appendChild(optaellingBlok(tally));
+          blok.appendChild(el('p', 'felt-note', 'Afgjort. Boksen er tømt og talt — anonymt, som det sig hør og bør.'));
+        }).catch(visStemmeFejl);
+      } else if (erGaest) {
+        // Gæsten må kigge, ikke stemme.
+        blok.appendChild(el('p', 'felt-note',
+          'Kun ministre kan stemme — du må nøjes med at holde vejret.'));
+      } else {
+        // status === 'aaben' og minister: to skæve valg-knapper.
+        var valg = el('div', 'stemme-valg');
+        var ayeKnap = el('button', 'stemme-knap aye', 'Aye! ✓');
+        ayeKnap.type = 'button';
+        ayeKnap.setAttribute('aria-pressed', 'false');
+        var noKnap = el('button', 'stemme-knap no', 'Nej tak ✗');
+        noKnap.type = 'button';
+        noKnap.setAttribute('aria-pressed', 'false');
+        valg.appendChild(ayeKnap);
+        valg.appendChild(noKnap);
+        blok.appendChild(valg);
+        // Lille skæv under-tekst (B4-tone) — vælg med maven, ikke med hovedet.
+        blok.appendChild(el('p', 'stemme-undertekst',
+          'Et tryk, ét svar — og du kan ikke fortryde dig til en bedre holdning.'));
+
+        // Markér mit eksisterende svar — også for skærmlæsere via aria-pressed,
+        // så valget ikke kun fremgår af den malede baggrund (WCAG 4.1.2).
+        DB.getMinStemme(afst.id, sess.memberId).then(function (svar) {
+          ayeKnap.setAttribute('aria-pressed', String(svar === 'ja'));
+          noKnap.setAttribute('aria-pressed', String(svar === 'nej'));
+          if (svar === 'ja') ayeKnap.classList.add('valgt');
+          else if (svar === 'nej') noKnap.classList.add('valgt');
+        }).catch(function () { /* ingen markering — ikke kritisk */ });
+
+        ayeKnap.addEventListener('click', function () { afgivStemme(afst.id, 'ja'); });
+        noKnap.addEventListener('click', function () { afgivStemme(afst.id, 'nej'); });
+      }
+
+      // Sekretærens værktøj: optælling (kun tal) + offentliggør (kun åbne) + slet.
+      if (sekretaer) {
+        var h = el('div', 'handlinger hoejre');
+        if (afst.status === 'aaben') {
+          // Optælling vises kun for åbne; for offentlige er tallene allerede oppe.
+          DB.getStemmeTally(afst.id).then(function (tally) {
+            blok.insertBefore(optaellingBlok(tally), h);
+          }).catch(visStemmeFejl);
+
+          var pub = el('button', 'knap-lille', 'Offentliggør svarene');
+          pub.type = 'button';
+          pub.addEventListener('click', function () {
+            if (!window.confirm('Offentliggør svarene? Så kan ingen stemme om — og alle ser tallene.')) return;
+            DB.offentliggoerAfstemning(afst.id).then(function () {
+              App.toast('Boksen er tømt. Tallene står til skue nu.');
+              renderStemmeboks();
+            }).catch(function (e) {
+              App.toast('Boksen ville ikke åbnes. Prøv igen.');
+              if (window.console && console.error) console.error(e);
+            });
+          });
+          h.appendChild(pub);
+        }
+
+        var slet = el('button', 'knap-lille fare', 'Slet');
+        slet.type = 'button';
+        slet.addEventListener('click', function () {
+          if (!window.confirm('Slet spørgsmålet helt? Svarene ryger med — og det kommer aldrig igen.')) return;
+          DB.removeAfstemning(afst.id).then(function () {
+            App.toast('Spørgsmålet er revet ud af protokollen. Som var det aldrig stillet.');
+            renderStemmeboks();
+          }).catch(function (e) {
+            App.toast('Spørgsmålet ville ikke slettes. Det klamrer sig fast.');
+            if (window.console && console.error) console.error(e);
+          });
+        });
+        h.appendChild(slet);
+        blok.appendChild(h);
+      }
+
+      return blok;
+    }
+
     function renderStemmeboks() {
       var vaert = document.getElementById('stemmeboks-vaert');
       if (!vaert) return;
-      DB.getAktivAfstemning().then(function (afst) {
+      DB.getAfstemninger().then(function (liste) {
         ryd(vaert);
+        liste = liste || [];
 
-        // Ingen aktiv afstemning -> tom-tilstand (+ sekretærens åbn-knap).
-        if (!afst) {
+        // Sekretæren kan altid stille flere — knappen står øverst.
+        if (sekretaer) vaert.appendChild(stilSpmKnap());
+
+        // Tom boks -> tom-tilstand (knappen står stadig ovenover for sekretæren).
+        if (!liste.length) {
           vaert.appendChild(tomBlok(
             '🗳',
             'Boksen står tom …',
             'Ingen har noget på hjerte lige nu. Det varer nok ikke.'
           ));
-          if (sekretaer) {
-            var h = el('div', 'handlinger hoejre');
-            var b = el('button', 'knap-lille');
-            b.type = 'button';
-            b.id = 'aabn-spm';
-            b.textContent = '+ Stil et Ja/Nej-spørgsmål';
-            b.addEventListener('click', aabnSpm);
-            h.appendChild(b);
-            vaert.appendChild(h);
-          }
           return;
         }
 
-        // Spørgsmålet vises altid (esc'd via textContent).
-        vaert.appendChild(el('div', 'stemmeboks-spm', afst.spoergsmaal));
-
-        if (afst.status === 'offentlig') {
-          // Afgjort: alle ser kun tallene + en lille note. Ingen knapper.
-          DB.getStemmeTally(afst.id).then(function (tally) {
-            vaert.appendChild(optaellingBlok(tally));
-            vaert.appendChild(el('p', 'felt-note', 'Afgjort. Boksen er tømt og talt — anonymt, som det sig hør og bør.'));
-          }).catch(visStemmeFejl);
-          return;
-        }
-
-        // status === 'aaben'
-        if (erGaest) {
-          // Gæsten må kigge, ikke stemme.
-          vaert.appendChild(el('p', 'felt-note',
-            'Kun ministre kan stemme — du må nøjes med at holde vejret.'));
-        } else {
-          var valg = el('div', 'stemme-valg');
-          var ayeKnap = el('button', 'stemme-knap aye', 'Aye ✓');
-          ayeKnap.type = 'button';
-          ayeKnap.setAttribute('aria-pressed', 'false');
-          var noKnap = el('button', 'stemme-knap no', 'No');
-          noKnap.type = 'button';
-          noKnap.setAttribute('aria-pressed', 'false');
-          valg.appendChild(ayeKnap);
-          valg.appendChild(noKnap);
-          vaert.appendChild(valg);
-
-          // Markér mit eksisterende svar — også for skærmlæsere via aria-pressed,
-          // så valget ikke kun fremgår af den malede baggrund (WCAG 4.1.2).
-          DB.getMinStemme(afst.id, sess.memberId).then(function (svar) {
-            ayeKnap.setAttribute('aria-pressed', String(svar === 'ja'));
-            noKnap.setAttribute('aria-pressed', String(svar === 'nej'));
-            if (svar === 'ja') ayeKnap.classList.add('valgt');
-            else if (svar === 'nej') noKnap.classList.add('valgt');
-          }).catch(function () { /* ingen markering — ikke kritisk */ });
-
-          ayeKnap.addEventListener('click', function () { afgivStemme(afst.id, 'ja'); });
-          noKnap.addEventListener('click', function () { afgivStemme(afst.id, 'nej'); });
-        }
-
-        // Sekretæren ser optælling + publicér-knap (kun tal, aldrig hvem).
-        if (sekretaer) {
-          DB.getStemmeTally(afst.id).then(function (tally) {
-            vaert.appendChild(optaellingBlok(tally));
-            var h = el('div', 'handlinger hoejre');
-            var pub = el('button', 'knap-lille');
-            pub.type = 'button';
-            pub.textContent = 'Offentliggør svarene';
-            pub.addEventListener('click', function () {
-              if (!window.confirm('Offentliggør svarene? Så kan ingen stemme om — og alle ser tallene.')) return;
-              DB.offentliggoerAfstemning(afst.id).then(function () {
-                App.toast('Boksen er tømt. Tallene står til skue nu.');
-                renderStemmeboks();
-              }).catch(function (e) {
-                App.toast('Boksen ville ikke åbnes. Prøv igen.');
-                if (window.console && console.error) console.error(e);
-              });
-            });
-            h.appendChild(pub);
-            vaert.appendChild(h);
-          }).catch(visStemmeFejl);
-        }
+        // Ellers: en blok pr. afstemning (nyeste først, som DB leverer dem).
+        liste.forEach(function (afst) {
+          vaert.appendChild(afstemningBlok(afst));
+        });
       }).catch(function (e) {
         ryd(vaert);
         vaert.appendChild(tomBlok('🗳', 'Boksen sidder fast …',

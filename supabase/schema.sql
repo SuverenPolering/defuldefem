@@ -179,12 +179,11 @@ create table if not exists opslag (
   oprettet  timestamptz not null default now()
 );
 
--- Joy's næser — tæller hvor mange gange nogen har fået en næse.
+-- Joy's næser — næse-tæller pr. medlem (Joy tildeler; antal = hvor mange
+-- næser medlemmet har fået). Én række pr. medlem, member_id som primærnøgle.
 create table if not exists naeser (
-  id       uuid primary key default gen_random_uuid(),
-  titel    text not null,
-  antal    integer not null default 1,
-  oprettet timestamptz not null default now()
+  member_id text primary key references members(id) on delete cascade,
+  antal     integer not null default 0
 );
 
 -- Stemmeboks — ja/nej-afstemninger ('aaben' indtil de offentliggøres).

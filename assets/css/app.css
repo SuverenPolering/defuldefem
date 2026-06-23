@@ -1164,14 +1164,6 @@ input[type="number"]{font-weight:700}
 }
 .opslag-handling{display:flex;gap:6px;margin-top:10px}
 
-/* ---- 4) Grupperede bøder: resumé i accordion-hovedet ----
-   Sidder mellem titel og .chevron; håndskrevet Caveat-tone som de øvrige
-   nips. Skubbes til højre, holder sig på én linje. */
-.boede-resume{
-  font-family:'Caveat',cursive;font-size:15px;color:var(--tekst-svag);
-  margin-left:auto;margin-right:10px;white-space:nowrap;
-}
-
 /* ---- 5) Stemmeboks (vedtaegter.html) ----
    Spørgsmål i hav-blå; aye/no som to brede knapper i grøn/koral, valgt
    = malet flade. Optælling viser KUN tal (aldrig identiteter). */
@@ -1210,3 +1202,44 @@ input[type="number"]{font-weight:700}
   display:inline-flex;align-items:center;gap:6px;
 }
 .naese-handling{display:flex;gap:6px;flex-shrink:0}
+
+/* ============================================================
+   UDVIDELSE 4 — runde 2: Joy's næse-tæller, stemmeboks-liste,
+   rødt ✗ på Nej, samlet Skyld-accordion.
+   Samme B4-palet/æstetik. Ingen nye fonte, ingen gradients.
+   Interaktive elementer ≥44px; focus-visible bevaret. Kun nye
+   regler oven på de eksisterende; jeg rør ikke runde-1-CSS'en.
+   ============================================================ */
+
+/* ---- 1) Joy's næser — stort 👃 pr. medlem ----
+   .naese-tal findes allerede (tal + flex/gap); emoji-spannet ligger
+   INDENI den, så næsen og tallet flugter pænt på linjen. */
+.naese-emoji{font-size:23px;line-height:1;vertical-align:-2px;margin-right:2px}
+
+/* ---- 2) Stemme-knapper — tydeligt rødt ✗ + skæv under-tekst ----
+   .stemme-knap.aye/.no/.valgt findes allerede. Her gør vi KUN Nej'et
+   en anelse federe (✗ skal læses som et rødt nej) og tilføjer plads
+   til en håndskreven humor-linje under knapperne. Holder mig til
+   --koral-tekst — ingen nye farver. */
+.stemme-knap.no{font-weight:800}
+.stemme-undertekst{
+  font-family:'Caveat',cursive;font-size:14px;color:var(--tekst-svag);
+  text-align:center;margin-top:8px;
+}
+
+/* ---- 3) Stemmeboks-liste (flere åbne afstemninger i ét kort) ----
+   Hver afstemning er en .stemme-blok adskilt af en stiplet linje à la
+   .boede/.medlem; den første uden top-streg. »Afgjort«-noten i Caveat. */
+.stemme-blok{padding:14px 0;border-top:1px dashed var(--linje)}
+.stemme-blok:first-child{border-top:none}
+
+/* ---- 4) Samlet Skyld-sektion — accordion-head med titel + beløb + knap ----
+   Genbruger .accordion-head (flex, align-items:center). Beløbet skubbes
+   helt til højre; restance i koral-tekst (a11y). »Markér betalt« får luft
+   og må ikke klemmes. Navnet/titlen må fylde og brydes uden at mase resten. */
+.accordion-head .medlem-navn{min-width:0;overflow-wrap:anywhere}
+.accordion-head .saldo-belob{margin-left:auto;white-space:nowrap}
+.accordion-head .saldo-belob.skyld{color:var(--koral-tekst)}
+.accordion-head .knap-lille{margin-left:10px;flex-shrink:0}
+/* »Intet at betale«-noten skubbes også til højre i head'en. */
+.accordion-head .hvem{margin-left:auto}

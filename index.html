@@ -24,7 +24,7 @@
 </section>
 
 <section class="sektion">
-  <div class="sektion-titel"><h2>Opslagstavlen</h2><span class="nips">næste møde</span></div>
+  <div class="sektion-titel"><h2>Opslagstavlen</h2><span class="nips">næste møde &amp; Information</span></div>
   <div id="moede-vaert"></div>
   <div id="opslag-vaert"></div>
   <div class="handlinger hoejre">
@@ -73,24 +73,6 @@
     </div>
     <div class="handlinger hoejre">
       <button type="submit" class="knap knap-bred">Hæng op</button>
-    </div>
-  </form>
-</div>
-
-<!-- Bottom-sheet: ny næse (kun Joy) -->
-<div class="ark" id="ark-naese" aria-hidden="true" role="dialog" aria-label="Ny næse">
-  <button class="luk-knap" type="button" data-luk aria-label="Luk">&times;</button>
-  <div class="ark-titel">Ny næse</div>
-  <span class="ark-under">Hvad lavede Joy nu? Skriv det ned, før hun benægter det.</span>
-  <form id="form-naese">
-    <div class="felt">
-      <label class="felt-label" for="naese-titel">Forseelsen</label>
-      <input type="text" id="naese-titel" maxlength="80" required
-        placeholder="Glemte kapslerne. Igen.">
-      <span class="felt-note">Højst 80 tegn. Det er en næse, ikke en anmeldelse.</span>
-    </div>
-    <div class="handlinger hoejre">
-      <button type="submit" class="knap knap-bred">Giv næse</button>
     </div>
   </form>
 </div>
@@ -487,55 +469,57 @@
     });
   }
 
-  /* ---------- (B) Joy's næser ---------- */
-  function renderNaeser() {
+  /* ---------- (B) Joy's næser — tæller pr. medlem ---------- */
+  // Faste medlems-titler nu; Joy tildeler næser pr. medlem (ingen fri titel).
+  function renderNaeser(members) {
     var vaert = $('naeser-vaert');
     var erJoy = !!(sess && sess.rolle === 'joy');
+    members = members || [];
 
     return DB.getNaeser().then(function (naeser) {
       naeser = naeser || [];
 
+      // Slå antal op pr. medlem (kun rækker der findes; resten default 0).
+      var antalFor = {};
+      for (var a = 0; a < naeser.length; a++) {
+        antalFor[naeser[a].memberId] = naeser[a].antal;
+      }
+
+      // Alle medlemmer, Gæst nederst — én række pr. medlem, også med 0 næser.
+      var raekkefoelge = App.medlemmerGaestSidst(members);
       var indre = '';
-      if (!naeser.length) {
+      if (!raekkefoelge.length) {
         indre =
           '<div class="tom">' +
             '<span class="tom-ikon">👃</span>' +
-            '<div class="tom-titel">Ingen næser endnu</div>' +
-            '<p>Joy har en ren straffeattest. Det varer næppe ved.</p>' +
+            '<div class="tom-titel">Ingen medlemmer endnu</div>' +
+            '<p>Der er ingen næser at uddele før nogen møder op.</p>' +
           '</div>';
       } else {
-        for (var i = 0; i < naeser.length; i++) {
-          var n = naeser[i];
-          var joyHandling = '';
-          if (erJoy) {
-            joyHandling =
-              '<div class="naese-handling handlinger hoejre kun-joy">' +
-                '<button type="button" class="knap-lille" data-plus="' + esc(n.id) + '">+</button>' +
-                '<button type="button" class="knap-lille fare" data-naese-slet="' + esc(n.id) + '">Slet</button>' +
-              '</div>';
-          }
+        for (var i = 0; i < raekkefoelge.length; i++) {
+          var m = raekkefoelge[i];
+          var antal = antalFor[m.id] || 0;
+          // Kun Joy må uddele — en lille »Giv næse«-knap pr. række.
+          var joyHandling = erJoy
+            ? '<div class="naese-handling handlinger hoejre kun-joy">' +
+                '<button type="button" class="knap-lille kun-joy" data-naese="' + esc(m.id) + '">Giv næse</button>' +
+              '</div>'
+            : '';
           indre +=
             '<div class="naese-raekke">' +
-              '<span class="naese-titel">' + esc(n.titel) + '</span>' +
-              '<span class="naese-tal">👃 ' + esc(String(n.antal)) + '</span>' +
+              '<span class="naese-titel">' + esc(m.titel) + '</span>' +
+              '<span class="naese-tal"><span class="naese-emoji">👃</span> ' + esc(String(antal)) + '</span>' +
               joyHandling +
             '</div>';
         }
       }
 
-      // Joy kan tilføje en ny næse — knappen ligger nederst i panelet.
-      var nyKnap = erJoy
-        ? '<div class="handlinger hoejre">' +
-            '<button type="button" class="knap-lille kun-joy" id="aabn-naese">+ Ny næse</button>' +
-          '</div>'
-        : '';
-
-      // Bevar fold-tilstanden hen over re-render (Joy klikker '+' inde i det
-      // åbne panel; ellers ville panelet klappe sammen ved hvert klik).
+      // Bevar fold-tilstanden hen over re-render (Joy klikker »Giv næse« inde i
+      // det åbne panel; ellers ville panelet klappe sammen ved hvert klik).
       var hovedFoer = vaert.querySelector('.accordion-head');
       var varAaben = !!(hovedFoer && hovedFoer.getAttribute('aria-expanded') === 'true');
 
-      // Fold-ud: titlerne ligger i panelet, antallet vises ved siden af.
+      // Fold-ud: medlemstitlerne ligger i panelet, antallet vises ved siden af.
       vaert.innerHTML =
         '<div class="kort">' +
           '<span class="pin hav" style="top:-6px;left:16px"></span>' +
@@ -545,7 +529,6 @@
           '</button>' +
           '<div class="accordion-panel' + (varAaben ? ' aaben' : '') + '">' +
             indre +
-            nyKnap +
           '</div>' +
         '</div>';
 
@@ -560,39 +543,18 @@
         });
       }
 
-      // Joy-handlinger: +1, slet, og ny næse.
+      // Joy-handling: tildel næse pr. medlem (+1) og re-render.
       if (erJoy) {
-        var plusKnapper = vaert.querySelectorAll('[data-plus]');
-        for (var p = 0; p < plusKnapper.length; p++) {
-          plusKnapper[p].addEventListener('click', function () {
-            var id = this.getAttribute('data-plus');
-            DB.incrementNaese(id).then(function () {
-              return renderNaeser();
+        var giveKnapper = vaert.querySelectorAll('[data-naese]');
+        for (var g = 0; g < giveKnapper.length; g++) {
+          giveKnapper[g].addEventListener('click', function () {
+            var memberId = this.getAttribute('data-naese');
+            DB.tildelNaese(memberId).then(function () {
+              return renderNaeser(members);
             }).catch(function (e) {
               App.toast('Den næse ville ikke tælles. Prøv igen.');
               if (window.console && console.error) console.error(e);
             });
-          });
-        }
-        var slettere = vaert.querySelectorAll('[data-naese-slet]');
-        for (var d = 0; d < slettere.length; d++) {
-          slettere[d].addEventListener('click', function () {
-            var id = this.getAttribute('data-naese-slet');
-            if (!window.confirm('Stryg næsen fra registret?')) return;
-            DB.removeNaese(id).then(function () {
-              App.toast('Næsen er strøget. Joy slipper billigt.');
-              return renderNaeser();
-            }).catch(function (e) {
-              App.toast('Næsen sad fast. Prøv igen.');
-              if (window.console && console.error) console.error(e);
-            });
-          });
-        }
-        var nyBtn = $('aabn-naese');
-        if (nyBtn) {
-          nyBtn.addEventListener('click', function () {
-            $('naese-titel').value = '';
-            App.ark.open($('ark-naese'));
           });
         }
       }
@@ -626,7 +588,7 @@
     renderAeresvaeg(top3);
     renderRegering(members);
     renderOpslag(medlemNavn);
-    renderNaeser();
+    renderNaeser(members);
 
     /* ---------- wire ark-knapper + formularer ---------- */
     // »+ Tilføj information« åbner et tomt opslag-ark.
@@ -664,32 +626,7 @@
       });
     }
 
-    // Ny næse — kun Joy ser knappen, men vi vogter alligevel rollen.
-    var formNaese = $('form-naese');
-    if (formNaese) {
-      formNaese.addEventListener('submit', function (e) {
-        e.preventDefault();
-        if (!sess || sess.rolle !== 'joy') {
-          App.toast('Kun Joy uddeler næser til Joy.');
-          return;
-        }
-        var titel = ($('naese-titel').value || '').trim();
-        if (!titel) {
-          App.toast('En næse uden forseelse? Skriv hvad hun lavede.');
-          return;
-        }
-        DB.addNaese({ titel: titel }).then(function () {
-          App.ark.close($('ark-naese'));
-          App.toast('Næse noteret.');
-          return renderNaeser();
-        }).catch(function (err) {
-          App.toast('Næsen ville ikke noteres. Prøv igen.');
-          if (window.console && console.error) console.error(err);
-        });
-      });
-    }
-
-    // Fælles luk-knapper i begge nye ark.
+    // Fælles luk-knapper i de øvrige ark.
     var lukKnapper = document.querySelectorAll('[data-luk]');
     for (var lk = 0; lk < lukKnapper.length; lk++) {
       lukKnapper[lk].addEventListener('click', function () { App.ark.close(); });
