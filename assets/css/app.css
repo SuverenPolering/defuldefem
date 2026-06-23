@@ -1268,3 +1268,9 @@ input[type="number"]{font-weight:700}
 .skyld-raekke .chevron{color:var(--hav-lys);transition:transform .2s ease}
 .skyld-raekke[aria-expanded="true"] .chevron{transform:rotate(90deg)}
 @media (prefers-reduced-motion:reduce){.skyld-raekke .chevron{transition:none}}
+
+/* Bøde-rækker i den udfoldede skyldner: beløbet i en fast, højrestillet
+   tabular-kolonne, og »−« vises altid (deaktiveret ved antal 1), så beløbene
+   flugter uanset om bøden er stakket. */
+.boede-belob{display:inline-block;min-width:56px;text-align:right;font-variant-numeric:tabular-nums}
+.boede .takst .knap-lille:disabled{opacity:.4;cursor:default}
