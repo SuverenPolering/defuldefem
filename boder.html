@@ -365,48 +365,54 @@
           "</div>";
         }
 
-        // Medlems-rækkefølge = balancens (beløbssorteret, Gæst IKKE tvunget nederst).
+        // Rækkefølge: skyldnere først (beløb faldende), derefter de gældfri.
+        // Gæst er ALTID nederst i sin gruppe — nederst blandt skyldnere hvis de
+        // skylder, ellers nederst overalt.
+        liste.sort(function (a, b) {
+          var aD = a.beloeb > 0 ? 0 : 1, bD = b.beloeb > 0 ? 0 : 1;
+          if (aD !== bD) return aD - bD;
+          var aG = a.memberId === "gaest" ? 1 : 0, bG = b.memberId === "gaest" ? 1 : 0;
+          if (aG !== bG) return aG - bG;
+          return b.beloeb - a.beloeb;
+        });
+
+        // Ensartet rækkestruktur, så beløbene flugter i én kolonne uanset om
+        // rækken kan foldes ud: [navn (fylder)] [status] [beløb (fast, højre)]
+        // [chevron eller tom chevron-plads]. Status (Markér betalt / »intet at
+        // betale«) ligger FØR beløbet, så kun en smal chevron-plads står efter
+        // beløbet — beløbets højrekant ender samme sted i alle rækker.
         var html = "";
         liste.forEach(function (r) {
           var raekker = grupper[r.memberId];
           var harBoeder = !!(raekker && raekker.length);
-          var klasse = r.beloeb > 0 ? "saldo-belob skyld" : "saldo-belob";
-          var handling;
-          if (r.beloeb > 0) {
-            handling = erFinans
-              ? '<button type="button" class="knap-lille kun-finans" data-betal="' + esc(r.memberId) + '">Markér betalt</button>'
-              : "";
-          } else {
-            handling = '<span class="hvem">intet at betale</span>';
-          }
+          var belob = '<span class="saldo-belob' + (r.beloeb > 0 ? " skyld" : "") + '">' + App.formatKr(r.beloeb) + "</span>";
+          var status = (r.beloeb > 0)
+            ? (erFinans ? '<button type="button" class="knap-lille kun-finans" data-betal="' + esc(r.memberId) + '">Markér betalt</button>' : "")
+            : '<span class="hvem">intet at betale</span>';
+          var chevron = harBoeder
+            ? '<span class="chevron" aria-hidden="true">▸</span>'
+            : '<span class="chevron-tom" aria-hidden="true"></span>';
+          var indre =
+            '<span class="medlem-navn">' + esc(navnFor(r.memberId)) + "</span>" +
+            '<span class="skyld-status">' + status + "</span>" +
+            belob +
+            chevron;
           if (harBoeder) {
-            // Foldbart hoved. Det er et <div role="button"> (IKKE en <button>), så
-            // "Markér betalt"-knappen kan ligge inde i hovedet uden ugyldig knap-i-knap.
-            html += '<div class="accordion-head" role="button" tabindex="0" aria-expanded="false">' +
-                '<span class="medlem-navn">' + esc(navnFor(r.memberId)) + "</span>" +
-                '<span class="' + klasse + '">' + App.formatKr(r.beloeb) + "</span>" +
-                handling +
-                ' <span class="chevron" aria-hidden="true">▸</span>' +
-              "</div>";
+            // <div role="button"> (ikke <button>), så »Markér betalt« kan ligge inde
+            // i rækken uden ugyldig knap-i-knap.
+            html += '<div class="skyld-raekke" role="button" tabindex="0" aria-expanded="false">' + indre + "</div>";
             var indhold = "";
             raekker.forEach(function (f) { indhold += boedeRaekke(f); });
             html += '<div class="accordion-panel">' + indhold + "</div>";
           } else {
-            // Afregnet medlem uden bøder: simpel, ikke-interaktiv række (intet at folde ud).
-            html += '<div class="saldo-raekke">' +
-                "<span>" + esc(navnFor(r.memberId)) + "</span>" +
-                '<span class="skyld-handling">' +
-                  '<span class="' + klasse + '">' + App.formatKr(r.beloeb) + "</span>" +
-                  handling +
-                "</span>" +
-              "</div>";
+            html += '<div class="skyld-raekke">' + indre + "</div>";
           }
         });
         el.innerHTML = html;
 
         // Accordion: hvert medlem med bøder åbnes/lukkes uafhængigt (klik + tastatur).
         // "Markér betalt" ligger i hovedet; dens klik må IKKE også toggle (stopPropagation).
-        var heads = el.querySelectorAll('.accordion-head[aria-expanded]');
+        var heads = el.querySelectorAll('.skyld-raekke[aria-expanded]');
         for (var hi = 0; hi < heads.length; hi++) {
           (function (head) {
             function toggle() {

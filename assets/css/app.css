@@ -1239,13 +1239,32 @@ input[type="number"]{font-weight:700}
 .stemme-blok{padding:14px 0;border-top:1px dashed var(--linje)}
 .stemme-blok:first-child{border-top:none}
 
-/* ---- 4) Samlet Skyld-sektion — accordion-head med titel + beløb + knap ----
-   Genbruger .accordion-head (flex, align-items:center). Beløbet skubbes
-   helt til højre; restance i koral-tekst (a11y). »Markér betalt« får luft
-   og må ikke klemmes. Navnet/titlen må fylde og brydes uden at mase resten. */
+/* (Joy's næser- og Regeringen-hoveder bruger stadig .accordion-head .medlem-navn.) */
 .accordion-head .medlem-navn{min-width:0;overflow-wrap:anywhere}
-.accordion-head .saldo-belob{margin-left:auto;white-space:nowrap}
-.accordion-head .saldo-belob.skyld{color:var(--koral-tekst)}
-.accordion-head .knap-lille{margin-left:10px;flex-shrink:0}
-/* »Intet at betale«-noten skubbes også til højre i head'en. */
-.accordion-head .hvem{margin-left:auto}
+
+/* ---- 4) Samlet Skyld-sektion — ensartede rækker med flugtende beløbskolonne ----
+   Hver række: [navn (fylder)] [status] [beløb (fast bredde, højrestillet,
+   tabular-cifre)] [chevron eller tom 1em-plads]. Da kun en smal chevron-plads
+   står EFTER beløbet, ender alle beløbs højrekant samme sted — foldbare som
+   flade rækker. Foldbare rækker er <div role=button>. */
+.skyld-raekke{
+  display:flex;align-items:center;gap:8px;
+  width:100%;min-height:44px;padding:8px 2px;
+  border-bottom:1px dashed var(--linje);
+  text-align:left;color:var(--tekst);
+}
+.skyld-raekke:last-child{border-bottom:none}
+.skyld-raekke[role="button"]{cursor:pointer}
+.skyld-raekke .medlem-navn{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.skyld-status{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px}
+.skyld-status:empty{display:none}
+.skyld-status .hvem{white-space:nowrap}
+.skyld-raekke .saldo-belob{
+  flex:0 0 auto;min-width:62px;text-align:right;white-space:nowrap;
+  font-weight:700;color:var(--hav);font-variant-numeric:tabular-nums;
+}
+.skyld-raekke .saldo-belob.skyld{color:var(--koral-tekst)}
+.skyld-raekke .chevron,.skyld-raekke .chevron-tom{flex:0 0 auto;width:1em;text-align:center}
+.skyld-raekke .chevron{color:var(--hav-lys);transition:transform .2s ease}
+.skyld-raekke[aria-expanded="true"] .chevron{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){.skyld-raekke .chevron{transition:none}}

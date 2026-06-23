@@ -156,16 +156,34 @@
    * MEDLEMMER
    * ======================================================= */
 
+  // Joys kanoniske visningsnavn er »Joy« OVERALT; »— nyder bare turen« hører kun
+  // til i Regeringen (tilføjes der). Vi stripper et evt. gammelt suffiks fra
+  // databasen/cachen/seed, så navnet er ens alle steder — uden at det kræver en
+  // DB-migration. Andre medlemmer røres ikke.
+  function _normMember(m) {
+    if (m && m.rolle === 'joy' && typeof m.titel === 'string') {
+      var t = m.titel.replace(/\s*—\s*nyder bare turen\s*$/i, '');
+      if (t !== m.titel) {
+        var k = {};
+        for (var p in m) { if (Object.prototype.hasOwnProperty.call(m, p)) k[p] = m[p]; }
+        k.titel = t;
+        return k;
+      }
+    }
+    return m;
+  }
+  function _normMembers(list) { return (list || []).map(_normMember); }
+
   function getMembers() {
     if (_supabase()) {
       var c = _cacheGet('members');
-      if (c && c.length) return Promise.resolve(c);
+      if (c && c.length) return Promise.resolve(_normMembers(c));
       return _sb().from('members').select('*').order('navn').then(function (res) {
-        return _cacheSet('members', _data(res));
+        return _cacheSet('members', _normMembers(_data(res)));
       });
     }
     return _async(function () {
-      return _read('members', []);
+      return _normMembers(_read('members', []));
     });
   }
 
