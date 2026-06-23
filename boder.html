@@ -354,11 +354,11 @@
             "</div>" +
             '<div class="takst">' +
               (betalt ? '<span class="betalt-maerke">Betalt</span> ' : "") +
-              App.formatKr(enhed * antal) +
+              '<span class="boede-belob">' + App.formatKr(enhed * antal) + "</span>" +
+              // »−« vises ALTID for ministeren (deaktiveret ved antal 1), så
+              // beløbskolonnen flugter uanset om bøden er stakket eller ej.
               (erMinister
-                ? (antal > 1
-                    ? ' <button type="button" class="knap-lille" aria-label="Fjern én" data-dec-boede="' + esc(f.id) + '">−</button>'
-                    : "") +
+                ? ' <button type="button" class="knap-lille" aria-label="Fjern én" data-dec-boede="' + esc(f.id) + '"' + (antal > 1 ? "" : " disabled") + ">−</button>" +
                   ' <button type="button" class="knap-lille fare" data-slet-boede="' + esc(f.id) + '">Slet</button>'
                 : "") +
             "</div>" +
@@ -468,6 +468,7 @@
           var dec = el.querySelectorAll("[data-dec-boede]");
           for (var d = 0; d < dec.length; d++) {
             dec[d].addEventListener("click", function () {
+              if (this.disabled) return; // deaktiveret ved antal 1 — brug Slet
               var id = this.getAttribute("data-dec-boede");
               DB.decrementFine(id).then(function () {
                 App.toast("Én trukket fra. Resten står stadig.");
