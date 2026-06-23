@@ -308,20 +308,26 @@
 
     // Adgangstekst pr. rolle (vises i accordion-panelet under hvert medlem).
     var adgang = {
-      turistminister: 'Opretter, redigerer og sletter møder & rejser i kalenderen.',
+      turistminister: 'Opretter, redigerer og sletter møder & ture i kalenderen.',
       boedekasseminister: 'Registrerer, redigerer, sletter og tildeler bøder samt bødekataloget. Rydder betalte bøder fra protokollen. Redigerer bødekassens vedtægter.',
-      finansminister: 'Regulerer kassens saldo, markerer bøder betalt og eftergiver gæld.',
-      foreningssekretaer: 'Opretter øl-aftener og tilføjer øl. Redigerer og sletter ønsker. Redigerer foreningens vedtægter.',
-      joy: 'Ingen forpligtelser — bedømmer øl, svarer på møder og tilføjer ønsker som alle andre. Men: uddeler OG trækker næser tilbage i synderegisteret — det privilegium er Joys helt alene.',
-      gaest: 'Ingen rettigheder — bedømmer øl og kan få bøder. Ser med, men styrer intet.'
+      finansminister: 'Regulerer kassens saldo og markerer bøder betalt — så pengene lander i kassen.',
+      foreningssekretaer: 'Opretter øl-aftener og tilføjer øl i protokollen. Redigerer og sletter ønsker. Redigerer foreningens vedtægter. Styrer stemmeboksen — stiller, offentliggør og rydder spørgsmål — og kan tage ethvert opslag ned fra tavlen.',
+      joy: 'Nyder bare turen og har ingen pligter. Bedømmer øl, svarer på møder og hænger sedler op som alle andre. Men han alene uddeler — og trækker tilbage — næser i synderegisteret.',
+      gaest: 'Ingen rettigheder — bedømmer øl og kan få bøder, men stemmer ikke i stemmeboksen. Ser med, styrer intet.'
     };
 
     function medlemRaekke(m) {
       var init = m.initial || (m.navn ? m.navn.charAt(0) : '?');
       var tekst = adgang[m.rolle] || '';
+      // »— nyder bare turen« hører KUN til her i Regeringen. Andre steder vises
+      // Joy bare som »Joy«. Robust uanset om databasen endnu har det gamle navn:
+      // strip et evt. eksisterende suffiks først, læg det så på én gang.
+      var visTitel = m.rolle === 'joy'
+        ? m.titel.replace(/\s*—\s*nyder bare turen\s*$/i, '') + ' — nyder bare turen'
+        : m.titel;
       return '<button type="button" class="medlem accordion-head" aria-expanded="false">' +
         '<div class="brik">' + esc(init) + '</div>' +
-        '<div class="medlem-navn">' + esc(m.titel) + '</div>' +
+        '<div class="medlem-navn">' + esc(visTitel) + '</div>' +
         '<span class="chevron" aria-hidden="true">▸</span>' +
       '</button>' +
       '<div class="accordion-panel">' +
