@@ -38,7 +38,7 @@ window.CONFIG = {
     { id: 'jakob',   rolle: 'boedekasseminister', titel: 'Bødekasseminister',      initial: 'J', fornavn: 'Jakob' },
     { id: 'kim',     rolle: 'finansminister',     titel: 'Finansminister',         initial: 'K', fornavn: 'Kim' },
     { id: 'anders',  rolle: 'foreningssekretaer', titel: 'Foreningssekretær',      initial: 'A', fornavn: 'Anders' },
-    { id: 'steffen', rolle: 'joy',                titel: 'Joy — nyder bare turen', initial: 'S', fornavn: 'Steffen' },
+    { id: 'steffen', rolle: 'joy',                titel: 'Joy',                    initial: 'S', fornavn: 'Steffen' },
     { id: 'gaest',   rolle: 'gaest',              titel: 'Gæst',                   initial: 'G', fornavn: 'Gæst' }
   ]
 };
