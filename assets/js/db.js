@@ -1138,6 +1138,38 @@
     });
   }
 
+  // Fjern ét medlems næse (−1, gulv 0). Sletter rækken når den når 0. Returnér {memberId, antal}.
+  function fjernNaese(memberId) {
+    if (_supabase()) {
+      return _sb().from('naeser').select('antal').eq('member_id', memberId).maybeSingle().then(function (res) {
+        var ex = _data(res);
+        if (!ex) return { memberId: memberId, antal: 0 };
+        var ny = Math.max(0, (Number(ex.antal) || 0) - 1);
+        if (ny <= 0) {
+          return _sb().from('naeser').delete().eq('member_id', memberId)
+            .then(function (r) { _data(r); return { memberId: memberId, antal: 0 }; });
+        }
+        return _sb().from('naeser').update({ antal: ny }).eq('member_id', memberId)
+          .then(function (r) { _data(r); return { memberId: memberId, antal: ny }; });
+      });
+    }
+    return _async(function () {
+      var liste = _read('naeser', []);
+      var ud = [];
+      var nyAntal = 0;
+      for (var i = 0; i < liste.length; i++) {
+        if (liste[i].memberId === memberId) {
+          nyAntal = Math.max(0, (Number(liste[i].antal) || 0) - 1);
+          if (nyAntal <= 0) continue; // drop rækken når den rammer 0
+          liste[i].antal = nyAntal;
+        }
+        ud.push(liste[i]);
+      }
+      _write('naeser', ud);
+      return { memberId: memberId, antal: nyAntal };
+    });
+  }
+
   /* =========================================================
    * STEMMEBOKSEN: AFSTEMNINGER + SVAR (hemmelig optælling)
    * ======================================================= */
@@ -1321,6 +1353,7 @@
 
     getNaeser: getNaeser,
     tildelNaese: tildelNaese,
+    fjernNaese: fjernNaese,
 
     getAfstemninger: getAfstemninger,
     removeAfstemning: removeAfstemning,

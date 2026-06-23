@@ -1199,10 +1199,15 @@ input[type="number"]{font-weight:700}
 .naese-titel{font-weight:600;color:var(--tekst);min-width:0;overflow-wrap:anywhere;flex:1 1 auto}
 .naese-tal{
   font-weight:700;color:var(--hav);white-space:nowrap;
-  display:inline-flex;align-items:center;justify-content:flex-end;gap:6px;
-  flex:0 0 auto;min-width:48px;
+  display:inline-flex;align-items:center;gap:6px;
+  flex:0 0 auto;
 }
+/* Tallet får sit eget fast-bredde, højrestillede felt med tabular-cifre, så
+   👃-emojiet (fast første kolonne) ALDRIG flytter sig når antallet ændrer sig. */
+.naese-antal{min-width:1.6em;text-align:right;font-variant-numeric:tabular-nums}
 .naese-handling{display:flex;gap:6px;flex-shrink:0}
+/* »−«-knappen vises altid (så rækkerne flugter), men er sløret/inaktiv ved 0. */
+.naese-handling .knap-lille:disabled{opacity:.4;cursor:default}
 
 /* ============================================================
    UDVIDELSE 4 — runde 2: Joy's næse-tæller, stemmeboks-liste,

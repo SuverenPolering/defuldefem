@@ -312,7 +312,7 @@
       boedekasseminister: 'Registrerer, redigerer, sletter og tildeler bøder samt bødekataloget. Rydder betalte bøder fra protokollen. Redigerer bødekassens vedtægter.',
       finansminister: 'Regulerer kassens saldo, markerer bøder betalt og eftergiver gæld.',
       foreningssekretaer: 'Opretter øl-aftener og tilføjer øl. Redigerer og sletter ønsker. Redigerer foreningens vedtægter.',
-      joy: 'Ingen forpligtelser — men bedømmer øl, svarer på møder og tilføjer ønsker som alle andre.',
+      joy: 'Ingen forpligtelser — bedømmer øl, svarer på møder og tilføjer ønsker som alle andre. Men: uddeler OG trækker næser tilbage i synderegisteret — det privilegium er Joys helt alene.',
       gaest: 'Ingen rettigheder — bedømmer øl og kan få bøder. Ser med, men styrer intet.'
     };
 
@@ -499,16 +499,18 @@
         for (var i = 0; i < raekkefoelge.length; i++) {
           var m = raekkefoelge[i];
           var antal = antalFor[m.id] || 0;
-          // Kun Joy må uddele — en lille »Giv næse«-knap pr. række.
+          // Kun Joy må uddele/fjerne. Begge knapper vises ALTID (»−« deaktiveret
+          // ved 0), så knap-gruppen har konstant bredde og rækkerne flugter.
           var joyHandling = erJoy
             ? '<div class="naese-handling kun-joy">' +
-                '<button type="button" class="knap-lille kun-joy" data-naese="' + esc(m.id) + '">Giv næse</button>' +
+                '<button type="button" class="knap-lille fare" data-naese-fjern="' + esc(m.id) + '" aria-label="Fjern én næse"' + (antal <= 0 ? ' disabled' : '') + '>−</button>' +
+                '<button type="button" class="knap-lille" data-naese="' + esc(m.id) + '">Giv næse</button>' +
               '</div>'
             : '';
           indre +=
             '<div class="naese-raekke">' +
               '<span class="naese-titel">' + esc(m.titel) + '</span>' +
-              '<span class="naese-tal"><span class="naese-emoji">👃</span> ' + esc(String(antal)) + '</span>' +
+              '<span class="naese-tal"><span class="naese-emoji">👃</span><span class="naese-antal">' + esc(String(antal)) + '</span></span>' +
               joyHandling +
             '</div>';
         }
@@ -543,7 +545,7 @@
         });
       }
 
-      // Joy-handling: tildel næse pr. medlem (+1) og re-render.
+      // Joy-handling: tildel (+1) og fjern (−1) næse pr. medlem, så re-render.
       if (erJoy) {
         var giveKnapper = vaert.querySelectorAll('[data-naese]');
         for (var g = 0; g < giveKnapper.length; g++) {
@@ -553,6 +555,19 @@
               return renderNaeser(members);
             }).catch(function (e) {
               App.toast('Den næse ville ikke tælles. Prøv igen.');
+              if (window.console && console.error) console.error(e);
+            });
+          });
+        }
+        var fjernKnapper = vaert.querySelectorAll('[data-naese-fjern]');
+        for (var f = 0; f < fjernKnapper.length; f++) {
+          fjernKnapper[f].addEventListener('click', function () {
+            if (this.disabled) return;
+            var memberId = this.getAttribute('data-naese-fjern');
+            DB.fjernNaese(memberId).then(function () {
+              return renderNaeser(members);
+            }).catch(function (e) {
+              App.toast('Den næse ville ikke fjernes. Prøv igen.');
               if (window.console && console.error) console.error(e);
             });
           });
