@@ -1196,10 +1196,11 @@ input[type="number"]{font-weight:700}
   padding:9px 0;border-bottom:1px dashed var(--linje);
 }
 .naese-raekke:last-child{border-bottom:none}
-.naese-titel{font-weight:600;color:var(--tekst);min-width:0;overflow-wrap:anywhere}
+.naese-titel{font-weight:600;color:var(--tekst);min-width:0;overflow-wrap:anywhere;flex:1 1 auto}
 .naese-tal{
   font-weight:700;color:var(--hav);white-space:nowrap;
-  display:inline-flex;align-items:center;gap:6px;
+  display:inline-flex;align-items:center;justify-content:flex-end;gap:6px;
+  flex:0 0 auto;min-width:48px;
 }
 .naese-handling{display:flex;gap:6px;flex-shrink:0}
 
