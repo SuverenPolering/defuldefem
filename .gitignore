@@ -5,3 +5,10 @@ Vedtægter/
 
 # Kilde-data (Excel) — holdes lokalt, ud af repo
 Tidligere ølsmagninger/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
