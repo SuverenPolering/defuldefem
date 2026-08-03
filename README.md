@@ -58,3 +58,26 @@ Data ligger nu i `localStorage` pr. enhed. Når klubben vil dele data live:
 3. Inkludér `@supabase/supabase-js` fra CDN. `db.js` har TODO-grenene klar — signaturerne ændres ikke.
 
 Repoet er klubbens fælles sandhed: alt arbejde committes og lægges live med det samme.
+
+## Keep-alive (Supabase)
+
+Supabase pauser gratis-projekter efter 7 dages inaktivitet — og kun rigtige
+API-/databasekald tæller, ikke sidevisninger af den statiske side. Workflowet
+[`supabase-keepalive.yml`](.github/workflows/supabase-keepalive.yml) sender
+derfor hver anden dag ét autentificeret GET-kald til tabellen `hjerteslag`
+(oprettes med [`supabase/hjerteslag.sql`](supabase/hjerteslag.sql) i Supabase'
+SQL Editor). Er svaret ikke HTTP 200, bliver jobbet rødt, og GitHub sender mail.
+
+**Repo-secrets** (GitHub → Settings → Secrets and variables → Actions):
+
+| Secret | Værdi |
+|--------|-------|
+| `SUPABASE_URL` | projektets URL — samme som `SUPABASE_URL` i `assets/js/config.js` |
+| `SUPABASE_ANON_KEY` | anon-nøglen — samme som `SUPABASE_ANON` i `assets/js/config.js` (offentlig i forvejen; ligger som secret, så den kun vedligeholdes ét sted) |
+
+**Manuel test:** Actions-fanen → »Supabase keep-alive« → »Run workflow«.
+Grøn = Supabase svarede 200. Rød = læs loggen (statuskode + responstid står der).
+
+> **OBS:** GitHub slår planlagte workflows fra efter 60 dages inaktivitet i
+> repoet. Der kommer en mail, og workflowet kan genaktiveres med ét klik på
+> Actions-fanen.

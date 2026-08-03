@@ -1,0 +1,45 @@
+# Supabase keep-alive.
+#
+# Supabase pauser gratis-projekter efter 7 dages inaktivitet, og kun rigtige
+# API-/databasekald tæller — ikke sidevisninger. Dette workflow sender hver
+# anden dag ét autentificeret GET-kald til tabellen "hjerteslag" (oprettes
+# med supabase/hjerteslag.sql). Fejler hårdt (rødt job = mail fra GitHub)
+# hvis svaret ikke er HTTP 200.
+#
+# OBS: GitHub deaktiverer planlagte workflows efter 60 dages inaktivitet i
+# repoet — se afsnittet "Keep-alive" i README.md.
+name: Supabase keep-alive
+
+on:
+  schedule:
+    # 06:23 UTC på ulige månedsdage (1., 3., 5., ...) = hver anden dag.
+    # Skævt minuttal med vilje — GitHub anbefaler at undgå hele timer.
+    - cron: "23 6 */2 * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  hjerteslag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GET mod hjerteslag-tabellen
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Repo-secrets SUPABASE_URL og/eller SUPABASE_ANON_KEY er ikke sat"
+            exit 1
+          fi
+          svar=$(curl -sS --max-time 30 -o /dev/null -w '%{http_code} %{time_total}' \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/hjerteslag?select=id&limit=1")
+          status="${svar% *}"
+          tid="${svar#* }"
+          echo "HTTP-status: $status | responstid: ${tid}s"
+          if [ "$status" != "200" ]; then
+            echo "::error::Keep-alive fejlede: HTTP $status (forventede 200)"
+            exit 1
+          fi
