@@ -302,6 +302,15 @@ nav a.aktiv{color:var(--hav)}
 nav a.aktiv .ikon{transform:scale(1.1)}
 nav a .ikon{display:block;font-size:17px;margin-bottom:2px}
 
+/* Standalone-webapp (gemt på hjemmeskærmen): der er ingen Safari-linje, så
+   bundmenuen lå klods op ad home-indikatoren. Løft den fri med enhedens
+   sikre-zone-margen. Gælder KUN i display-mode: standalone — i browser og som
+   bogmærke ændres intet. (env() kræver viewport-fit=cover, som alle sider har.) */
+@media (display-mode: standalone) {
+  nav{ padding-bottom: env(safe-area-inset-bottom); }
+  body{ padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+}
+
 /* ============================================================
    UDVIDELSE — app-komponenter i B4-æstetik
    Samme palet, samme nåle/tape/ring-detaljer, lette rotationer,
