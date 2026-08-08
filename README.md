@@ -30,8 +30,18 @@ assets/js/db.js       datalag (async API) — localStorage nu, Supabase senere
 assets/js/seed.js     eksempeldata (sås i localStorage hvis tomt)
 assets/js/auth.js     mock-login + session + roller
 assets/js/app.js       topbar + bund-nav, route-guard, render-helpers
+assets/icons/          hjemmeskærms-/faneikon: »DFF« i logo-fonten (Yellowtail)
+manifest.webmanifest   PWA-manifest (navn, ikoner, farver) — »Føj til hjemmeskærm«
 supabase/schema.sql    tabeller + RLS, klar til Supabase-fasen
 ```
+
+Ikonet (»DFF« i Yellowtail på den lyse havblå/sand-palet) er genereret i den
+rigtige logofont og ligger som `apple-touch-icon.png` (iPhone), `icon-192/512`
+(Android/PWA), maskable-variant samt en selvstændig `favicon.svg` til
+browserfaner. Alle sider peger på dem via `<head>`.
+
+> **iPhone:** iOS cacher hjemmeskærms-ikoner. Vises det gamle grå »D« stadig,
+> så slet genvejen fra hjemmeskærmen og føj siden til igen fra Safari.
 
 ## Login (mock-fasen)
 
