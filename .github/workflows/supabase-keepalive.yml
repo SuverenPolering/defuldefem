@@ -6,8 +6,10 @@
 # med supabase/hjerteslag.sql). Fejler hårdt (rødt job = mail fra GitHub)
 # hvis svaret ikke er HTTP 200.
 #
-# OBS: GitHub deaktiverer planlagte workflows efter 60 dages inaktivitet i
-# repoet — se afsnittet "Keep-alive" i README.md.
+# GitHub deaktiverer planlagte workflows efter 60 dages inaktivitet i repoet.
+# Jobbet "hold-aktivt" genaktiverer derfor workflowet via GitHub API'et ved
+# hver kørsel, så fristen nulstilles løbende — uden dummy-commits.
+# Se også afsnittet "Keep-alive" i README.md.
 name: Supabase keep-alive
 
 on:
@@ -43,3 +45,19 @@ jobs:
             echo "::error::Keep-alive fejlede: HTTP $status (forventede 200)"
             exit 1
           fi
+
+  hold-aktivt:
+    # Nulstiller GitHubs 60-dages-frist for planlagte workflows ved at
+    # genaktivere dette workflow via API'et. Kører uafhængigt af
+    # "hjerteslag", så workflowet holdes i live, selv hvis Supabase-kaldet fejler.
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Genaktivér workflowet (nulstil 60-dages-fristen)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method PUT \
+            "repos/${{ github.repository }}/actions/workflows/supabase-keepalive.yml/enable"
+          echo "Workflowet er genaktiveret – GitHubs 60-dages-frist er nulstillet."
