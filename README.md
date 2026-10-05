@@ -88,6 +88,8 @@ SQL Editor). Er svaret ikke HTTP 200, bliver jobbet rødt, og GitHub sender mail
 **Manuel test:** Actions-fanen → »Supabase keep-alive« → »Run workflow«.
 Grøn = Supabase svarede 200. Rød = læs loggen (statuskode + responstid står der).
 
-> **OBS:** GitHub slår planlagte workflows fra efter 60 dages inaktivitet i
-> repoet. Der kommer en mail, og workflowet kan genaktiveres med ét klik på
-> Actions-fanen.
+> **Ingen 60-dages-deaktivering:** GitHub slår normalt planlagte workflows fra
+> efter 60 dages inaktivitet i repoet. Workflowet har derfor et ekstra job,
+> `hold-aktivt`, der genaktiverer workflowet via GitHub API'et ved hver kørsel,
+> så fristen nulstilles løbende — uden dummy-commits. Kommer mailen alligevel,
+> kan workflowet genaktiveres med ét klik på Actions-fanen.
